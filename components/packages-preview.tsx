@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
+import Image from "next/image"
 
 export default function PackagesPreview() {
   const packages = [
@@ -8,18 +9,21 @@ export default function PackagesPreview() {
       duration: "6 Days",
       price: "From $899",
       highlights: ["Burj Khalifa", "Desert Safari", "Dubai Mall"],
+      image: "/dubai-burj-khalifa-city-skyline.jpg",
     },
     {
       name: "European Tour",
       duration: "7 Days",
       price: "From $1,299",
       highlights: ["Paris", "Amsterdam", "Rome"],
+      image: "/europe-paris-eiffel-tower-landmarks.jpg",
     },
     {
       name: "Asia Explorer",
       duration: "5 Days",
       price: "From $799",
       highlights: ["Thailand", "Singapore", "Malaysia"],
+      image: "/asia-tropical-beaches-thailand-temples.jpg",
     },
   ]
 
@@ -50,8 +54,14 @@ export default function PackagesPreview() {
               key={idx}
               className="group bg-white border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
             >
-              <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500 relative overflow-hidden">
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition"></div>
+              <div className="h-48 relative overflow-hidden bg-gray-200">
+                <Image
+                  src={pkg.image || "/placeholder.svg"}
+                  alt={pkg.name}
+                  fill
+                  className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition"></div>
               </div>
               <div className="p-8">
                 <h3 className="text-2xl font-bold mb-2">{pkg.name}</h3>
