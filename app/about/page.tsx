@@ -1,5 +1,6 @@
 "use client"
 
+import './page.css'
 import { useScrollToTop } from "@/hooks/use-scroll-to-top"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
@@ -133,7 +134,7 @@ export default function About() {
             Dedicated professionals committed to your success
           </p>
 
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-8 team-grid">
             {[
               { name: "George Owusu Ntim", role: "Founder & Director", image: "/images/founder.jpg" },
               { name: "Sadat Abdul Wahab", role: "Admissions Specialist", image: "/images/team1.jpg" },
@@ -151,7 +152,7 @@ export default function About() {
                     alt={member.name}
                     width={300}
                     height={400}
-                    className="w-full h-full object-cover object-top group-hover:scale-110 transition duration-300"
+                    className="min-w-2xs md:min-w-1/3 w-full h-full object-cover object-top group-hover:scale-110 transition duration-300"
                   />
                 </div>
                 <h3 className="text-lg font-bold text-foreground">{member.name}</h3>

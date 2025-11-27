@@ -1,0 +1,12 @@
+@media (max-width: 768px) {
+  .team-grid {
+    grid-template-columns: 1fr 1fr; 
+  }
+}
+
+@media (max-width: 577px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}

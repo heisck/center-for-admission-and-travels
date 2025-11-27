@@ -76,7 +76,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <Mail size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span>info@centerforadmissionandtravels.com</span>
+                <span>info@CFAAT.com</span>
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <MapPin size={16} className="mt-1 flex-shrink-0 text-primary" />
