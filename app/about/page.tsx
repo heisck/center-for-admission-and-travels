@@ -152,7 +152,7 @@ export default function About() {
                     alt={member.name}
                     width={300}
                     height={400}
-                    className="min-w-2xs md:min-w-1/3 w-full h-full object-cover object-top group-hover:scale-110 transition duration-300"
+                    className="min-w-3xs md:min-w-1/3 w-full h-full object-cover object-top group-hover:scale-110 transition duration-300"
                   />
                 </div>
                 <h3 className="text-lg font-bold text-foreground">{member.name}</h3>
