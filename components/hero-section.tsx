@@ -1,8 +1,48 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
+//import Image from "next/image"
+import Masonry from './Masonry';
 
+const items = [
+    {
+      id: "1",
+      img: "/images/thisshouldbeintegrated5.jpg",
+      url: "https://example.com/one",
+      height: 400,
+    },
+    {
+      id: "2",
+      img: "/images/integrate2.jpg",
+      url: "https://example.com/two",
+      height: 350,
+    },
+    {
+      id: "3",
+      img: "/images/integrate.jpg",
+      url: "https://example.com/three",
+      height: 400,
+    },
+    {
+      id: "4",
+      img: "/images/integrate1.jpg",
+      url: "https://example.com/four",
+      height: 600,
+    },
+    {
+      id: "5",
+      img: "/images/integrate3.jpg",
+      url: "https://example.com/five",
+      height: 300,
+    },
+    // {
+    //   id: "6",
+    //   img: "/images/integrated2.jpg",
+    //   url: "https://example.com/six",
+    //   height: 600,
+    // },
+    
+];
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden pt-20 pb-32 md:pt-32 md:pb-48">
@@ -61,17 +101,28 @@ export default function HeroSection() {
 
           {/* Right Image */}
           <div className="relative h-96 md:h-full">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-3xl opacity-10 blur-3xl"></div>
-            <div className="relative bg-white rounded-3xl p-2 shadow-2xl">
-              <div className="relative h-96 rounded-2xl overflow-hidden">
-                <Image
+            <div className="absolute inset-0 bg-transparent rounded-3xl "></div>
+            <div className="relative bg-transparent rounded-3xl ">
+              <div className="relative h-96 rounded-2xl ">
+                <Masonry
+                  items={items}
+                  ease="power3.out"
+                  duration={0.6}
+                  stagger={0.05}
+                  animateFrom="bottom"
+                  scaleOnHover={true}
+                  hoverScale={0.95}
+                  blurToFocus={true}
+                  colorShiftOnHover={false}
+                />
+                {/* <Image
                   src="/images/thisshouldbeintegrated5.jpg"
                   alt="Team engagement"
                   fill
                   className="object-cover"
                   priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                /> */}
+                <div className="absolute inset-0 bg-transparent"></div>
               </div>
             </div>
           </div>
