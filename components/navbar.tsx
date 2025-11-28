@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
+import './navbar.css'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -47,16 +48,16 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden md:flex gap-3">
+          <div className="hidden md:flex gap-3 md:gap-2">
             <Link
               href="/signin"
-              className="px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
+              className="px-4 md:px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold"
+              className="px-4 md:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold signup-button"
             >
               Sign Up
             </Link>
