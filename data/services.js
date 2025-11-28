@@ -5,7 +5,7 @@ export const services = [
     description: 'Admission guidance, university selection, and visa processing for top institutions worldwide',
     icon: 'GraduationCap',
     route: '/study-abroad',
-    heroImage: '/images/thisshouldbeintegrated2.jpg',
+    heroImage: '/images/study-abroad.jpg',
     bannerTitle: 'Study Abroad',
     bannerSubtitle: 'Transform your future with world-class education',
     benefits: [
@@ -64,7 +64,7 @@ export const services = [
     description: 'Job placement assistance and relocation support in verified international companies',
     icon: 'Briefcase',
     route: '/work-abroad',
-    heroImage: '/images/thisshouldbeintegrated1.jpg',
+    heroImage: '/images/work-abroad.jpg',
     bannerTitle: 'Work Abroad',
     bannerSubtitle: 'Build your career on the global stage',
     benefits: [
