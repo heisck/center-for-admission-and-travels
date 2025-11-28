@@ -1,8 +1,17 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect, useState } from 'react'
 //import Image from "next/image"
-import Masonry from './Masonry';
+import Masonry from './Masonry'
+import Stack from './Stack'
+
+const images = [
+  { id: 1, img: "/images/thisshouldbeintegrated5.jpg" },
+  { id: 2, img: "/images/integrate2.jpg" },
+  { id: 3, img: "/images/integrate.jpg" },
+  { id: 4, img: "/images/integrate1.jpg" }
+];
 
 const items = [
     {
@@ -104,17 +113,21 @@ export default function HeroSection() {
             <div className="absolute inset-0 bg-transparent rounded-3xl "></div>
             <div className="relative bg-transparent rounded-3xl ">
               <div className="relative h-96 rounded-2xl ">
-                <Masonry
-                  items={items}
-                  ease="power3.out"
-                  duration={0.6}
-                  stagger={0.05}
-                  animateFrom="bottom"
-                  scaleOnHover={true}
-                  hoverScale={0.95}
-                  blurToFocus={true}
-                  colorShiftOnHover={false}
-                />
+                {
+                  // render Masonry on larger screens (>=768px), Stack on smaller
+                }
+                {typeof window !== 'undefined' ? (
+                  <ResponsiveChooser images={images} items={items} />
+                ) : (
+                  // during SSR render the Stack fallback
+                  <Stack
+                    randomRotation={true}
+                    sensitivity={180}
+                    sendToBackOnClick={true}
+                    cardDimensions={{ width: "100%", height: "100%" }}
+                    cardsData={images}
+                  />
+                )}
                 {/* <Image
                   src="/images/thisshouldbeintegrated5.jpg"
                   alt="Team engagement"
@@ -129,5 +142,47 @@ export default function HeroSection() {
         </div>
       </div>
     </section>
+  )
+}
+
+function ResponsiveChooser({ images, items }: { images: { id: number; img: string }[]; items: any[] }) {
+  const [isLarge, setIsLarge] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width:768px)')
+    const handler = (e: MediaQueryListEvent) => setIsLarge(e.matches)
+    setIsLarge(mq.matches)
+    if (mq.addEventListener) mq.addEventListener('change', handler)
+    else mq.addListener(handler as any)
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', handler)
+      else mq.removeListener(handler as any)
+    }
+  }, [])
+
+  if (isLarge) {
+    return (
+      <Masonry
+        items={items}
+        ease="power3.out"
+        duration={0.6}
+        stagger={0.05}
+        animateFrom="bottom"
+        scaleOnHover={true}
+        hoverScale={0.95}
+        blurToFocus={true}
+        colorShiftOnHover={false}
+      />
+    )
+  }
+
+  return (
+    <Stack
+      randomRotation={true}
+      sensitivity={180}
+      sendToBackOnClick={true}
+      cardDimensions={{ width: "100%", height: "100%" }}
+      cardsData={images}
+    />
   )
 }
