@@ -28,12 +28,12 @@ export default function HeroSection() {
             </div>
 
             <div className="flex gap-4 flex-wrap">
-              <Link
-                href="/packages"
+              <a
+                href="#services"
                 className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
               >
-                Explore Packages
-              </Link>
+                View Our Services
+              </a>
               <Link
                 href="/contact"
                 className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"

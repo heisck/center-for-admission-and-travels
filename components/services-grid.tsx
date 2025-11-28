@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Globe, Briefcase, Plane, GraduationCap } from "lucide-react"
 
 export default function ServicesGrid() {
@@ -6,26 +7,30 @@ export default function ServicesGrid() {
       icon: GraduationCap,
       title: "Study Abroad",
       description: "Admission guidance, university selection, and visa processing for top institutions worldwide",
+      href: "/study-abroad",
     },
     {
       icon: Briefcase,
       title: "Work Abroad",
       description: "Job placement assistance and relocation support in verified international companies",
+      href: "/work-abroad",
     },
     {
       icon: Plane,
       title: "Travel & Tours",
       description: "Curated travel packages to Dubai, Europe, Asia, and more with full support",
+      href: "/travel-tours",
     },
     {
       icon: Globe,
       title: "Global Network",
       description: "Partnerships with accredited universities and verified employers worldwide",
+      href: "/global-network",
     },
   ]
 
   return (
-    <section className="py-24 bg-white">
+    <section id="services" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -41,16 +46,17 @@ export default function ServicesGrid() {
           {services.map((service, idx) => {
             const Icon = service.icon
             return (
-              <div
+              <Link
                 key={idx}
-                className="group p-8 rounded-2xl border border-border hover:border-primary bg-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+                href={service.href}
+                className="group p-8 rounded-2xl border border-border hover:border-primary bg-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
               >
                 <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-gradient-to-br group-hover:from-orange-500 group-hover:to-red-500 transition">
                   <Icon className="w-7 h-7 text-primary group-hover:text-white transition" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-foreground">{service.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{service.description}</p>
-              </div>
+              </Link>
             )
           })}
         </div>

@@ -4,7 +4,7 @@ import { useScrollToTop } from "@/hooks/use-scroll-to-top"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Image from "next/image"
-import BookingForm from "@/components/booking-form"
+import SharedBookingForm from "@/components/shared-booking-form"
 import { CheckCircle } from "lucide-react"
 
 interface ServicePageTemplateProps {
@@ -16,7 +16,7 @@ interface ServicePageTemplateProps {
     bannerSubtitle: string
     benefits: string[]
     requirements: string[]
-    countries: Array<{ name: string; description: string }>
+    countries: Array<{ name: string; description: string; image?: string }>
     visaGuidance: string
     successStories: Array<{ name: string; program: string; quote: string }>
     scholarships: Array<{ name: string; amount: string; description: string }>
@@ -113,19 +113,39 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
             </span>
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Explore opportunities across the globe
+            Explore opportunities across the globe with our trusted partners
           </p>
 
           <div className="grid md:grid-cols-3 gap-8">
             {service.countries.map((country, idx) => (
               <div
                 key={idx}
-                className="group bg-white border border-border rounded-xl p-6 hover:shadow-xl hover:border-primary transition-all duration-300 transform hover:-translate-y-2"
+                className="group bg-white border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary transition-all duration-300 transform hover:-translate-y-2"
               >
-                <h3 className="text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition">
-                  {country.name}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">{country.description}</p>
+                {country.image && (
+                  <div className="relative h-48 overflow-hidden">
+                    <Image
+                      src={country.image}
+                      alt={country.name}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="text-2xl font-bold text-white">{country.name}</h3>
+                    </div>
+                  </div>
+                )}
+                {!country.image && (
+                  <div className="p-6 pb-3">
+                    <h3 className="text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition">
+                      {country.name}
+                    </h3>
+                  </div>
+                )}
+                <div className="p-6 pt-4">
+                  <p className="text-muted-foreground leading-relaxed">{country.description}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -211,7 +231,7 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
             Fill out the form below to start your application process. Our team will contact you within 24 hours.
           </p>
 
-          <BookingForm serviceType={service.title} />
+          <SharedBookingForm serviceType={service.title} />
         </div>
       </section>
 

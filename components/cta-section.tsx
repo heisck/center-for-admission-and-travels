@@ -18,17 +18,17 @@ export default function CTASection() {
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
           <Link
-            href="/auth"
+            href="/signin"
             className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
           >
             Get Started Today
           </Link>
-          <Link
-            href="/packages"
+          <a
+            href="#services"
             className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
           >
-            Explore Packages
-          </Link>
+            Explore Services
+          </a>
         </div>
       </div>
     </section>

@@ -32,11 +32,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/packages" className="hover:text-primary transition">
-                  Packages
-                </Link>
-              </li>
-              <li>
                 <Link href="/contact" className="hover:text-primary transition">
                   Contact
                 </Link>
@@ -77,11 +72,11 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-2 text-slate-400">
                 <Phone size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span>+233 248 422 663</span>
+                <a href="tel:+233248422663" className="hover:text-primary transition">+233 248 422 663</a>
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <Mail size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span className="break-all">info@centerforadmissionandtravels.com</span>
+                <a href="mailto:info@centerforadmissionandtravels.com" className="break-all hover:text-primary transition">info@centerforadmissionandtravels.com</a>
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <MapPin size={16} className="mt-1 flex-shrink-0 text-primary" />
