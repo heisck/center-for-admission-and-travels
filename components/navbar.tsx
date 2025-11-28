@@ -23,27 +23,44 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
-            <Link href="/" className="text-foreground hover:text-orange-600 transition text-sm font-medium">
+          <div className="hidden md:flex space-x-1">
+            <Link href="/" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
               Home
             </Link>
-            <Link href="/about" className="text-foreground hover:text-orange-600 transition text-sm font-medium">
+            <Link href="/about" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
               About
             </Link>
-            <Link href="/packages" className="text-foreground hover:text-orange-600 transition text-sm font-medium">
-              Packages
+            <Link href="/study-abroad" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
+              Study
             </Link>
-            <Link href="/contact" className="text-foreground hover:text-orange-600 transition text-sm font-medium">
+            <Link href="/work-abroad" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
+              Work
+            </Link>
+            <Link href="/travel-tours" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
+              Travel
+            </Link>
+            <Link href="/global-network" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
+              Network
+            </Link>
+            <Link href="/contact" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
               Contact
             </Link>
           </div>
 
-          <Link
-            href="/auth"
-            className="hidden md:inline-block px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold"
-          >
-            Get Started
-          </Link>
+          <div className="hidden md:flex gap-3">
+            <Link
+              href="/signin"
+              className="px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold"
+            >
+              Sign Up
+            </Link>
+          </div>
 
           {/* Mobile Menu Button */}
           <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2 hover:bg-muted rounded-lg">
@@ -53,25 +70,42 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden pb-4 space-y-4">
-            <Link href="/" className="block text-foreground hover:text-orange-600 text-sm font-medium">
+          <div className="md:hidden pb-4 space-y-2">
+            <Link href="/" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
               Home
             </Link>
-            <Link href="/about" className="block text-foreground hover:text-orange-600 text-sm font-medium">
+            <Link href="/about" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
               About
             </Link>
-            <Link href="/packages" className="block text-foreground hover:text-orange-600 text-sm font-medium">
-              Packages
+            <Link href="/study-abroad" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
+              Study Abroad
             </Link>
-            <Link href="/contact" className="block text-foreground hover:text-orange-600 text-sm font-medium">
+            <Link href="/work-abroad" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
+              Work Abroad
+            </Link>
+            <Link href="/travel-tours" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
+              Travel & Tours
+            </Link>
+            <Link href="/global-network" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
+              Global Network
+            </Link>
+            <Link href="/contact" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
               Contact
             </Link>
-            <Link
-              href="/auth"
-              className="block w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold text-sm"
-            >
-              Get Started
-            </Link>
+            <div className="border-t pt-4 space-y-2 mt-4">
+              <Link
+                href="/signin"
+                className="block px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
+                className="block w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold text-sm"
+              >
+                Sign Up
+              </Link>
+            </div>
           </div>
         )}
       </div>

@@ -49,19 +49,24 @@ export default function Footer() {
             <h4 className="font-bold mb-4">Services</h4>
             <ul className="space-y-2 text-sm text-slate-400">
               <li>
-                <a href="#" className="hover:text-primary transition">
+                <Link href="/study-abroad" className="hover:text-primary transition">
                   Study Abroad
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-primary transition">
+                <Link href="/work-abroad" className="hover:text-primary transition">
                   Work Abroad
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-primary transition">
+                <Link href="/travel-tours" className="hover:text-primary transition">
                   Travel & Tours
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/global-network" className="hover:text-primary transition">
+                  Global Network
+                </Link>
               </li>
             </ul>
           </div>
@@ -72,15 +77,15 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-2 text-slate-400">
                 <Phone size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span>+233 302 962 036</span>
+                <span>+233 248 422 663</span>
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <Mail size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span>info@CFAAT.com</span>
+                <span className="break-all">info@centerforadmissionandtravels.com</span>
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <MapPin size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span>Tamale, Ghana</span>
+                <span>Tamale, Northern Region, BA14 Chinkara Street, Gumani</span>
               </li>
             </ul>
           </div>

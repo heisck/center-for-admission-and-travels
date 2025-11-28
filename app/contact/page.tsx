@@ -145,8 +145,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Phone</h4>
-                    <p className="text-muted-foreground">+233 302 962 036</p>
-                    <p className="text-muted-foreground">+233 504 353 887</p>
+                    <p className="text-muted-foreground">+233 248 422 663</p>
                   </div>
                 </div>
 
@@ -156,7 +155,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Email</h4>
-                    <p className="text-muted-foreground">info@centerforadmissionandtravels.com</p>
+                    <p className="text-muted-foreground break-all">info@centerforadmissionandtravels.com</p>
                   </div>
                 </div>
 
@@ -166,8 +165,8 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Office Location</h4>
-                    <p className="text-muted-foreground">Tamale, Bolga Road</p>
-                    <p className="text-muted-foreground">Opposite Nasona Filling Station</p>
+                    <p className="text-muted-foreground">Tamale, Northern Region</p>
+                    <p className="text-muted-foreground">BA14 Chinkara Street, Gumani</p>
                     <p className="text-muted-foreground">Ghana</p>
                   </div>
                 </div>
@@ -199,7 +198,7 @@ export default function Contact() {
               {/* WhatsApp CTA */}
               <div className="pt-4 border-t">
                 <a
-                  href="https://wa.me/233302962036"
+                  href="https://wa.me/233248422663"
                   className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition"
                 >
                   Chat on WhatsApp

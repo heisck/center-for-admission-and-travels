@@ -1,0 +1,61 @@
+export const studyCountries = [
+  'United Kingdom',
+  'United States',
+  'Canada',
+  'Australia',
+  'Netherlands',
+  'Germany',
+  'Switzerland',
+  'New Zealand',
+  'Sweden',
+  'Ireland',
+];
+
+export const workCountries = [
+  'Canada',
+  'United Kingdom',
+  'Australia',
+  'United Arab Emirates',
+  'Germany',
+  'Singapore',
+  'New Zealand',
+  'Netherlands',
+  'Switzerland',
+  'Ireland',
+];
+
+export const travelCountries = [
+  'United Arab Emirates',
+  'France',
+  'Thailand',
+  'Cambodia',
+  'Vietnam',
+  'United States',
+  'United Kingdom',
+  'Italy',
+  'Spain',
+  'Japan',
+];
+
+export const allCountries = [
+  { name: 'United Kingdom', region: 'Europe', timezone: 'GMT' },
+  { name: 'United States', region: 'North America', timezone: 'EST/PST' },
+  { name: 'Canada', region: 'North America', timezone: 'EST/PST' },
+  { name: 'Australia', region: 'Oceania', timezone: 'AEST' },
+  { name: 'Netherlands', region: 'Europe', timezone: 'CET' },
+  { name: 'Germany', region: 'Europe', timezone: 'CET' },
+  { name: 'Switzerland', region: 'Europe', timezone: 'CET' },
+  { name: 'New Zealand', region: 'Oceania', timezone: 'NZDT' },
+  { name: 'Sweden', region: 'Europe', timezone: 'CET' },
+  { name: 'Ireland', region: 'Europe', timezone: 'GMT' },
+  { name: 'United Arab Emirates', region: 'Middle East', timezone: 'GST' },
+  { name: 'France', region: 'Europe', timezone: 'CET' },
+  { name: 'Thailand', region: 'Asia', timezone: 'ICT' },
+  { name: 'Cambodia', region: 'Asia', timezone: 'ICT' },
+  { name: 'Vietnam', region: 'Asia', timezone: 'ICT' },
+  { name: 'Singapore', region: 'Asia', timezone: 'SGT' },
+  { name: 'Japan', region: 'Asia', timezone: 'JST' },
+  { name: 'India', region: 'Asia', timezone: 'IST' },
+  { name: 'Italy', region: 'Europe', timezone: 'CET' },
+  { name: 'Spain', region: 'Europe', timezone: 'CET' },
+];

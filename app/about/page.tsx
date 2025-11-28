@@ -136,14 +136,14 @@ export default function About() {
 
           <div className="grid md:grid-cols-4 gap-8 team-grid">
             {[
-              { name: "George Owusu Ntim", role: "Founder & Director", image: "/images/founder.jpg" },
-              { name: "Sadat Abdul Wahab", role: "Admissions Specialist", image: "/images/team1.jpg" },
+              { name: "George Owusu Ntim", role: "Managing Director & Chief Travel Consultant", image: "/images/founder.jpg" },
+              { name: "Sadat Abdul Wahab", role: "Travel Consultant", image: "/images/team1.jpg" },
               {
                 name: "Drake Nana Adjei Afram",
-                role: "Travel Consultant",
-                image: "/images/team2.jpg",
+                role: "Accountant",
+                image: "/images/USETHIS IMAGE FOR THE TEAM MEMBER TO REPLACE THE ONE OF THE FOUNDER.jpg",
               },
-              { name: "Esther Adjei Konamah", role: "Operations Manager", image: "/images/team3.jpg" },
+              { name: "Esther Adjei Konamah", role: "Administrative & Front Desk Officer", image: "/images/team3.jpg" },
             ].map((member, idx) => (
               <div key={idx} className="group">
                 <div className="relative h-64 mb-4 rounded-xl overflow-hidden shadow-lg">
