@@ -172,7 +172,7 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="pt-8 border-t">
+              {/* <div className="pt-8 border-t">
                 <h3 className="text-lg font-bold text-foreground mb-6">Our Team</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="relative h-32 rounded-lg overflow-hidden shadow-md">
@@ -193,7 +193,7 @@ export default function Contact() {
                     <Image src="/images/team3.jpg" alt="Esther" fill className="object-cover object-top" />
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* WhatsApp CTA */}
               <div className="pt-4 border-t">

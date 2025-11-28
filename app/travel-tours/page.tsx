@@ -22,7 +22,7 @@ export default function TravelTours() {
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
             <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl">
               <Image
-                src="/images/thisshouldbeintegrated2.jpg"
+                src="/images/travel.jpg"
                 alt="Travel packages showcase"
                 fill
                 className="object-cover object-center"

@@ -136,12 +136,12 @@ export default function About() {
 
           <div className="grid md:grid-cols-4 gap-8 team-grid">
             {[
-              { name: "George Owusu Ntim", role: "Managing Director & Chief Travel Consultant", image: "/images/founder.jpg" },
+              { name: "George Owusu Ntim", role: "Founder, Managing Director & Chief Travel Consultant", image: "/images/USETHIS IMAGE FOR THE TEAM MEMBER TO REPLACE THE ONE OF THE FOUNDER.jpg" },
               { name: "Sadat Abdul Wahab", role: "Travel Consultant", image: "/images/team1.jpg" },
               {
                 name: "Drake Nana Adjei Afram",
                 role: "Accountant",
-                image: "/images/USETHIS IMAGE FOR THE TEAM MEMBER TO REPLACE THE ONE OF THE FOUNDER.jpg",
+                image: "/images/team2.jpg",
               },
               { name: "Esther Adjei Konamah", role: "Administrative & Front Desk Officer", image: "/images/team3.jpg" },
             ].map((member, idx) => (
