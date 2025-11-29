@@ -1,12 +1,17 @@
-.hero-content {
-  background-image: url(/images/integrate1.jpg);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+.hero-content-wrapper {
+  position: relative;
+  padding-top: 32px;
+  padding-left: 16px;
+  padding-right: 16px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.hero-content-wrapper > div {
+  margin-bottom: 16px;
 }
 
 @media (min-width: 768px) {
-  .hero-content {
-    background-image: none;
+  .hero-mobile-wrapper {
+    display: none;
   }
 }
