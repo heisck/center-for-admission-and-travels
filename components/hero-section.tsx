@@ -4,14 +4,14 @@ import Link from "next/link"
 import { useEffect, useState } from 'react'
 //import Image from "next/image"
 import Masonry from './Masonry'
-import Stack from './Stack'
-import './hero-section.css'
+// import Stack from './Stack'
+import Folder from './Folder'
+
 
 const images = [
   { id: 1, img: "/images/thisshouldbeintegrated5.jpg" },
-  { id: 2, img: "/images/integrate2.jpg" },
-  { id: 3, img: "/images/integrate.jpg" },
-  { id: 4, img: "/images/integrate1.jpg" }
+  { id: 2, img: "/images/integrate.jpg" },
+  { id: 3, img: "/images/integrate1.jpg" }
 ];
 
 const items = [
@@ -55,7 +55,7 @@ const items = [
 ];
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden pt-20 pb-32 md:pt-32 md:pb-48">
+    <section className="relative overflow-hidden pt-12 md:pt-32 md:pb-48">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-10"></div>
 
@@ -93,7 +93,7 @@ export default function HeroSection() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8">
+            <div className="grid grid-cols-3 md:gap-6 pt-8">
               <div>
                 <div className="text-3xl font-bold text-primary">50+</div>
                 <p className="text-sm text-muted-foreground">Success Stories</p>
@@ -110,10 +110,10 @@ export default function HeroSection() {
           </div>
 
           {/* Right Image */}
-          <div className="relative h-96 md:h-full stack-div">
+          <div className="relative h-70 md:h-full stack-div">
             <div className="absolute inset-0 bg-transparent rounded-3xl "></div>
             <div className="relative bg-transparent rounded-3xl ">
-              <div className="relative h-96 rounded-2xl ">
+              <div className="relative flex items-center pt-20 md:pt-0 justify-center h-70 md:h-96 rounded-2xl ">
                 <ResponsiveChooser images={images} items={items} />
               </div>
             </div>
@@ -127,6 +127,7 @@ export default function HeroSection() {
 function ResponsiveChooser({ images, items }: { images: { id: number; img: string }[]; items: any[] }) {
   const [isLarge, setIsLarge] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
@@ -140,20 +141,22 @@ function ResponsiveChooser({ images, items }: { images: { id: number; img: strin
       else mq.removeListener(handler as any)
     }
   }, [])
-
   // On first render (SSR), default to Stack to avoid null content
   const shouldRenderMasonry = isMounted && isLarge
 
   if (isMounted === false) {
     // SSR render: default to Stack
     return (
-      <Stack
-        randomRotation={true}
-        sensitivity={180}
-        sendToBackOnClick={true}
-        cardDimensions={{ width: "100%", height: "100%" }}
-        cardsData={images}
-      />
+      <div style={{ height: '600px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Folder
+          size={1.7}
+          color="#F97316"
+          className="custom-folder"
+          items={images.slice(0, 3).map(img => (
+            <img key={img.id} src={img.img} alt={`hero-${img.id}`} className="w-full h-full rounded-sm object-cover" />
+          ))}
+        />
+      </div>
     )
   }
 
@@ -174,12 +177,20 @@ function ResponsiveChooser({ images, items }: { images: { id: number; img: strin
   }
 
   return (
-    <Stack
-      randomRotation={true}
-      sensitivity={180}
-      sendToBackOnClick={true}
-      cardDimensions={{ width: "100%", height: "100%" }}
-      cardsData={images}
-    />
+    <div style={{ height: '600px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+      <div onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
+        <Folder
+          size={1.7}
+          color="#F97316"
+          className="custom-folder"
+          items={images.slice(0, 3).map(img => (
+            <img key={img.id} src={img.img} alt={`hero-${img.id}`} className="w-full h-full rounded-sm object-cover" />
+          ))}
+        />
+      </div>
+      <div className="absolute  text-center text-sm font-semibold text-white transition-all duration-300">
+        {isOpen ? '📂 Click to collapse' : '📂 Click to open'}
+      </div>
+    </div>
   )
 }

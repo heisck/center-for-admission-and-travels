@@ -55,7 +55,8 @@ export default function ServicesGrid() {
                   <Icon className="w-7 h-7 text-primary group-hover:text-white transition" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-foreground">{service.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{service.description}</p>
+                <p className="text-muted-foreground leading-relaxed mb-4">{service.description}</p>
+                <span className="inline-block text-primary font-semibold text-sm group-hover:translate-x-1 transition-transform">Click to know more →</span>
               </Link>
             )
           })}
