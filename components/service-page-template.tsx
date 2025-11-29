@@ -4,9 +4,9 @@ import { useScrollToTop } from "@/hooks/use-scroll-to-top"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Image from "next/image"
-import SharedBookingForm from "@/components/shared-booking-form"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, ArrowRight } from "lucide-react"
 import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom"
+import Link from "next/link"
 
 interface ServicePageTemplateProps {
   service: {
@@ -50,9 +50,16 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground mb-6">{service.bannerSubtitle}</p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
                 Discover comprehensive support and guidance tailored to help you achieve your international aspirations with confidence and clarity.
               </p>
+              {/* Top Apply Button */}
+              <Link
+                href={`/apply?service=${encodeURIComponent(service.title)}`}
+                className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+              >
+                Click to Apply <ArrowRight className="w-5 h-5" />
+              </Link>
             </div>
           </div>
         </div>
@@ -204,16 +211,20 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
 
       <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
-            <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-12 text-center border border-orange-200">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Ready to Begin Your Journey?
-            </span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Fill out the form below to start your application process. Our team will contact you within 24 hours.
-          </p>
-
-          <SharedBookingForm serviceType={service.title} />
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Click the button below to start your application. Select your service, fill out your details, and our team will contact you within 24 hours.
+            </p>
+            <Link
+              href={`/apply?service=${encodeURIComponent(service.title)}`}
+              className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-bold text-lg hover:shadow-xl transition transform hover:scale-105"
+            >
+              Click to Apply Now <ArrowRight className="w-6 h-6" />
+            </Link>
+          </div>
         </div>
       </section>
 

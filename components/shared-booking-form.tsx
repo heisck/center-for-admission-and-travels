@@ -2,13 +2,15 @@
 
 import { useState } from "react"
 import { allCountries } from "@/data/countries"
+import { CreditCard } from "lucide-react"
 
 interface SharedBookingFormProps {
   serviceType?: string
   onSubmitSuccess?: () => void
+  onServiceChange?: (service: string) => void
 }
 
-export default function SharedBookingForm({ serviceType: initialServiceType, onSubmitSuccess }: SharedBookingFormProps) {
+export default function SharedBookingForm({ serviceType: initialServiceType, onSubmitSuccess, onServiceChange }: SharedBookingFormProps) {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -22,10 +24,15 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     })
+
+    if (name === "serviceType" && onServiceChange) {
+      onServiceChange(value)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,6 +68,22 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-lg border border-border">
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Service Type</label>
+          <select
+            name="serviceType"
+            value={formData.serviceType}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition"
+          >
+            <option value="">Select a service</option>
+            <option value="Study Abroad">Study Abroad</option>
+            <option value="Work Abroad">Work Abroad</option>
+            <option value="Travel & Tours">Travel & Tours</option>
+          </select>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
@@ -123,23 +146,6 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-2">Service Type</label>
-          <select
-            name="serviceType"
-            value={formData.serviceType}
-            onChange={handleChange}
-            required
-            disabled={!!initialServiceType}
-            className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition disabled:bg-muted disabled:cursor-not-allowed"
-          >
-            <option value="">Select a service</option>
-            <option value="Study Abroad">Study Abroad</option>
-            <option value="Work Abroad">Work Abroad</option>
-            <option value="Global Network">Global Network</option>
-          </select>
-        </div>
-
-        <div>
           <label className="block text-sm font-semibold text-foreground mb-2">Additional Notes</label>
           <textarea
             name="notes"
@@ -191,6 +197,72 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
           We respect your privacy. Your information will only be used to process your booking request.
         </p>
       </form>
+
+      {/* Conditional Checkout Section - Only show if "Pay Now" is selected */}
+      {formData.paymentOption === "pay-now" && (
+        <div className="mt-8 bg-white rounded-2xl shadow-xl p-8 border border-border">
+          <div className="flex items-center gap-3 mb-6">
+            <CreditCard className="w-6 h-6 text-primary" />
+            <h3 className="text-2xl font-bold text-foreground">Payment Details</h3>
+          </div>
+
+          <div className="space-y-6">
+            {/* Payment Summary */}
+            <div className="bg-slate-50 rounded-lg p-6 border border-border">
+              <h4 className="font-bold text-foreground mb-4">Order Summary</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Service:</span>
+                  <span className="font-semibold">{formData.serviceType || "Not selected"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Name:</span>
+                  <span className="font-semibold">{formData.fullName || "Not provided"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Country:</span>
+                  <span className="font-semibold">{formData.country || "Not selected"}</span>
+                </div>
+                <div className="border-t pt-2 mt-4 flex justify-between">
+                  <span className="font-bold">Total Amount:</span>
+                  <span className="text-lg font-bold text-primary">GHS 500.00</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div>
+              <h4 className="font-bold text-foreground mb-4">Select Payment Method</h4>
+              <div className="grid gap-3">
+                <label className="flex items-center p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition">
+                  <input type="radio" name="paymentMethod" value="card" defaultChecked className="w-4 h-4 text-primary" />
+                  <span className="ml-3 font-semibold text-foreground">Credit/Debit Card</span>
+                </label>
+                <label className="flex items-center p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition">
+                  <input type="radio" name="paymentMethod" value="momo" className="w-4 h-4 text-primary" />
+                  <span className="ml-3 font-semibold text-foreground">Mobile Money (MTN/Vodafone)</span>
+                </label>
+                <label className="flex items-center p-4 border-2 border-border rounded-lg cursor-pointer hover:border-primary transition">
+                  <input type="radio" name="paymentMethod" value="bank" className="w-4 h-4 text-primary" />
+                  <span className="ml-3 font-semibold text-foreground">Bank Transfer</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Placeholder for Payment Processor Integration */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+              💳 Payment gateway (Stripe, Paystack, etc.) will be integrated here based on your choice.
+            </div>
+
+            <button
+              type="button"
+              className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-bold text-lg hover:shadow-xl transition"
+            >
+              Complete Payment
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
