@@ -99,7 +99,15 @@ export default function Stack({
       }}
     >
       {cards.map((card, index) => {
-        const randomRotate = randomRotation ? Math.random() * 10 - 5 : 0;
+        // Deterministic pseudo-random based on card id and index to avoid
+        // server/client hydration mismatches caused by Math.random().
+        const seededRandomFromNumber = (n: number) => {
+          const x = Math.sin(n) * 10000;
+          return x - Math.floor(x);
+        };
+
+        const seed = typeof card.id === 'number' ? card.id : index;
+        const randomRotate = randomRotation ? seededRandomFromNumber(seed + index) * 10 - 5 : 0;
 
         return (
           <CardRotate key={card.id} onSendToBack={() => sendToBack(card.id)} sensitivity={sensitivity}>

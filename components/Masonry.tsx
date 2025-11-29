@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 
@@ -101,7 +103,17 @@ const Masonry: React.FC<MasonryProps> = ({
     let direction = animateFrom;
     if (animateFrom === 'random') {
       const dirs = ['top', 'bottom', 'left', 'right'];
-      direction = dirs[Math.floor(Math.random() * dirs.length)] as typeof animateFrom;
+      // Deterministic selection based on item id to avoid SSR/CSR hydration mismatches.
+      const seededHash = (str: string) => {
+        let h = 2166136261 >>> 0;
+        for (let i = 0; i < str.length; i++) {
+          h = Math.imul(h ^ str.charCodeAt(i), 16777619) >>> 0;
+        }
+        return h;
+      };
+
+      const idx = seededHash(String(item.id)) % dirs.length;
+      direction = dirs[idx] as typeof animateFrom;
     }
 
     switch (direction) {
