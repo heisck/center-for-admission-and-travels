@@ -8,6 +8,7 @@ import Image from "next/image"
 import { useState } from "react"
 import { travelPackages } from "@/data/packages"
 import { MapPin, Clock, DollarSign, CheckCircle } from "lucide-react"
+import DomeGallery from './DomeGallery';
 
 export default function TravelTours() {
   useScrollToTop()
@@ -20,13 +21,16 @@ export default function TravelTours() {
       <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-            <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl">
-              <Image
+            <div className="relative h-80 rounded-2xl overflow-hidden ">
+              <div style={{ width: '100%', height: '100%' }}>
+                <DomeGallery />
+              </div>
+              {/* <Image
                 src="/images/travel.jpg"
                 alt="Travel packages showcase"
                 fill
                 className="object-cover object-center"
-              />
+              /> */}
             </div>
 
             <div>
