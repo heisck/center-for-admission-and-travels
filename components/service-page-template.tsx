@@ -6,6 +6,7 @@ import Footer from "@/components/footer"
 import Image from "next/image"
 import SharedBookingForm from "@/components/shared-booking-form"
 import { CheckCircle } from "lucide-react"
+import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom"
 
 interface ServicePageTemplateProps {
   service: {
@@ -172,30 +173,11 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
         </div>
       </section>
 
-      <section className="py-12 sm:py-16 md:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
-            <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              Success Stories
-            </span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Hear from our satisfied clients about their transformative journeys
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {service.successStories.map((story, idx) => (
-              <div key={idx} className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-8 border border-orange-100 hover:shadow-lg transition">
-                <p className="text-lg text-foreground italic mb-4">"{story.quote}"</p>
-                <div className="border-t pt-4">
-                  <p className="font-bold text-primary">{story.name}</p>
-                  <p className="text-sm text-muted-foreground">{story.program}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsCustom
+        testimonials={service.successStories.map(s => ({ name: s.name, role: s.program, content: s.quote }))}
+        title="Success Stories"
+        subtitle="Hear from our satisfied clients about their transformative journeys"
+      />
 
       <section className="py-12 sm:py-16 md:py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
