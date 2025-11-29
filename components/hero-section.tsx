@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 //import Image from "next/image"
 import Masonry from './Masonry'
 // import Stack from './Stack'
-import Folder from './Folder'
+
 
 
 const images = [
@@ -54,22 +54,56 @@ const items = [
     
 ];
 export default function HeroSection() {
+  const [isMounted, setIsMounted] = useState(false)
+  const [isLarge, setIsLarge] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+    const mq = window.matchMedia('(min-width:768px)')
+    const handler = (e: MediaQueryListEvent) => setIsLarge(e.matches)
+    setIsLarge(mq.matches)
+    if (mq.addEventListener) mq.addEventListener('change', handler)
+    else mq.addListener(handler as any)
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', handler)
+      else mq.removeListener(handler as any)
+    }
+  }, [])
+
   return (
-    <section className="relative overflow-hidden pt-12 md:pt-32 md:pb-48">
+    <section className="relative overflow-hidden pt-12 md:pt-22 lg:py-32 md:pb-22">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-10"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-20"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
-          <div className="md:space-y-8 space-y-4 animate-fade-in">
-            <div>
+          <div className="relative overflow-hidden md:space-y-8 space-y-4 animate-fade-in">
+            {/* Small screens: Masonry background for the hero content (behind text) */}
+            {isMounted && !isLarge && (
+              <div className="absolute inset-0 -z-10 pointer-events-none md:hidden rounded-2xl overflow-hidden">
+                <div className="absolute inset-0 opacity-60 filter blur-md">
+                  <Masonry
+                    items={[items[0]]}
+                    ease="power3.out"
+                    duration={0.6}
+                    stagger={0}
+                    animateFrom="center"
+                    scaleOnHover={false}
+                    hoverScale={1}
+                    blurToFocus={false}
+                    colorShiftOnHover={false}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="relative z-10">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  Unlock the World
+                  Looking To Travel
                 </span>
                 <br />
-                <span className="text-foreground">Enrich Your Future</span>
+                <span className="text-foreground">& Enrich Your Future</span>
               </h1>
               <p className="text-lg text-muted-foreground mt-6 leading-relaxed">
                 Welcome to Center for Admission and Travels, where your dreams of studying, working, and traveling
@@ -77,7 +111,7 @@ export default function HeroSection() {
               </p>
             </div>
 
-            <div className="flex gap-4 flex-wrap">
+            <div className="relative z-10 flex gap-4 flex-wrap">
               <a
                 href="#services"
                 className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
@@ -93,7 +127,7 @@ export default function HeroSection() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 md:gap-6 pt-8">
+            <div className="relative z-10 grid grid-cols-3 md:gap-6 pt-8">
               <div>
                 <div className="text-3xl font-bold text-primary">50+</div>
                 <p className="text-sm text-muted-foreground">Success Stories</p>
@@ -109,13 +143,10 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right Image */}
-          <div className="relative h-70 md:h-full stack-div">
-            <div className="absolute inset-0 bg-transparent rounded-3xl "></div>
-            <div className="relative bg-transparent rounded-3xl ">
-              <div className="relative flex items-center pt-20 md:pt-0 justify-center h-70 md:h-96 rounded-2xl ">
-                <ResponsiveChooser images={images} items={items} />
-              </div>
+          {/* Right Image - Only on desktop */}
+          <div className="hidden md:flex relative h-full">
+            <div className="relative w-full h-96 rounded-2xl ">
+              <ResponsiveChooser images={images} items={items} isMounted={isMounted} isLarge={isLarge} />
             </div>
           </div>
         </div>
@@ -124,43 +155,14 @@ export default function HeroSection() {
   )
 }
 
-function ResponsiveChooser({ images, items }: { images: { id: number; img: string }[]; items: any[] }) {
-  const [isLarge, setIsLarge] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
+function ResponsiveChooser({ images, items, isMounted, isLarge }: { images: { id: number; img: string }[]; items: any[]; isMounted: boolean; isLarge: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
 
-  useEffect(() => {
-    setIsMounted(true)
-    const mq = window.matchMedia('(min-width:768px)')
-    const handler = (e: MediaQueryListEvent) => setIsLarge(e.matches)
-    setIsLarge(mq.matches)
-    if (mq.addEventListener) mq.addEventListener('change', handler)
-    else mq.addListener(handler as any)
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', handler)
-      else mq.removeListener(handler as any)
-    }
-  }, [])
-  // On first render (SSR), default to Stack to avoid null content
-  const shouldRenderMasonry = isMounted && isLarge
+  // Only render something here on large screens. For SSR and small screens return null so
+  // the Masonry background placed in the left content handles the small-screen visuals.
+  if (!isMounted) return null
 
-  if (isMounted === false) {
-    // SSR render: default to Stack
-    return (
-      <div style={{ height: '600px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Folder
-          size={1.7}
-          color="#F97316"
-          className="custom-folder"
-          items={images.slice(0, 3).map(img => (
-            <img key={img.id} src={img.img} alt={`hero-${img.id}`} className="w-full h-full rounded-sm object-cover" />
-          ))}
-        />
-      </div>
-    )
-  }
-
-  if (shouldRenderMasonry) {
+  if (isLarge) {
     return (
       <Masonry
         items={items}
@@ -176,21 +178,5 @@ function ResponsiveChooser({ images, items }: { images: { id: number; img: strin
     )
   }
 
-  return (
-    <div style={{ height: '600px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-      <div onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
-        <Folder
-          size={1.7}
-          color="#F97316"
-          className="custom-folder"
-          items={images.slice(0, 3).map(img => (
-            <img key={img.id} src={img.img} alt={`hero-${img.id}`} className="w-full h-full rounded-sm object-cover" />
-          ))}
-        />
-      </div>
-      <div className="absolute  text-center text-sm font-semibold text-white transition-all duration-300">
-        {isOpen ? '📂 Click to collapse' : '📂 Click to open'}
-      </div>
-    </div>
-  )
+  return null
 }
