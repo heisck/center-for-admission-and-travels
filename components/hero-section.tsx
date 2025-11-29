@@ -63,7 +63,7 @@ export default function HeroSection() {
   }, [])
 
   return (
-    <section className="relative overflow-hidden pt-12 md:pt-22 lg:py-32 md:pb-22">
+    <section className="relative overflow-hidden md:py-22">
       {/* Background gradient - hidden on mobile when Masonry is visible */}
       <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-30"></div>
 
