@@ -1,3 +1,5 @@
+"use client"
+
 import { motion, useMotionValue, useTransform } from 'motion/react';
 import { useState } from 'react';
 
@@ -24,7 +26,7 @@ function CardRotate({ children, onSendToBack, sensitivity }: CardRotateProps) {
 
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center cursor-grab"
+      className="absolute cursor-grab"
       style={{ x, y, rotateX, rotateY }}
       drag
       dragConstraints={{ top: 0, right: 0, bottom: 0, left: 0 }}
@@ -58,10 +60,22 @@ export default function Stack({
     cardsData.length
       ? cardsData
       : [
-          { id: 1, img: "/images/thisshouldbeintegrated5.jpg" },
-          { id: 2, img: "/images/integrate2.jpg" },
-          { id: 3, img: "/images/integrate.jpg" },
-          { id: 4, img: "/images/integrate1.jpg" }
+          {
+            id: 1,
+            img: 'https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?q=80&w=500&auto=format'
+          },
+          {
+            id: 2,
+            img: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=500&auto=format'
+          },
+          {
+            id: 3,
+            img: 'https://images.unsplash.com/photo-1452626212852-811d58933cae?q=80&w=500&auto=format'
+          },
+          {
+            id: 4,
+            img: 'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=500&auto=format'
+          }
         ]
   );
 
@@ -85,13 +99,7 @@ export default function Stack({
       }}
     >
       {cards.map((card, index) => {
-        const seededRandomRotate = (id: number, idx: number) => {
-          const seed = id * 997 + idx * 13;
-          const r = (Math.sin(seed) + 1) / 2; // 0..1
-          return r * 10 - 5; // -5..5
-        };
-
-        const randomRotate = randomRotation ? seededRandomRotate(card.id, index) : 0;
+        const randomRotate = randomRotation ? Math.random() * 10 - 5 : 0;
 
         return (
           <CardRotate key={card.id} onSendToBack={() => sendToBack(card.id)} sensitivity={sensitivity}>
@@ -101,6 +109,7 @@ export default function Stack({
               animate={{
                 rotateZ: (cards.length - index - 1) * 4 + randomRotate,
                 scale: 1 + index * 0.06 - cards.length * 0.06,
+                transformOrigin: '90% 90%'
               }}
               initial={false}
               transition={{
@@ -110,8 +119,7 @@ export default function Stack({
               }}
               style={{
                 width: cardDimensions.width,
-                height: cardDimensions.height,
-                transformOrigin: '90% 90%'
+                height: cardDimensions.height
               }}
             >
               <img src={card.img} alt={`card-${card.id}`} className="w-full h-full object-cover pointer-events-none" />
