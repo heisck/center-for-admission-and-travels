@@ -15,6 +15,8 @@ interface ServicePageTemplateProps {
     heroImage: string
     bannerTitle: string
     bannerSubtitle: string
+    overview?: string
+    whyStudyOutsideThisCountry?: { title: string; highlights: string[] }
     benefits: string[]
     requirements: string[]
     countries: Array<{ name: string; description: string; image?: string }>
@@ -65,6 +67,21 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
         </div>
       </section>
 
+      {service.overview && (
+        <section className="py-12 sm:py-16 md:py-20 bg-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-8 md:p-12 border border-orange-200">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-foreground">
+                About This Service
+              </h2>
+              <p className="text-lg text-foreground leading-relaxed">
+                {service.overview}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="py-12 sm:py-16 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
@@ -86,6 +103,36 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
           </div>
         </div>
       </section>
+
+      {service.whyStudyOutsideThisCountry && (
+        <section className="py-12 sm:py-16 md:py-20 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
+              <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                {service.whyStudyOutsideThisCountry.title}
+              </span>
+            </h2>
+            <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+              Discover transformative opportunities that await you in the world's top destinations
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {service.whyStudyOutsideThisCountry.highlights.map((highlight, idx) => (
+                <div key={idx} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition">
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0 mt-1">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p className="text-foreground leading-relaxed">{highlight}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-12 sm:py-16 md:py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

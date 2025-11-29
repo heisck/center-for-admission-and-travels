@@ -8,6 +8,19 @@ export const services = [
     heroImage: '/images/study-abroad.jpg',
     bannerTitle: 'Study Abroad',
     bannerSubtitle: 'Transform your future with world-class education',
+    overview: 'Education is the foundation of success. Our expert team guides you through every step of the study abroad journey—from selecting the perfect university that matches your goals and budget, to securing admission and handling all visa requirements. With our personalized approach, hundreds of students have transformed their futures through quality international education. We don\'t just process applications; we become your trusted partner in achieving your academic dreams at the world\'s most prestigious institutions.',
+    whyStudyOutsideThisCountry: {
+      title: 'Why Study Outside Your Country?',
+      highlights: [
+        'Access to world-class universities with cutting-edge research facilities and innovative teaching methodologies that expand your knowledge and skills',
+        'Global recognition and competitive advantage—international degrees are highly valued by employers worldwide and can significantly boost your career prospects',
+        'Diverse academic programs and curricula that offer flexibility to explore multiple disciplines before specializing, providing a broader educational foundation',
+        'Abundant scholarship and financial aid opportunities specifically designed for international students, making quality education more accessible',
+        'Build an international professional network with peers from around the world, creating lifelong connections and global career opportunities',
+        'Work authorization programs in many countries that allow you to gain practical experience and offset education costs during your studies',
+        'Personal growth through cultural immersion, language development, and exposure to different perspectives that shape well-rounded global citizens',
+      ]
+    },
     benefits: [
       'Expert admission counseling from experienced professionals with track records of successful placements',
       'Comprehensive university selection based on your academic profile, career goals, and financial circumstances',
@@ -30,9 +43,9 @@ export const services = [
       { name: 'United Kingdom', description: 'World-renowned universities with centuries of academic excellence', image: '/united-kingdom-big-ben-london-university.jpg' },
       { name: 'United States', description: 'Leading institutions offering diverse programs and financial aid opportunities', image: '/statue-of-liberty-nyc.png' },
       { name: 'Canada', description: 'Quality education with welcoming policies for international students', image: '/canada-niagara-falls-toronto-city.jpg' },
-      { name: 'Australia', description: 'Strong academic reputation with excellent post-study work opportunities', image: '/asia-tropical-beaches-thailand-temples.jpg' },
-      { name: 'Netherlands', description: 'Affordable quality education with English-taught programs', image: '/europe-paris-eiffel-tower-landmarks.jpg' },
-      { name: 'Germany', description: 'Excellence in engineering and sciences with low tuition costs', image: '/europe-paris-eiffel-tower-landmarks.jpg' },
+      { name: 'Australia', description: 'Strong academic reputation with excellent post-study work opportunities', image: '/austrailia.png' },
+      { name: 'Netherlands', description: 'Affordable quality education with English-taught programs', image: '/netherlands.jpg' },
+      { name: 'Germany', description: 'Excellence in engineering and sciences with low tuition costs', image: '/germany.jpg' },
     ],
     visaGuidance: 'Our visa specialists guide you through every step of the application process. We provide documentation checklists, interview preparation, and support throughout the approval process. Our success rate speaks for itself with hundreds of students obtaining their study visas annually.',
     successStories: [
@@ -145,7 +158,7 @@ export const services = [
       { name: 'United Kingdom', description: 'Russell Group and leading universities plus top-tier employers', image: '/united-kingdom-big-ben-london-university.jpg' },
       { name: 'United States', description: 'Ivy League and top research institutions across all sectors', image: '/statue-of-liberty-nyc.png' },
       { name: 'Canada', description: 'Research-focused universities and rapidly growing tech sector', image: '/canada-niagara-falls-toronto-city.jpg' },
-      { name: 'Australia', description: 'Go8 universities and companies in resources and technology', image: '/asia-tropical-beaches-thailand-temples.jpg' },
+      { name: 'Australia', description: 'Go8 universities and companies in resources and technology', image: '/austrailia.png' },
       { name: 'Europe', description: 'Renowned institutions across multiple countries and sectors', image: '/europe-paris-eiffel-tower-landmarks.jpg' },
       { name: 'Asia', description: 'Emerging opportunities in Singapore, Japan, and India', image: '/asia-tropical-beaches-thailand-temples.jpg' },
     ],
