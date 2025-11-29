@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from 'react'
 //import Image from "next/image"
 import Masonry from './Masonry'
+import './hero-section.css'
 // import Stack from './Stack'
 
 
@@ -51,44 +51,25 @@ const items = [
     //   url: "https://example.com/six",
     //   height: 600,
     // },
-    
+
 ];
 export default function HeroSection() {
-  const [isMounted, setIsMounted] = useState(false)
-  const [isLarge, setIsLarge] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-    const mq = window.matchMedia('(min-width:768px)')
-    const handler = (e: MediaQueryListEvent) => setIsLarge(e.matches)
-    setIsLarge(mq.matches)
-    if (mq.addEventListener) mq.addEventListener('change', handler)
-    else mq.addListener(handler as any)
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener('change', handler)
-      else mq.removeListener(handler as any)
-    }
-  }, [])
 
   return (
     <section className="relative overflow-hidden pt-12 md:pt-22 lg:py-32 md:pb-22">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-20"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-30"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
-          <div className="relative md:space-y-8 space-y-4 animate-fade-in">
-            {/* Small screens: Simple background image */}
-            <div className="absolute inset-0 -z-10 pointer-events-none md:hidden w-full h-80">
-              <img
-                src="/images/integrate1.jpg"
-                alt="Hero background"
-                className="w-full h-full object-cover rounded-lg opacity-80"
-              />
-            </div>
+          <div
+            className="hero-content relative md:space-y-8 space-y-4 animate-fade-in min-h-[420px] md:min-h-0"
+          >
+            {/* Small screens: Background overlay for text readability */}
+            <div className="md:hidden absolute inset-0 pointer-events-none bg-black/20" style={{ zIndex: 1 }} />
 
-            <div className="relative z-10">
+            <div className="relative z-20">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   Looking To Travel
@@ -102,7 +83,7 @@ export default function HeroSection() {
               </p>
             </div>
 
-            <div className="relative z-10 flex gap-4 flex-wrap">
+            <div className="relative z-20 flex gap-4 flex-wrap">
               <a
                 href="#services"
                 className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
@@ -118,7 +99,7 @@ export default function HeroSection() {
             </div>
 
             {/* Stats */}
-            <div className="relative z-10 grid grid-cols-3 md:gap-6 pt-8">
+            <div className="relative z-20 grid grid-cols-3 md:gap-6 pt-8">
               <div>
                 <div className="text-3xl font-bold text-primary">50+</div>
                 <p className="text-sm text-muted-foreground">Success Stories</p>
@@ -137,37 +118,21 @@ export default function HeroSection() {
           {/* Right Image - Only on desktop with Masonry */}
           <div className="hidden md:flex relative h-full">
             <div className="relative w-full h-96 rounded-2xl ">
-              <ResponsiveChooser images={images} items={items} isMounted={isMounted} isLarge={isLarge} />
+              <Masonry
+                items={items}
+                ease="power3.out"
+                duration={0.6}
+                stagger={0.05}
+                animateFrom="bottom"
+                scaleOnHover={true}
+                hoverScale={0.95}
+                blurToFocus={true}
+                colorShiftOnHover={true}
+              />
             </div>
           </div>
         </div>
       </div>
     </section>
   )
-}
-
-function ResponsiveChooser({ images, items, isMounted, isLarge }: { images: { id: number; img: string }[]; items: any[]; isMounted: boolean; isLarge: boolean }) {
-  const [isOpen, setIsOpen] = useState(false)
-
-  // Only render something here on large screens. For SSR and small screens return null so
-  // the Masonry background placed in the left content handles the small-screen visuals.
-  if (!isMounted) return null
-
-  if (isLarge) {
-    return (
-      <Masonry
-        items={items}
-        ease="power3.out"
-        duration={0.6}
-        stagger={0.05}
-        animateFrom="bottom"
-        scaleOnHover={true}
-        hoverScale={0.95}
-        blurToFocus={true}
-        colorShiftOnHover={true}
-      />
-    )
-  }
-
-  return null
 }
