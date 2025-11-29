@@ -78,25 +78,16 @@ export default function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
-          <div className="relative overflow-hidden md:space-y-8 space-y-4 animate-fade-in">
-            {/* Small screens: Masonry background for the hero content (behind text) */}
-            {isMounted && !isLarge && (
-              <div className="absolute inset-0 -z-10 pointer-events-none md:hidden rounded-2xl overflow-hidden">
-                <div className="absolute inset-0 opacity-60 filter blur-md">
-                  <Masonry
-                    items={[items[0]]}
-                    ease="power3.out"
-                    duration={0.6}
-                    stagger={0}
-                    animateFrom="center"
-                    scaleOnHover={false}
-                    hoverScale={1}
-                    blurToFocus={false}
-                    colorShiftOnHover={false}
-                  />
-                </div>
-              </div>
-            )}
+          <div className="relative md:space-y-8 space-y-4 animate-fade-in">
+            {/* Small screens: Simple background image */}
+            <div className="absolute inset-0 -z-10 pointer-events-none md:hidden w-full h-80">
+              <img
+                src="/images/integrate1.jpg"
+                alt="Hero background"
+                className="w-full h-full object-cover rounded-lg opacity-80"
+              />
+            </div>
+
             <div className="relative z-10">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
@@ -143,7 +134,7 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right Image - Only on desktop */}
+          {/* Right Image - Only on desktop with Masonry */}
           <div className="hidden md:flex relative h-full">
             <div className="relative w-full h-96 rounded-2xl ">
               <ResponsiveChooser images={images} items={items} isMounted={isMounted} isLarge={isLarge} />
@@ -173,7 +164,7 @@ function ResponsiveChooser({ images, items, isMounted, isLarge }: { images: { id
         scaleOnHover={true}
         hoverScale={0.95}
         blurToFocus={true}
-        colorShiftOnHover={false}
+        colorShiftOnHover={true}
       />
     )
   }
