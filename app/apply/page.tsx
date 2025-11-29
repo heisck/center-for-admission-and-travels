@@ -1,23 +1,11 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { Suspense } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import SharedBookingForm from "@/components/shared-booking-form"
+import ApplyFormContent from "./apply-form-content"
 
 export default function ApplyPage() {
-  const searchParams = useSearchParams()
-  const serviceParam = searchParams.get("service")
-  const [selectedService, setSelectedService] = useState<string>(serviceParam || "")
-  const [isHydrated, setIsHydrated] = useState(false)
-
-  useEffect(() => {
-    setIsHydrated(true)
-  }, [])
-
-  if (!isHydrated) return null
-
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -36,16 +24,9 @@ export default function ApplyPage() {
               </p>
             </div>
 
-            {/* Form Section */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Application Form
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                Select your service below and fill in your details. You can change your service selection at any time using the dropdown.
-              </p>
-              <SharedBookingForm serviceType={selectedService || undefined} onServiceChange={setSelectedService} />
-            </div>
+            <Suspense fallback={<div className="h-96 bg-white rounded-2xl shadow-xl animate-pulse" />}>
+              <ApplyFormContent />
+            </Suspense>
 
             {/* Info Cards */}
             <div className="grid md:grid-cols-2 gap-6 mt-12">
