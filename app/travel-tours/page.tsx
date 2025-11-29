@@ -34,7 +34,7 @@ export default function TravelTours() {
             </div>
 
             <div>
-              <h1 className="text-5xl md:text-6xl font-bold mb-4">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   Travel & Tours
                 </span>

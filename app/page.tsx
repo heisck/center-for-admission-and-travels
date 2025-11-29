@@ -3,7 +3,6 @@
 import Navbar from "@/components/navbar"
 import HeroSection from "@/components/hero-section"
 import ServicesGrid from "@/components/services-grid"
-import FounderSection from "@/components/founder-section"
 import CTASection from "@/components/cta-section"
 import Footer from "@/components/footer"
 
@@ -13,7 +12,6 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <ServicesGrid />
-      <FounderSection />
       <CTASection />
       <Footer />
     </main>

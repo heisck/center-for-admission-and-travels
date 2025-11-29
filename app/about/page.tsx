@@ -6,6 +6,8 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Image from "next/image"
 import { CheckCircle } from "lucide-react"
+import FounderSection from "@/components/founder-section"
+import { Description } from '@radix-ui/react-toast'
 
 export default function About() {
   useScrollToTop()
@@ -121,7 +123,7 @@ export default function About() {
           </div>
         </div>
       </section>
-
+      <FounderSection />
       {/* Team */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -136,14 +138,23 @@ export default function About() {
 
           <div className="grid md:grid-cols-4 gap-8 team-grid">
             {[
-              { name: "George Owusu Ntim", role: "Founder, Managing Director & Chief Travel Consultant", image: "/images/USETHIS IMAGE FOR THE TEAM MEMBER TO REPLACE THE ONE OF THE FOUNDER.jpg" },
-              { name: "Sadat Abdul Wahab", role: "Travel Consultant", image: "/images/team1.jpg" },
+              { 
+                name: "George Owusu Ntim", role: "Founder, Managing Director & Chief Travel Consultant", image: "/images/USETHIS IMAGE FOR THE TEAM MEMBER TO REPLACE THE ONE OF THE FOUNDER.jpg",
+
+              },
+              { 
+                name: "Sadat Abdul Wahab", role: "Travel Consultant", image: "/images/team1.jpg", description: "Sadat Abdul Wahab is a dedicated Travel Consultant with in-depth knowledge of visa procedures, ticketing, and travel planning. He works closely with clients to create tailored travel solutions that fit their goals and budgets. Sadat’s expertise and customer-focused approach help ensure stress-free journeys from Ghana to destinations around the world."
+              },
               {
                 name: "Drake Nana Adjei Afram",
                 role: "Accountant",
                 image: "/images/team2.jpg",
+                description: "Drake Nana Adjei Afram oversees all financial operations at Center for Admission and Travels. As the company’s Accountant, he is responsible for budgeting, invoicing, reconciliation, and maintaining accurate financial records. With strong analytical skills and a commitment to transparency, Drake supports the financial stability and growth of the organisation."
               },
-              { name: "Esther Adjei Konamah", role: "Administrative & Front Desk Officer", image: "/images/team3.jpg" },
+              { 
+                name: "Esther Adjei Konamah", role: "Administrative & Front Desk Officer", image: "/images/team3.jpg" 
+              ,description: "Esther Adjei Konamah ensures the smooth daily operation of our office. As the Administrative and Front Desk Officer, she warmly welcomes clients, manages enquiries, organizes appointments, and maintains efficient office systems. Esther’s professionalism, communication skills, and friendly service make her an essential part of our client experience."
+              },
             ].map((member, idx) => (
               <div key={idx} className="group">
                 <div className="relative h-64 mb-4 rounded-xl overflow-hidden shadow-lg">
@@ -157,6 +168,14 @@ export default function About() {
                 </div>
                 <h3 className="text-lg font-bold text-foreground">{member.name}</h3>
                 <p className="text-primary font-semibold">{member.role}</p>
+                {member.description && (
+                  <div className="text-sm text-muted-foreground leading-relaxed mt-2">
+                    <details>
+                      <summary className="cursor-pointer">More Info</summary>
+                      <div className="mt-2">{member.description}</div>
+                    </details>
+                  </div>
+                )}
               </div>
             ))}
           </div>

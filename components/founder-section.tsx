@@ -29,9 +29,7 @@ export default function FounderSection() {
                 </span>
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                George Owusu Ntim founded Center for Admission and Travels with a vision to transform lives through
-                international opportunities. With years of experience in education, travel, and global placements,
-                George is committed to making your dreams a reality.
+                George Owusu Ntim is the visionary Director of Center for Admission and Travels. With a strong background in international education, travel coordination, and client advisory services, he leads the company with excellence and integrity. George is committed to helping students, travellers, and professionals access global opportunities through reliable guidance, transparent processes, and personalized support.
               </p>
             </div>
 
