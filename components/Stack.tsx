@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, useMotionValue, useTransform } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface CardRotateProps {
   children: React.ReactNode;
@@ -79,6 +79,14 @@ export default function Stack({
         ]
   );
 
+  const [isHydrated, setIsHydrated] = useState(false);
+  const hasMountedRef = useRef(false);
+
+  useEffect(() => {
+    hasMountedRef.current = true;
+    setIsHydrated(true);
+  }, []);
+
   const sendToBack = (id: number) => {
     setCards(prev => {
       const newCards = [...prev];
@@ -114,11 +122,11 @@ export default function Stack({
             <motion.div
               className="rounded-2xl overflow-hidden border-4 border-white"
               onClick={() => sendToBackOnClick && sendToBack(card.id)}
-              animate={{
+              animate={isHydrated ? {
                 rotateZ: (cards.length - index - 1) * 4 + randomRotate,
                 scale: 1 + index * 0.06 - cards.length * 0.06,
                 transformOrigin: '90% 90%'
-              }}
+              } : {}}
               initial={false}
               transition={{
                 type: 'spring',
@@ -127,7 +135,10 @@ export default function Stack({
               }}
               style={{
                 width: cardDimensions.width,
-                height: cardDimensions.height
+                height: cardDimensions.height,
+                rotateZ: !isHydrated ? (cards.length - index - 1) * 4 + randomRotate : undefined,
+                scale: !isHydrated ? 1 + index * 0.06 - cards.length * 0.06 : undefined,
+                transformOrigin: !isHydrated ? '90% 90%' : undefined
               }}
             >
               <img src={card.img} alt={`card-${card.id}`} className="w-full h-full object-cover pointer-events-none" />

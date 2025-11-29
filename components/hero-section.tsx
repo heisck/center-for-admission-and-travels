@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 //import Image from "next/image"
 import Masonry from './Masonry'
 import Stack from './Stack'
+import './hero-section.css'
 
 const images = [
   { id: 1, img: "/images/thisshouldbeintegrated5.jpg" },
@@ -61,9 +62,9 @@ export default function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
-          <div className="space-y-8 animate-fade-in">
+          <div className="md:space-y-8 space-y-4 animate-fade-in">
             <div>
-              <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-4">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   Unlock the World
                 </span>
@@ -109,32 +110,11 @@ export default function HeroSection() {
           </div>
 
           {/* Right Image */}
-          <div className="relative h-96 md:h-full">
+          <div className="relative h-96 md:h-full stack-div">
             <div className="absolute inset-0 bg-transparent rounded-3xl "></div>
             <div className="relative bg-transparent rounded-3xl ">
               <div className="relative h-96 rounded-2xl ">
-                {
-                  // render Masonry on larger screens (>=768px), Stack on smaller
-                }
-                {typeof window !== 'undefined' ? (
-                  <ResponsiveChooser images={images} items={items} />
-                ) : (
-                  // during SSR render the Stack fallback
-                  <Stack
-                    randomRotation={true}
-                    sensitivity={180}
-                    sendToBackOnClick={true}
-                    cardDimensions={{ width: "100%", height: "100%" }}
-                    cardsData={images}
-                  />
-                )}
-                {/* <Image
-                  src="/images/thisshouldbeintegrated5.jpg"
-                  alt="Team engagement"
-                  fill
-                  className="object-cover"
-                  priority
-                /> */}
+                <ResponsiveChooser images={images} items={items} />
               </div>
             </div>
           </div>
@@ -146,8 +126,10 @@ export default function HeroSection() {
 
 function ResponsiveChooser({ images, items }: { images: { id: number; img: string }[]; items: any[] }) {
   const [isLarge, setIsLarge] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
     const mq = window.matchMedia('(min-width:768px)')
     const handler = (e: MediaQueryListEvent) => setIsLarge(e.matches)
     setIsLarge(mq.matches)
@@ -159,7 +141,23 @@ function ResponsiveChooser({ images, items }: { images: { id: number; img: strin
     }
   }, [])
 
-  if (isLarge) {
+  // On first render (SSR), default to Stack to avoid null content
+  const shouldRenderMasonry = isMounted && isLarge
+
+  if (isMounted === false) {
+    // SSR render: default to Stack
+    return (
+      <Stack
+        randomRotation={true}
+        sensitivity={180}
+        sendToBackOnClick={true}
+        cardDimensions={{ width: "100%", height: "100%" }}
+        cardsData={images}
+      />
+    )
+  }
+
+  if (shouldRenderMasonry) {
     return (
       <Masonry
         items={items}
