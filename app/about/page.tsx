@@ -143,12 +143,12 @@ export default function About() {
 
               },
               { 
-                name: "Sadat Abdul Wahab", role: "Travel Consultant", image: "/images/team1.jpg", description: "Sadat Abdul Wahab is a dedicated Travel Consultant with in-depth knowledge of visa procedures, ticketing, and travel planning. He works closely with clients to create tailored travel solutions that fit their goals and budgets. Sadat’s expertise and customer-focused approach help ensure stress-free journeys from Ghana to destinations around the world."
+                name: "Sadat Abdul Wahab", role: "Travel Consultant", image: "/images/team2.jpg", description: "Sadat Abdul Wahab is a dedicated Travel Consultant with in-depth knowledge of visa procedures, ticketing, and travel planning. He works closely with clients to create tailored travel solutions that fit their goals and budgets. Sadat’s expertise and customer-focused approach help ensure stress-free journeys from Ghana to destinations around the world."
               },
               {
                 name: "Drake Nana Adjei Afram",
                 role: "Accountant",
-                image: "/images/team2.jpg",
+                image: "/images/team1.jpg",
                 description: "Drake Nana Adjei Afram oversees all financial operations at Center for Admission and Travels. As the company’s Accountant, he is responsible for budgeting, invoicing, reconciliation, and maintaining accurate financial records. With strong analytical skills and a commitment to transparency, Drake supports the financial stability and growth of the organisation."
               },
               { 
