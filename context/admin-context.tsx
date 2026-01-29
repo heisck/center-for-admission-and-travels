@@ -48,29 +48,33 @@ export interface AdminContent {
     }>
   }
   packages: Array<{
-    id: number
+    id: string
     name: string
-    category: string
+    description: string
+    category: 'travel' | 'study' | 'work'
     duration: string
     price: number
-    description: string
     highlights: string[]
-    images: string[]
     itinerary: string
-    included: string[]
-    notIncluded: string[]
+    images: string[]
   }>
-  services: Array<{
-    id: string
-    title: string
-    description: string
-    icon: string
-    sections: Array<{
+  travelTours: {
+    hero: {
       title: string
-      content: string
-      image?: string
+      description: string
+      paragraph: string
+      image: string
+    }
+    featured: Array<{
+      id: string
+      name: string
+      description: string
+      duration: string
+      price: number
+      image: string
+      highlights: string[]
     }>
-  }>
+  }
 }
 
 interface HistoryState {
@@ -88,6 +92,9 @@ interface AdminContextType {
   updatePackage: (id: number, updates: Partial<AdminContent['packages'][0]>) => void
   addPackage: (pkg: AdminContent['packages'][0]) => void
   deletePackage: (id: number) => void
+  updateTravelTours: (updates: Partial<AdminContent['travelTours']>) => void
+  updateTravelToursHero: (updates: Partial<AdminContent['travelTours']['hero']>) => void
+  updateTravelToursFeatured: (featured: AdminContent['travelTours']['featured']) => void
   undo: () => void
   redo: () => void
   canUndo: boolean
@@ -302,6 +309,43 @@ const defaultContent: AdminContent = {
       ],
     },
   ],
+  travelTours: {
+    hero: {
+      title: 'Travel & Tours',
+      description: 'Explore our carefully curated collection of travel experiences designed to create unforgettable memories. From exotic beaches to historic landmarks, cultural immersion to adventure activities, we offer comprehensive travel packages with full support.',
+      paragraph: 'Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication to ensure your journey is smooth, enjoyable, and hassle-free.',
+      image: '/images/integrate1.jpg',
+    },
+    featured: [
+      {
+        id: '1',
+        name: 'Dubai Experience',
+        description: 'Discover the perfect blend of ultramodern luxury and Arabian heritage in the City of Gold.',
+        duration: '6 Days',
+        price: 899,
+        image: '/dubai-burj-khalifa-city-skyline.jpg',
+        highlights: ['Burj Khalifa', 'Desert Safari', 'Dhow Cruise Dinner', 'Dubai Mall', 'Palm Jumeirah'],
+      },
+      {
+        id: '2',
+        name: 'European Tour',
+        description: 'Experience the charm of Europe this summer.',
+        duration: '7 Days',
+        price: 1299,
+        image: '/europe-paris-eiffel-tower-landmarks.jpg',
+        highlights: ['Paris', 'Amsterdam', 'Rome', 'Guided Tours', 'Museum Visits'],
+      },
+      {
+        id: '3',
+        name: 'Asia Explorer',
+        description: 'Immerse yourself in the colors and cultures of Asia.',
+        duration: '5 Days',
+        price: 799,
+        image: '/asia-tropical-beaches-thailand-temples.jpg',
+        highlights: ['Thailand', 'Singapore', 'Malaysia', 'City Tours', 'Tropical Islands'],
+      },
+    ],
+  },
 }
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
@@ -374,6 +418,33 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     updatePackages(newPackages)
   }, [content.packages, updatePackages])
 
+  const updateTravelTours = useCallback((updates: Partial<AdminContent['travelTours']>) => {
+    const newContent = {
+      ...content,
+      travelTours: { ...content.travelTours, ...updates },
+    }
+    updateHistory(newContent)
+  }, [content, updateHistory])
+
+  const updateTravelToursHero = useCallback((updates: Partial<AdminContent['travelTours']['hero']>) => {
+    const newContent = {
+      ...content,
+      travelTours: {
+        ...content.travelTours,
+        hero: { ...content.travelTours.hero, ...updates },
+      },
+    }
+    updateHistory(newContent)
+  }, [content, updateHistory])
+
+  const updateTravelToursFeatured = useCallback((featured: AdminContent['travelTours']['featured']) => {
+    const newContent = {
+      ...content,
+      travelTours: { ...content.travelTours, featured },
+    }
+    updateHistory(newContent)
+  }, [content, updateHistory])
+
   const undo = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1
@@ -409,6 +480,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         updatePackage,
         addPackage,
         deletePackage,
+        updateTravelTours,
+        updateTravelToursHero,
+        updateTravelToursFeatured,
         undo,
         redo,
         canUndo: historyIndex > 0,

@@ -1,18 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { Undo2, Redo2, RotateCcw, Home, Info, Package, Settings, Eye, EyeOff } from 'lucide-react'
+import { Undo2, Redo2, RotateCcw, Home, Info, Package, Settings, Eye, EyeOff, Plane } from 'lucide-react'
 import { useAdmin } from '@/context/admin-context'
 import AdminHomeEditor from './editors/admin-home-editor'
 import AdminAboutEditor from './editors/admin-about-editor'
 import AdminPackagesEditor from './editors/admin-packages-editor'
 import AdminServicesEditor from './editors/admin-services-editor'
+import AdminTravelToursEditor from './editors/admin-travel-tours-editor'
 import LivePreview from './live-preview'
 import { AdminHelp } from './admin-help'
 import { DataManager } from './data-manager'
 import { AdminStats } from './admin-stats'
 
-type AdminPage = 'home' | 'about' | 'packages' | 'services'
+type AdminPage = 'home' | 'about' | 'packages' | 'services' | 'travel-tours'
 
 export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState<AdminPage>('home')
@@ -23,6 +24,7 @@ export default function AdminDashboard() {
     { id: 'home', label: 'Home', icon: <Home size={18} /> },
     { id: 'about', label: 'About', icon: <Info size={18} /> },
     { id: 'packages', label: 'Packages', icon: <Package size={18} /> },
+    { id: 'travel-tours', label: 'Travel Tours', icon: <Plane size={18} /> },
     { id: 'services', label: 'Services', icon: <Settings size={18} /> },
   ]
 
@@ -98,6 +100,7 @@ export default function AdminDashboard() {
             {currentPage === 'home' && <AdminHomeEditor />}
             {currentPage === 'about' && <AdminAboutEditor />}
             {currentPage === 'packages' && <AdminPackagesEditor />}
+            {currentPage === 'travel-tours' && <AdminTravelToursEditor />}
             {currentPage === 'services' && <AdminServicesEditor />}
           </div>
         </div>
