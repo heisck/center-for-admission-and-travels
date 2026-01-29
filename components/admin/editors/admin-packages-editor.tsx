@@ -181,9 +181,9 @@ export default function AdminPackagesEditor() {
         {packages.map((pkg) => (
           <div key={pkg.id} className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
             {/* Header */}
-            <button
+            <div
               onClick={() => setExpandedId(expandedId === pkg.id ? null : pkg.id)}
-              className="w-full px-8 py-6 flex justify-between items-center hover:bg-slate-50 transition"
+              className="w-full px-8 py-6 flex justify-between items-center hover:bg-slate-50 transition cursor-pointer"
             >
               <div className="text-left flex-1">
                 <h3 className="text-xl font-bold text-foreground">{pkg.name}</h3>
@@ -203,7 +203,7 @@ export default function AdminPackagesEditor() {
                 </button>
                 {expandedId === pkg.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </div>
-            </button>
+            </div>
 
             {/* Details */}
             {expandedId === pkg.id && (
