@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Trash2, Plus, Upload, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 
@@ -19,6 +19,8 @@ export function ImageEditor({
 }: ImageEditorProps) {
   const [newImageUrl, setNewImageUrl] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAddImage = () => {
     if (newImageUrl.trim() && images.length < maxImages) {
@@ -26,6 +28,47 @@ export function ImageEditor({
       setNewImageUrl('')
       setShowAddForm(false)
     }
+  }
+
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files) return
+
+    Array.from(files).forEach((file) => {
+      if (images.length >= maxImages) return
+      if (!file.type.startsWith('image/')) return
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        onChange([...images, result])
+      }
+      reader.readAsDataURL(file)
+    })
+
+    setNewImageUrl('')
+    setShowAddForm(false)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    handleFileSelect(e.dataTransfer.files)
   }
 
   const handleRemoveImage = (index: number) => {
@@ -95,9 +138,42 @@ export function ImageEditor({
 
       {/* Add Image Form */}
       {showAddForm && (
-        <div className="bg-slate-50 border border-border rounded-lg p-4 space-y-3">
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Image URL</label>
+        <div className="bg-slate-50 border border-border rounded-lg p-4 space-y-4">
+          {/* File Upload Area */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`relative border-2 border-dashed rounded-lg p-6 text-center transition cursor-pointer ${
+              isDragging
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-white hover:border-primary hover:bg-primary/5'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => handleFileSelect(e.target.files)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            <div className="flex flex-col items-center gap-2">
+              <Upload size={32} className="text-primary" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Drag & drop images here or click to browse
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Supported: JPG, PNG, GIF, WebP
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* URL Fallback */}
+          <div className="border-t border-border pt-4">
+            <label className="block text-sm font-semibold text-foreground mb-2">Or paste image URL</label>
             <input
               type="text"
               value={newImageUrl}
@@ -105,7 +181,6 @@ export function ImageEditor({
               placeholder="https://example.com/image.jpg"
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <p className="text-xs text-muted-foreground mt-2">Paste a valid image URL. Supported: JPG, PNG, GIF, WebP</p>
           </div>
 
           {newImageUrl && (
@@ -128,12 +203,15 @@ export function ImageEditor({
               disabled={!newImageUrl.trim()}
               className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:shadow transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <Upload size={16} /> Add Image
+              <Upload size={16} /> Add URL Image
             </button>
             <button
               onClick={() => {
                 setShowAddForm(false)
                 setNewImageUrl('')
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = ''
+                }
               }}
               className="flex-1 px-4 py-2 bg-slate-200 text-foreground rounded-lg font-medium hover:bg-slate-300 transition"
             >
