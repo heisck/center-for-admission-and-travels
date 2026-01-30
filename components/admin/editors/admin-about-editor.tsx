@@ -90,17 +90,6 @@ export default function AdminAboutEditor() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Hero Image URL</label>
-            <input
-              type="text"
-              value={about.heroImage}
-              onChange={(e) => updateAbout({ heroImage: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="/images/..."
-            />
-          </div>
-
           <ImageEditor
             images={[about.heroImage]}
             onChange={(images) => updateAbout({ heroImage: images[0] || '' })}
@@ -241,85 +230,112 @@ export default function AdminAboutEditor() {
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {about.team.map((member) => (
-            <div key={member.id} className="border border-border rounded-lg p-4">
-              <div className="flex justify-between items-start mb-3">
+            <div key={member.id} className="bg-slate-50 border border-border rounded-lg p-6">
+              <div className="flex justify-between items-start mb-4">
                 <input
                   type="text"
                   value={member.name}
                   onChange={(e) => handleUpdateTeamMember(member.id, 'name', e.target.value)}
-                  className="text-lg font-semibold px-2 py-1 border border-border rounded flex-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="text-lg font-semibold px-3 py-2 border border-border rounded-lg flex-1 focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Team member name"
                 />
                 <button
                   onClick={() => handleDeleteTeamMember(member.id)}
-                  className="p-2 hover:bg-red-50 rounded-lg transition text-red-600 ml-2"
+                  className="p-2 hover:bg-red-50 rounded-lg transition text-red-600 ml-2 flex-shrink-0"
+                  title="Delete team member"
                 >
                   <Trash2 size={18} />
                 </button>
               </div>
 
-              <input
-                type="text"
-                value={member.role}
-                onChange={(e) => handleUpdateTeamMember(member.id, 'role', e.target.value)}
-                placeholder="Role/Position"
-                className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-              />
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <input
+                    type="text"
+                    value={member.role}
+                    onChange={(e) => handleUpdateTeamMember(member.id, 'role', e.target.value)}
+                    placeholder="Role/Position"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  />
+                </div>
+              </div>
 
-              <input
-                type="text"
-                value={member.image}
-                onChange={(e) => handleUpdateTeamMember(member.id, 'image', e.target.value)}
-                placeholder="Image URL"
-                className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-              />
+              <div className="mb-4">
+                <ImageEditor
+                  images={[member.image]}
+                  onChange={(images) => handleUpdateTeamMember(member.id, 'image', images[0] || '')}
+                  maxImages={1}
+                  label="Team Member Photo"
+                />
+              </div>
 
-              <textarea
-                value={member.description}
-                onChange={(e) => handleUpdateTeamMember(member.id, 'description', e.target.value)}
-                placeholder="Bio/Description"
-                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                rows={3}
-              />
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">Bio/Description</label>
+                <textarea
+                  value={member.description}
+                  onChange={(e) => handleUpdateTeamMember(member.id, 'description', e.target.value)}
+                  placeholder="Bio/Description"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
+                />
+              </div>
             </div>
           ))}
         </div>
 
         {showAddTeam && (
-          <div className="mt-4 border border-border rounded-lg p-4 bg-slate-50">
-            <input
-              type="text"
-              value={newTeam.name}
-              onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
-              placeholder="Team member name"
-              className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <input
-              type="text"
-              value={newTeam.role}
-              onChange={(e) => setNewTeam({ ...newTeam, role: e.target.value })}
-              placeholder="Role/Position"
-              className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <input
-              type="text"
-              value={newTeam.image}
-              onChange={(e) => setNewTeam({ ...newTeam, image: e.target.value })}
-              placeholder="Image URL"
-              className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <textarea
-              value={newTeam.description}
-              onChange={(e) => setNewTeam({ ...newTeam, description: e.target.value })}
-              placeholder="Bio/Description"
-              className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary"
-              rows={3}
-            />
+          <div className="mt-6 border border-border rounded-lg p-6 bg-slate-50">
+            <h3 className="text-lg font-bold mb-4 text-foreground">Add New Team Member</h3>
+
+            <div className="space-y-4 mb-4">
+              <div>
+                <input
+                  type="text"
+                  value={newTeam.name}
+                  onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
+                  placeholder="Team member name"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
+                />
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  value={newTeam.role}
+                  onChange={(e) => setNewTeam({ ...newTeam, role: e.target.value })}
+                  placeholder="Role/Position"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <ImageEditor
+                  images={newTeam.image ? [newTeam.image] : []}
+                  onChange={(images) => setNewTeam({ ...newTeam, image: images[0] || '' })}
+                  maxImages={1}
+                  label="Team Member Photo"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">Bio/Description</label>
+                <textarea
+                  value={newTeam.description}
+                  onChange={(e) => setNewTeam({ ...newTeam, description: e.target.value })}
+                  placeholder="Bio/Description"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
+                />
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={handleAddTeamMember}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:shadow-lg transition"
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!newTeam.name.trim()}
               >
                 Add Member
               </button>
