@@ -17,12 +17,9 @@ export default function AdminContactPage() {
       {/* Hero */}
       <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <EditableTextWrapper
-            value="Get in Touch"
-            onChange={() => {}}
-            variant="title"
-            className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4"
-          />
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-foreground">
+            Get in Touch
+          </h1>
           <p className="text-xl text-muted-foreground">We're here to help you start your global journey</p>
         </div>
       </section>

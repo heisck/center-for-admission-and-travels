@@ -70,14 +70,11 @@ export default function AdminGlobalNetworkPage() {
                 rows={2}
                 className="text-xl text-muted-foreground mb-6"
               />
-              <EditableTextareaWrapper
-                value="Discover comprehensive support and guidance tailored to help you achieve your international aspirations with confidence and clarity."
-                onChange={() => {}}
-                rows={3}
-                className="text-lg text-muted-foreground leading-relaxed mb-8"
-              />
+              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                Discover comprehensive support and guidance tailored to help you achieve your international aspirations with confidence and clarity.
+              </p>
               <Link
-                href={`/admin/apply?service=${encodeURIComponent(service.title)}`}
+                href={`/apply?service=${encodeURIComponent(service.title)}`}
                 className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
               >
                 Click to Apply <ArrowRight className="w-5 h-5" />
@@ -235,7 +232,7 @@ export default function AdminGlobalNetworkPage() {
               Click the button below to start your application. Select your service, fill out your details, and our team will contact you within 24 hours.
             </p>
             <Link
-              href={`/admin/apply?service=${encodeURIComponent(service.title)}`}
+              href={`/apply?service=${encodeURIComponent(service.title)}`}
               className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-bold text-lg hover:shadow-xl transition transform hover:scale-105"
             >
               Click to Apply Now <ArrowRight className="w-6 h-6" />

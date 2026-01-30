@@ -458,17 +458,177 @@ const defaultContent: AdminContent = {
   })),
 }
 
+const STORAGE_KEY = 'admin_content'
+const HISTORY_STORAGE_KEY = 'admin_history'
+const HISTORY_INDEX_STORAGE_KEY = 'admin_history_index'
+
+// Helper function to load from localStorage
+const loadFromStorage = (): AdminContent | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored) as AdminContent
+    }
+  } catch (error) {
+    console.error('Error loading from localStorage:', error)
+  }
+  return null
+}
+
+// Helper function to save to localStorage with quota handling
+const saveToStorage = (content: AdminContent): boolean => {
+  if (typeof window === 'undefined') return false
+  try {
+    const contentStr = JSON.stringify(content)
+    localStorage.setItem(STORAGE_KEY, contentStr)
+    return true
+  } catch (error: any) {
+    // Handle quota exceeded error
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      console.warn('localStorage quota exceeded. Attempting cleanup...')
+      
+      // Try to clear old history and retry
+      try {
+        localStorage.removeItem(HISTORY_STORAGE_KEY)
+        localStorage.removeItem(HISTORY_INDEX_STORAGE_KEY)
+        const contentStr = JSON.stringify(content)
+        localStorage.setItem(STORAGE_KEY, contentStr)
+        console.warn('Cleared history to save current content. History has been reset.')
+        return true
+      } catch (retryError) {
+        console.error('Failed to save even after cleanup:', retryError)
+        // Show user-friendly warning
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            alert('Storage limit reached. Your changes are saved in memory but may be lost on page refresh. Please export your content to save it permanently.')
+          }, 100)
+        }
+        return false
+      }
+    }
+    console.error('Error saving to localStorage:', error)
+    return false
+  }
+}
+
+// Helper function to load history from localStorage
+const loadHistoryFromStorage = (): HistoryState[] | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored) as HistoryState[]
+    }
+  } catch (error) {
+    console.error('Error loading history from localStorage:', error)
+  }
+  return null
+}
+
+// Maximum history entries to keep (to prevent storage bloat)
+const MAX_HISTORY_ENTRIES = 10
+
+// Helper function to save history to localStorage (limited size)
+const saveHistoryToStorage = (history: HistoryState[]): boolean => {
+  if (typeof window === 'undefined') return false
+  
+  // Limit history size to prevent storage bloat
+  const limitedHistory = history.slice(-MAX_HISTORY_ENTRIES)
+  
+  try {
+    const historyStr = JSON.stringify(limitedHistory)
+    // Check size before saving (rough estimate: 5MB limit)
+    if (historyStr.length > 4 * 1024 * 1024) {
+      console.warn('History too large, keeping only most recent entries')
+      // Keep only last 5 entries if still too large
+      const minimalHistory = history.slice(-5)
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(minimalHistory))
+      return true
+    }
+    localStorage.setItem(HISTORY_STORAGE_KEY, historyStr)
+    return true
+  } catch (error: any) {
+    // Silently fail for history - it's less critical than current content
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      console.warn('History storage quota exceeded. History will not be persisted.')
+      // Try to save minimal history
+      try {
+        const minimalHistory = history.slice(-3)
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(minimalHistory))
+      } catch {
+        // If even minimal history fails, just don't save it
+        localStorage.removeItem(HISTORY_STORAGE_KEY)
+      }
+    }
+    return false
+  }
+}
+
 export function AdminProvider({ children }: { children: React.ReactNode }) {
-  const [content, setContent] = useState<AdminContent>(defaultContent)
-  const [history, setHistory] = useState<HistoryState[]>([{ content: defaultContent, timestamp: Date.now() }])
-  const [historyIndex, setHistoryIndex] = useState(0)
+  // Initialize from localStorage or use default
+  const [content, setContent] = useState<AdminContent>(() => {
+    const stored = loadFromStorage()
+    return stored || defaultContent
+  })
+  
+  const [history, setHistory] = useState<HistoryState[]>(() => {
+    const stored = loadHistoryFromStorage()
+    if (stored && stored.length > 0) {
+      // Limit loaded history to MAX_HISTORY_ENTRIES
+      return stored.slice(-MAX_HISTORY_ENTRIES)
+    }
+    const initialContent = loadFromStorage() || defaultContent
+    return [{ content: initialContent, timestamp: Date.now() }]
+  })
+  
+  const [historyIndex, setHistoryIndex] = useState(() => {
+    if (typeof window === 'undefined') return 0
+    try {
+      const stored = localStorage.getItem(HISTORY_INDEX_STORAGE_KEY)
+      if (stored !== null) {
+        const index = parseInt(stored, 10)
+        if (!isNaN(index)) {
+          return index
+        }
+      }
+    } catch (error) {
+      console.error('Error loading history index from localStorage:', error)
+    }
+    const storedHistory = loadHistoryFromStorage()
+    if (storedHistory && storedHistory.length > 0) {
+      return storedHistory.length - 1
+    }
+    return 0
+  })
 
   const updateHistory = useCallback((newContent: AdminContent) => {
     const newHistory = history.slice(0, historyIndex + 1)
     newHistory.push({ content: newContent, timestamp: Date.now() })
-    setHistory(newHistory)
-    setHistoryIndex(newHistory.length - 1)
+    
+    // Limit history size in memory too (keep last MAX_HISTORY_ENTRIES)
+    const limitedHistory = newHistory.length > MAX_HISTORY_ENTRIES 
+      ? newHistory.slice(-MAX_HISTORY_ENTRIES)
+      : newHistory
+    
+    setHistory(limitedHistory)
+    const newIndex = limitedHistory.length - 1
+    setHistoryIndex(newIndex)
     setContent(newContent)
+    
+    // Save to localStorage (prioritize current content over history)
+    const contentSaved = saveToStorage(newContent)
+    if (contentSaved) {
+      // Only save history if content was saved successfully
+      saveHistoryToStorage(limitedHistory)
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, newIndex.toString())
+        } catch {
+          // Ignore if index save fails
+        }
+      }
+    }
   }, [history, historyIndex])
 
   const updateContent = useCallback((updates: Partial<AdminContent>) => {
@@ -560,6 +720,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const newIndex = historyIndex - 1
       setHistoryIndex(newIndex)
       setContent(history[newIndex].content)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, newIndex.toString())
+      }
     }
   }, [history, historyIndex])
 
@@ -568,6 +731,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const newIndex = historyIndex + 1
       setHistoryIndex(newIndex)
       setContent(history[newIndex].content)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, newIndex.toString())
+      }
     }
   }, [history, historyIndex])
 
@@ -603,6 +769,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     setHistory(newHistory)
     setHistoryIndex(0)
     setContent(defaultContent)
+    // Clear localStorage and save default
+    try {
+      saveToStorage(defaultContent)
+      saveHistoryToStorage(newHistory)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, '0')
+      }
+    } catch (error) {
+      console.error('Error resetting to default:', error)
+    }
   }, [])
 
   return (
