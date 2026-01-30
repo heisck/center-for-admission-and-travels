@@ -100,7 +100,7 @@ export default function AdminAboutEditor() {
       </div>
 
       {/* Mission & Vision */}
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         {/* Mission */}
         <div className="bg-white rounded-xl shadow-sm border border-border p-8">
           <h3 className="text-2xl font-bold mb-6 text-foreground">Mission</h3>
@@ -198,7 +198,7 @@ export default function AdminAboutEditor() {
       <div className="bg-white rounded-xl shadow-sm border border-border p-8">
         <h2 className="text-2xl font-bold mb-6 text-foreground">Core Values</h2>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {about.coreValues.map((value) => (
             <div key={value.id} className="border border-border rounded-lg p-4">
               <input
@@ -250,16 +250,14 @@ export default function AdminAboutEditor() {
                 </button>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <input
-                    type="text"
-                    value={member.role}
-                    onChange={(e) => handleUpdateTeamMember(member.id, 'role', e.target.value)}
-                    placeholder="Role/Position"
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                  />
-                </div>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={member.role}
+                  onChange={(e) => handleUpdateTeamMember(member.id, 'role', e.target.value)}
+                  placeholder="Role/Position"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                />
               </div>
 
               <div className="mb-4">

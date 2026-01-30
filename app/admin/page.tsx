@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, Users, MapPin, BookOpen, Settings, ArrowRight } from 'lucide-react'
+import { Home, Users, MapPin, BookOpen, Settings, Mail, ArrowRight } from 'lucide-react'
 
 const PAGES = [
   {
@@ -39,6 +39,13 @@ const PAGES = [
     href: '/admin/services',
     color: 'from-red-500 to-red-600',
   },
+  {
+    name: 'Contact & Footer',
+    description: 'Manage contact info, address, and social media links',
+    icon: Mail,
+    href: '/admin/contact',
+    color: 'from-pink-500 to-rose-600',
+  },
 ]
 
 export default function AdminDashboard() {
@@ -57,7 +64,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Pages Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {PAGES.map((page) => {
             const Icon = page.icon
             return (

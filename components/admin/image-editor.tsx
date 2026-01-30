@@ -97,7 +97,7 @@ export function ImageEditor({
 
       {/* Image Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-4">
           {images.map((image, idx) => (
             <div key={idx} className="relative group">
               <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-slate-100 border border-border">

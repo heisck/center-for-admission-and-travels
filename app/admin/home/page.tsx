@@ -19,8 +19,8 @@ export default function AdminHomePage() {
     <>
       <AdminToolbar />
 
-      <main className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <main className="min-h-screen bg-slate-50 overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 space-y-6 sm:space-y-8">
           {/* Page Title */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground">Home Page Editor</h1>
@@ -69,7 +69,7 @@ export default function AdminHomePage() {
               </div>
 
               {/* CTA Text */}
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
                     Primary CTA Text
@@ -99,7 +99,7 @@ export default function AdminHomePage() {
                 </label>
                 <div className="space-y-4">
                   {hero.stats.map((stat, idx) => (
-                    <div key={idx} className="grid md:grid-cols-2 gap-4 p-4 bg-slate-100 rounded-lg">
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 p-4 bg-slate-100 rounded-lg">
                       <div>
                         <label className="block text-xs font-semibold text-slate-600 mb-2">
                           Value

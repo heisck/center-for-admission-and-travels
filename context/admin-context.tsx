@@ -75,6 +75,24 @@ export interface AdminContent {
       highlights: string[]
     }>
   }
+  contact: {
+    phone: string
+    email: string
+    address: {
+      street: string
+      city: string
+      region: string
+      country: string
+    }
+    whatsappNumber: string
+  }
+  footer: {
+    companyDescription: string
+    socialLinks: Array<{
+      platform: string
+      url: string
+    }>
+  }
 }
 
 interface HistoryState {
@@ -95,6 +113,8 @@ interface AdminContextType {
   updateTravelTours: (updates: Partial<AdminContent['travelTours']>) => void
   updateTravelToursHero: (updates: Partial<AdminContent['travelTours']['hero']>) => void
   updateTravelToursFeatured: (featured: AdminContent['travelTours']['featured']) => void
+  updateContact: (updates: Partial<AdminContent['contact']>) => void
+  updateFooter: (updates: Partial<AdminContent['footer']>) => void
   undo: () => void
   redo: () => void
   canUndo: boolean
@@ -346,6 +366,25 @@ const defaultContent: AdminContent = {
       },
     ],
   },
+  contact: {
+    phone: '+233 248 422 663',
+    email: 'info@centerforadmissionandtravels.com',
+    address: {
+      street: 'BA14 Chinkara Street, Gumani',
+      city: 'Tamale',
+      region: 'Northern Region',
+      country: 'Ghana',
+    },
+    whatsappNumber: '+233248422663',
+  },
+  footer: {
+    companyDescription: 'Unlocking global opportunities for education, work, and travel.',
+    socialLinks: [
+      { platform: 'Facebook', url: 'https://facebook.com' },
+      { platform: 'LinkedIn', url: 'https://linkedin.com' },
+      { platform: 'Twitter', url: 'https://twitter.com' },
+    ],
+  },
 }
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
@@ -461,6 +500,22 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [history, historyIndex])
 
+  const updateContact = useCallback((updates: Partial<AdminContent['contact']>) => {
+    const newContent = {
+      ...content,
+      contact: { ...content.contact, ...updates },
+    }
+    updateHistory(newContent)
+  }, [content, updateHistory])
+
+  const updateFooter = useCallback((updates: Partial<AdminContent['footer']>) => {
+    const newContent = {
+      ...content,
+      footer: { ...content.footer, ...updates },
+    }
+    updateHistory(newContent)
+  }, [content, updateHistory])
+
   const resetToDefault = useCallback(() => {
     const newHistory = [{ content: defaultContent, timestamp: Date.now() }]
     setHistory(newHistory)
@@ -483,6 +538,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         updateTravelTours,
         updateTravelToursHero,
         updateTravelToursFeatured,
+        updateContact,
+        updateFooter,
         undo,
         redo,
         canUndo: historyIndex > 0,

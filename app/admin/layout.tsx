@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Home, Settings, Users, MapPin, BookOpen, Briefcase, Globe, LogOut, Menu, X } from 'lucide-react'
+import { Home, Settings, Users, MapPin, BookOpen, Mail, LogOut, Menu, X } from 'lucide-react'
 
 const NAV_ITEMS = [
   { name: 'Home', href: '/admin/home', icon: Home },
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { name: 'Travel Tours', href: '/admin/travel-tours', icon: MapPin },
   { name: 'Packages', href: '/admin/packages', icon: BookOpen },
   { name: 'Services', href: '/admin/services', icon: Settings },
+  { name: 'Contact & Footer', href: '/admin/contact', icon: Mail },
 ]
 
 export default function AdminLayout({
@@ -59,7 +60,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -118,7 +119,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="md:ml-64 transition-margin duration-300">
+      <main className="relative w-full max-w-full md:pl-64 overflow-x-hidden transition-[padding] duration-300">
         {/* Overlay for mobile when menu is open */}
         {isMobileMenuOpen && (
           <div
