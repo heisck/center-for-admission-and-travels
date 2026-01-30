@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { services as servicesData } from '@/data/services'
 
 export interface AdminContent {
@@ -567,10 +567,43 @@ const saveHistoryToStorage = (history: HistoryState[]): boolean => {
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   // Initialize from localStorage or use default
+  // Will be updated from API on mount
   const [content, setContent] = useState<AdminContent>(() => {
     const stored = loadFromStorage()
     return stored || defaultContent
   })
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load content from database on mount
+  useEffect(() => {
+    const loadContentFromAPI = async () => {
+      try {
+        const response = await fetch('/api/content')
+        const result = await response.json()
+        if (result.success && result.data) {
+          setContent(result.data)
+          // Database is the source of truth - no localStorage needed
+        } else {
+          // Fallback to localStorage only if API fails (for offline support)
+          const stored = loadFromStorage()
+          if (stored) {
+            setContent(stored)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading content from API:', error)
+        // Fallback to localStorage only if API fails
+        const stored = loadFromStorage()
+        if (stored) {
+          setContent(stored)
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadContentFromAPI()
+  }, [])
   
   const [history, setHistory] = useState<HistoryState[]>(() => {
     const stored = loadHistoryFromStorage()
@@ -616,19 +649,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     setHistoryIndex(newIndex)
     setContent(newContent)
     
-    // Save to localStorage (prioritize current content over history)
-    const contentSaved = saveToStorage(newContent)
-    if (contentSaved) {
-      // Only save history if content was saved successfully
-      saveHistoryToStorage(limitedHistory)
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, newIndex.toString())
-        } catch {
-          // Ignore if index save fails
-        }
-      }
-    }
+    // History is kept in memory only - database is the source of truth for content
+    // No localStorage needed since all content is saved to database via API
   }, [history, historyIndex])
 
   const updateContent = useCallback((updates: Partial<AdminContent>) => {
@@ -636,7 +658,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     updateHistory(newContent)
   }, [content, updateHistory])
 
-  const updateHomeHero = useCallback((updates: Partial<AdminContent['home']['hero']>) => {
+  const updateHomeHero = useCallback(async (updates: Partial<AdminContent['home']['hero']>) => {
+    // Optimistic update (update UI immediately)
     const newContent = {
       ...content,
       home: {
@@ -645,9 +668,27 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
+
+    // Sync to database via API
+    try {
+      const response = await fetch('/api/admin/content/home', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hero: newContent.home.hero }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save to database:', result.error)
+        // Could revert here if needed
+      }
+    } catch (error) {
+      console.error('Error syncing to database:', error)
+      // Could revert here if needed
+    }
   }, [content, updateHistory])
 
-  const updateServices = useCallback((services: AdminContent['home']['services']) => {
+  const updateServices = useCallback(async (services: AdminContent['home']['services']) => {
+    // Optimistic update
     const newContent = {
       ...content,
       home: {
@@ -656,14 +697,45 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/home', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ services }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save services:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing services:', error)
+    }
   }, [content, updateHistory])
 
-  const updateAbout = useCallback((updates: Partial<AdminContent['about']>) => {
+  const updateAbout = useCallback(async (updates: Partial<AdminContent['about']>) => {
+    // Optimistic update
     const newContent = {
       ...content,
       about: { ...content.about, ...updates },
     }
     updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/about', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save about page:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing about page:', error)
+    }
   }, [content, updateHistory])
 
   const updatePackages = useCallback((packages: AdminContent['packages']) => {
@@ -737,23 +809,56 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [history, historyIndex])
 
-  const updateContact = useCallback((updates: Partial<AdminContent['contact']>) => {
+  const updateContact = useCallback(async (updates: Partial<AdminContent['contact']>) => {
+    // Optimistic update
     const newContent = {
       ...content,
       contact: { ...content.contact, ...updates },
     }
     updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/contact', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save contact info:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing contact info:', error)
+    }
   }, [content, updateHistory])
 
-  const updateFooter = useCallback((updates: Partial<AdminContent['footer']>) => {
+  const updateFooter = useCallback(async (updates: Partial<AdminContent['footer']>) => {
+    // Optimistic update
     const newContent = {
       ...content,
       footer: { ...content.footer, ...updates },
     }
     updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/footer', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save footer info:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing footer info:', error)
+    }
   }, [content, updateHistory])
 
-  const updateServicePage = useCallback((serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => {
+  const updateServicePage = useCallback(async (serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => {
+    // Optimistic update
     const newServicePages = content.servicePages.map((service) =>
       service.id === serviceId ? { ...service, ...updates } : service
     )
@@ -762,6 +867,21 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       servicePages: newServicePages,
     }
     updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch(`/api/admin/content/service-pages/${serviceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save service page:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing service page:', error)
+    }
   }, [content, updateHistory])
 
   const resetToDefault = useCallback(() => {
@@ -769,16 +889,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     setHistory(newHistory)
     setHistoryIndex(0)
     setContent(defaultContent)
-    // Clear localStorage and save default
-    try {
-      saveToStorage(defaultContent)
-      saveHistoryToStorage(newHistory)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, '0')
-      }
-    } catch (error) {
-      console.error('Error resetting to default:', error)
-    }
+    // Database is the source of truth - no localStorage needed
   }, [])
 
   return (

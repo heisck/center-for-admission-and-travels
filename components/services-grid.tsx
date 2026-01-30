@@ -1,8 +1,22 @@
+"use client"
+
 import Link from "next/link"
 import { Globe, Briefcase, Plane, GraduationCap } from "lucide-react"
+import { usePublicContent } from "@/context/public-content-context"
+
+// Icon mapping for services
+const iconMap: Record<string, any> = {
+  'GraduationCap': GraduationCap,
+  'Briefcase': Briefcase,
+  'Plane': Plane,
+  'Globe': Globe,
+}
 
 export default function ServicesGrid() {
-  const services = [
+  const { content } = usePublicContent()
+  
+  // Use services from database if available, otherwise use defaults
+  const defaultServices = [
     {
       icon: GraduationCap,
       title: "Study Abroad",
@@ -28,6 +42,22 @@ export default function ServicesGrid() {
       href: "/global-network",
     },
   ]
+
+  // Map database services to component format
+  const services = content?.home?.services?.length 
+    ? content.home.services.map((svc) => {
+        // Find matching service page for href
+        const servicePage = content?.servicePages?.find(sp => sp.id === svc.id || sp.title === svc.title)
+        const Icon = iconMap[svc.icon] || GraduationCap
+        
+        return {
+          icon: Icon,
+          title: svc.title,
+          description: svc.description,
+          href: servicePage?.route || `/${svc.id.toLowerCase().replace(/\s+/g, '-')}`,
+        }
+      })
+    : defaultServices
 
   return (
     <section id="services" className="py-12 md:py-24 bg-white">
