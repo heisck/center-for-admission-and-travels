@@ -3,6 +3,7 @@
 import { useAdmin } from '@/context/admin-context'
 import { Undo2, Redo2, RotateCcw, Save, Eye, LogOut } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export function AdminToolbar() {
   const { undo, redo, canUndo, canRedo, resetToDefault } = useAdmin()
@@ -18,8 +19,14 @@ export function AdminToolbar() {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex justify-between items-center gap-2 sm:gap-4 overflow-x-auto">
         {/* Left: Branding */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            A
+          <div className="relative w-8 h-8 flex-shrink-0">
+            <Image
+              src="/images/ca-20logo.png"
+              alt="Center for Admission and Travels logo"
+              fill
+              className="object-contain"
+              sizes="32px"
+            />
           </div>
           <span className="font-semibold text-foreground hidden sm:inline">Admin Panel</span>
         </div>

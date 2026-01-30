@@ -1,15 +1,13 @@
 'use client'
 
+import Link from 'next/link'
 import { useAdmin } from '@/context/admin-context'
 import { AdminToolbar } from '@/components/admin/admin-toolbar'
 import {
   EditableTextWrapper,
   EditableTextareaWrapper,
-  EditableImageListWrapper,
-  EditableListWrapper,
-  EditableSection,
 } from '@/components/admin/editable-content'
-import { Globe, Briefcase, Plane, GraduationCap } from 'lucide-react'
+import Footer from '@/components/footer'
 
 export default function AdminHomePage() {
   const { content, updateHomeHero, updateServices } = useAdmin()
@@ -17,203 +15,169 @@ export default function AdminHomePage() {
 
   return (
     <>
-      <AdminToolbar />
 
-      <main className="min-h-screen bg-slate-50 overflow-x-hidden">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 space-y-6 sm:space-y-8">
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Home Page Editor</h1>
-            <p className="text-muted-foreground mt-2">
-              Edit all content for your home page. Changes are saved automatically.
-            </p>
-          </div>
+      <main className="min-h-screen bg-background overflow-x-hidden">
+        {/* Hero - mirrors main home layout but fully editable */}
+        <section className="relative py-16 md:py-24 bg-gradient-to-br from-orange-50 via-white to-red-50 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Content */}
+              <div className="space-y-6">
+                <div>
+                  <EditableTextWrapper
+                    value={hero.title}
+                    onChange={(value) => updateHomeHero({ title: value })}
+                    variant="title"
+                    className="leading-tight"
+                  />
+                  {hero.subtitle && (
+                    <div className="mt-2">
+                      <EditableTextWrapper
+                        value={hero.subtitle}
+                        onChange={(value) => updateHomeHero({ subtitle: value })}
+                        variant="subtitle"
+                      />
+                    </div>
+                  )}
+                </div>
 
-          {/* Hero Section Editor */}
-          <EditableSection title="Hero Section">
-            <div className="space-y-6">
-              {/* Main Title */}
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Main Title
-                </label>
-                <EditableTextWrapper
-                  value={hero.title}
-                  onChange={(value) => updateHomeHero({ title: value })}
-                  variant="title"
-                />
-              </div>
-
-              {/* Subtitle */}
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Subtitle
-                </label>
-                <EditableTextWrapper
-                  value={hero.subtitle}
-                  onChange={(value) => updateHomeHero({ subtitle: value })}
-                  variant="subtitle"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Description
-                </label>
                 <EditableTextareaWrapper
                   value={hero.description}
                   onChange={(value) => updateHomeHero({ description: value })}
                   rows={3}
+                  className="mt-2"
                 />
-              </div>
 
-              {/* CTA Text */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    Primary CTA Text
-                  </label>
-                  <EditableTextWrapper
-                    value={hero.cta1Text}
-                    onChange={(value) => updateHomeHero({ cta1Text: value })}
-                    variant="body"
-                  />
+                {/* CTAs */}
+                <div className="flex gap-4 flex-wrap">
+                  <button className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105">
+                    {hero.cta1Text}
+                  </button>
+                  <button className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition">
+                    {hero.cta2Text}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    Secondary CTA Text
-                  </label>
-                  <EditableTextWrapper
-                    value={hero.cta2Text}
-                    onChange={(value) => updateHomeHero({ cta2Text: value })}
-                    variant="body"
-                  />
-                </div>
-              </div>
 
-              {/* Stats */}
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-4">
-                  Stats
-                </label>
-                <div className="space-y-4">
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-6 pt-4">
                   {hero.stats.map((stat, idx) => (
-                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 p-4 bg-slate-100 rounded-lg">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-2">
-                          Value
-                        </label>
-                        <input
-                          type="text"
-                          value={stat.value}
-                          onChange={(e) => {
-                            const newStats = [...hero.stats]
-                            newStats[idx] = { ...stat, value: e.target.value }
-                            updateHomeHero({ stats: newStats })
-                          }}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-2">
-                          Label
-                        </label>
-                        <input
-                          type="text"
-                          value={stat.label}
-                          onChange={(e) => {
-                            const newStats = [...hero.stats]
-                            newStats[idx] = { ...stat, label: e.target.value }
-                            updateHomeHero({ stats: newStats })
-                          }}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
+                    <div key={idx}>
+                      <input
+                        type="text"
+                        value={stat.value}
+                        onChange={(e) => {
+                          const newStats = [...hero.stats]
+                          newStats[idx] = { ...stat, value: e.target.value }
+                          updateHomeHero({ stats: newStats })
+                        }}
+                        className="w-full text-2xl md:text-3xl font-bold text-primary bg-transparent border-b border-transparent focus:border-primary focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={stat.label}
+                        onChange={(e) => {
+                          const newStats = [...hero.stats]
+                          newStats[idx] = { ...stat, label: e.target.value }
+                          updateHomeHero({ stats: newStats })
+                        }}
+                        className="mt-1 w-full text-sm text-muted-foreground bg-transparent border-b border-dotted border-slate-300 focus:border-primary focus:outline-none"
+                      />
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Hero Images */}
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-4">
-                  Hero Images
-                </label>
-                <EditableImageListWrapper
-                  images={hero.images}
-                  onChange={(images) => updateHomeHero({ images })}
-                  maxImages={6}
-                  label="Hero Images"
-                />
+              {/* Visual placeholder to mirror hero imagery area */}
+              <div className="relative h-72 md:h-96 rounded-2xl bg-slate-200 border border-dashed border-slate-400 flex items-center justify-center text-slate-500 text-sm text-center px-4">
+                Hero imagery & Masonry-style visuals appear here on the live site.
+                <br />
+                (Design-only area – content is managed separately.)
               </div>
             </div>
-          </EditableSection>
+          </div>
+        </section>
 
-          {/* Services Section Editor */}
-          <EditableSection title="Services">
-            <div className="space-y-6">
-              <p className="text-muted-foreground text-sm">
-                Edit each service card below. Services are displayed in a 2x2 grid on the home page.
+        {/* Services - mirrors main services grid with editable cards */}
+        <section id="services" className="py-12 md:py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                <span className="text-foreground">Our </span>
+                <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  Services
+                </span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Comprehensive solutions for your international journey
               </p>
+            </div>
 
+            <div className="grid md:grid-cols-2 gap-8">
               {services.map((service, idx) => (
                 <div
-                  key={idx}
-                  className="p-6 bg-slate-100 rounded-lg border border-slate-300 space-y-4"
+                  key={service.id}
+                  className="group p-8 rounded-2xl border border-border bg-white hover:border-primary hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
                 >
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-300">
-                    <h4 className="font-semibold text-foreground">Service {idx + 1}</h4>
-                    <span className="text-xs bg-primary text-white px-3 py-1 rounded-full">
-                      {service.id}
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Title
-                    </label>
+                  <h3 className="text-2xl font-bold mb-3 text-foreground">
                     <EditableTextWrapper
                       value={service.title}
                       onChange={(value) => {
-                        const newServices = [...services]
-                        newServices[idx] = { ...service, title: value }
-                        updateServices(newServices)
+                        const next = [...services]
+                        next[idx] = { ...service, title: value }
+                        updateServices(next)
                       }}
                       variant="heading"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Description
-                    </label>
-                    <EditableTextareaWrapper
-                      value={service.description}
-                      onChange={(value) => {
-                        const newServices = [...services]
-                        newServices[idx] = { ...service, description: value }
-                        updateServices(newServices)
-                      }}
-                      rows={2}
-                    />
+                  </h3>
+                  <EditableTextareaWrapper
+                    value={service.description}
+                    onChange={(value) => {
+                      const next = [...services]
+                      next[idx] = { ...service, description: value }
+                      updateServices(next)
+                    }}
+                    rows={3}
+                  />
+                  <div className="mt-4 text-sm text-primary font-semibold">
+                    Linked to: <span className="underline">{service.id}</span>
                   </div>
                 </div>
               ))}
             </div>
-          </EditableSection>
-
-          {/* Preview Note */}
-          <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Tips for Editing:</h3>
-            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-              <li>Click on any text to edit it inline</li>
-              <li>Use the Undo/Redo buttons to revert changes</li>
-              <li>Click Reset to return to default content</li>
-              <li>All changes are automatically tracked in history</li>
-            </ul>
           </div>
-        </div>
+        </section>
+
+        {/* CTA + Footer from main site (read-only, for visual parity) */}
+        <section className="py-20 bg-white border-t border-slate-100">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Ready to{' '}
+              <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Start Your Journey?
+              </span>
+            </h2>
+            <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
+              Let Center for Admission and Travels guide you to your global opportunity. Contact us today for a free
+              consultation.
+            </p>
+            <div className="flex gap-4 justify-center flex-wrap">
+              <Link
+                href="/signin"
+                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+              >
+                Get Started Today
+              </Link>
+              <a
+                href="#services"
+                className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
+              >
+                Explore Services
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <Footer />
       </main>
     </>
   )

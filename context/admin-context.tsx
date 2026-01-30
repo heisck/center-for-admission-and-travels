@@ -39,6 +39,15 @@ export interface AdminContent {
       title: string
       description: string
     }>
+    founder: {
+      name: string
+      title: string
+      description: string
+      image: string
+      vision: string
+      mission: string
+      values: string
+    }
     team: Array<{
       id: string
       name: string
@@ -200,6 +209,15 @@ const defaultContent: AdminContent = {
       { id: '5', title: 'Respect', description: 'Value every individual and their journey' },
       { id: '6', title: 'Confidentiality', description: 'Your information is safe with us' },
     ],
+    founder: {
+      name: 'George Owusu Ntim',
+      title: 'Meet Our Founder',
+      description: 'George Owusu Ntim is the visionary Director of Center for Admission and Travels. With a strong background in international education, travel coordination, and client advisory services, he leads the company with excellence and integrity. George is committed to helping students, travellers, and professionals access global opportunities through reliable guidance, transparent processes, and personalized support.',
+      image: '/images/founder.jpg',
+      vision: "Ghana's leading gateway to global opportunities",
+      mission: 'Trusted, personalized, professional services',
+      values: 'Integrity, professionalism, transparency, and care',
+    },
     team: [
       {
         id: '1',

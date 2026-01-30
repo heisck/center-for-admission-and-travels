@@ -1,14 +1,14 @@
 'use client'
 
+import Image from 'next/image'
 import { useAdmin } from '@/context/admin-context'
 import { AdminToolbar } from '@/components/admin/admin-toolbar'
 import {
   EditableTextWrapper,
   EditableTextareaWrapper,
-  EditableImageListWrapper,
   EditableListWrapper,
-  EditableSection,
 } from '@/components/admin/editable-content'
+import Footer from '@/components/footer'
 
 export default function AdminAboutPage() {
   const { content, updateAbout } = useAdmin()
@@ -40,253 +40,270 @@ export default function AdminAboutPage() {
 
   return (
     <>
-      <AdminToolbar />
 
-      <main className="min-h-screen bg-slate-50 overflow-x-hidden">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 space-y-6 sm:space-y-8">
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">About Page Editor</h1>
-            <p className="text-muted-foreground mt-2">
-              Edit company information, mission, vision, values, and team members.
-            </p>
-          </div>
+      <main className="min-h-screen bg-background overflow-x-hidden">
+        {/* Hero - mirrors main About hero layout */}
+        <section className="relative py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Image */}
+              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1 bg-slate-200">
+                {about.heroImage && (
+                  <Image
+                    src={about.heroImage}
+                    alt="About hero"
+                    fill
+                    className="object-cover object-top"
+                  />
+                )}
+              </div>
 
-          {/* Hero Section */}
-          <EditableSection title="Hero Section">
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Hero Title
-                </label>
+              {/* Content */}
+              <div className="order-1 md:order-2 space-y-4">
                 <EditableTextWrapper
                   value={about.heroTitle}
                   onChange={(value) => updateAbout({ heroTitle: value })}
                   variant="title"
+                  className="text-5xl md:text-6xl"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Hero Subtitle
-                </label>
                 <EditableTextareaWrapper
                   value={about.heroSubtitle}
                   onChange={(value) => updateAbout({ heroSubtitle: value })}
-                  rows={2}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Hero Image URL
-                </label>
-                <input
-                  type="text"
-                  value={about.heroImage}
-                  onChange={(e) => updateAbout({ heroImage: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
                 />
               </div>
             </div>
-          </EditableSection>
+          </div>
+        </section>
 
-          {/* Mission Section */}
-          <EditableSection title="Our Mission">
-            <div className="space-y-6">
+        {/* Mission & Vision - mirrors main layout with editable text */}
+        <section className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-12">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Mission Title
-                </label>
-                <EditableTextWrapper
-                  value={about.mission.title}
-                  onChange={(value) =>
-                    updateAbout({ mission: { ...about.mission, title: value } })
-                  }
-                  variant="heading"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Mission Description
-                </label>
+                <h2 className="text-3xl font-bold mb-6 text-primary">Our Mission</h2>
                 <EditableTextareaWrapper
                   value={about.mission.description}
                   onChange={(value) =>
                     updateAbout({ mission: { ...about.mission, description: value } })
                   }
-                  rows={3}
+                  rows={5}
                 />
+                <div className="mt-6 space-y-3">
+                  <EditableListWrapper
+                    items={about.mission.points}
+                    onChange={handleMissionPointsUpdate}
+                    label="Mission Points"
+                    placeholder="Add mission point"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Mission Points
-                </label>
-                <EditableListWrapper
-                  items={about.mission.points}
-                  onChange={handleMissionPointsUpdate}
-                  label="Points"
-                  placeholder="Enter a mission point"
-                />
-              </div>
-            </div>
-          </EditableSection>
-
-          {/* Vision Section */}
-          <EditableSection title="Our Vision">
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Vision Title
-                </label>
-                <EditableTextWrapper
-                  value={about.vision.title}
-                  onChange={(value) =>
-                    updateAbout({ vision: { ...about.vision, title: value } })
-                  }
-                  variant="heading"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Vision Description
-                </label>
+                <h2 className="text-3xl font-bold mb-6 text-primary">Our Vision</h2>
                 <EditableTextareaWrapper
                   value={about.vision.description}
                   onChange={(value) =>
                     updateAbout({ vision: { ...about.vision, description: value } })
                   }
-                  rows={3}
+                  rows={5}
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Vision Points
-                </label>
-                <EditableListWrapper
-                  items={about.vision.points}
-                  onChange={handleVisionPointsUpdate}
-                  label="Points"
-                  placeholder="Enter a vision point"
-                />
+                <div className="mt-6 space-y-3">
+                  <EditableListWrapper
+                    items={about.vision.points}
+                    onChange={handleVisionPointsUpdate}
+                    label="Vision Points"
+                    placeholder="Add vision point"
+                  />
+                </div>
               </div>
             </div>
-          </EditableSection>
+          </div>
+        </section>
 
-          {/* Core Values */}
-          <EditableSection title="Core Values">
-            <div className="space-y-6">
+        {/* Core Values - grid like main About page */}
+        <section className="py-20 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-4xl font-bold text-center mb-12">
+              <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Core Values
+              </span>
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8">
               {about.coreValues.map((value, idx) => (
                 <div
                   key={idx}
-                  className="p-6 bg-slate-100 rounded-lg border border-slate-300 space-y-4"
+                  className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition space-y-3"
                 >
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-300">
-                    <h4 className="font-semibold text-foreground">Value {idx + 1}</h4>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Title
-                    </label>
-                    <EditableTextWrapper
-                      value={value.title}
-                      onChange={(val) => handleCoreValuesUpdate(idx, 'title', val)}
-                      variant="body"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Description
-                    </label>
-                    <EditableTextareaWrapper
-                      value={value.description}
-                      onChange={(val) => handleCoreValuesUpdate(idx, 'description', val)}
-                      rows={2}
-                    />
-                  </div>
+                  <EditableTextWrapper
+                    value={value.title}
+                    onChange={(val) => handleCoreValuesUpdate(idx, 'title', val)}
+                    variant="heading"
+                    className="text-primary"
+                  />
+                  <EditableTextareaWrapper
+                    value={value.description}
+                    onChange={(val) => handleCoreValuesUpdate(idx, 'description', val)}
+                    rows={3}
+                  />
                 </div>
               ))}
             </div>
-          </EditableSection>
+          </div>
+        </section>
 
-          {/* Team Members */}
-          <EditableSection title="Team Members">
-            <div className="space-y-6">
+        {/* Founder Section - mirrors main About founder section */}
+        <section className="py-24 bg-gradient-to-br from-orange-50 to-red-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Image */}
+              <div className="relative h-96 md:h-full">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-3xl opacity-20 blur-3xl"></div>
+                <div className="relative bg-white rounded-3xl p-3 shadow-2xl overflow-hidden">
+                  <div className="relative h-96 bg-slate-200 rounded-2xl">
+                    {about.founder.image && (
+                      <Image
+                        src={about.founder.image}
+                        alt={about.founder.name}
+                        fill
+                        className="object-cover rounded-2xl"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="space-y-8">
+                <div>
+                  <EditableTextWrapper
+                    value={about.founder.title}
+                    onChange={(value) => updateAbout({ founder: { ...about.founder, title: value } })}
+                    variant="title"
+                    className="text-4xl md:text-5xl mb-4"
+                  />
+                  <EditableTextareaWrapper
+                    value={about.founder.description}
+                    onChange={(value) => updateAbout({ founder: { ...about.founder, description: value } })}
+                    rows={6}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <strong>Vision:</strong>{' '}
+                      <EditableTextWrapper
+                        value={about.founder.vision}
+                        onChange={(value) => updateAbout({ founder: { ...about.founder, vision: value } })}
+                        variant="body"
+                        className="inline"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <strong>Mission:</strong>{' '}
+                      <EditableTextWrapper
+                        value={about.founder.mission}
+                        onChange={(value) => updateAbout({ founder: { ...about.founder, mission: value } })}
+                        variant="body"
+                        className="inline"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <strong>Values:</strong>{' '}
+                      <EditableTextWrapper
+                        value={about.founder.values}
+                        onChange={(value) => updateAbout({ founder: { ...about.founder, values: value } })}
+                        variant="body"
+                        className="inline"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-xs font-semibold text-foreground mb-1">
+                    Founder Image URL
+                  </label>
+                  <input
+                    type="text"
+                    value={about.founder.image}
+                    onChange={(e) => updateAbout({ founder: { ...about.founder, image: e.target.value } })}
+                    className="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Team section - mirrors main team grid */}
+        <section className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-4xl font-bold text-center mb-4">
+              <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Meet Our Team
+              </span>
+            </h2>
+            <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+              Dedicated professionals committed to your success
+            </p>
+
+            <div className="grid md:grid-cols-4 gap-8">
               {about.team.map((member, idx) => (
-                <div
-                  key={idx}
-                  className="p-6 bg-slate-100 rounded-lg border border-slate-300 space-y-4"
-                >
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-300">
-                    <h4 className="font-semibold text-foreground">Team Member {idx + 1}</h4>
+                <div key={idx} className="group">
+                  <div className="relative h-64 mb-4 rounded-xl overflow-hidden shadow-lg bg-slate-200">
+                    {member.image && (
+                      <Image
+                        src={member.image}
+                        alt={member.name}
+                        fill
+                        className="w-full h-full object-cover object-top group-hover:scale-110 transition duration-300"
+                      />
+                    )}
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Name
-                    </label>
-                    <EditableTextWrapper
-                      value={member.name}
-                      onChange={(val) => handleTeamUpdate(idx, 'name', val)}
-                      variant="body"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Role
-                    </label>
+                  <EditableTextWrapper
+                    value={member.name}
+                    onChange={(val) => handleTeamUpdate(idx, 'name', val)}
+                    variant="heading"
+                    className="text-foreground"
+                  />
+                  <EditableTextareaWrapper
+                    value={member.role}
+                    onChange={(val) => handleTeamUpdate(idx, 'role', val)}
+                    rows={2}
+                  />
+                  <div className="mt-3">
                     <EditableTextareaWrapper
-                      value={member.role}
-                      onChange={(val) => handleTeamUpdate(idx, 'role', val)}
-                      rows={2}
+                      value={member.description}
+                      onChange={(val) => handleTeamUpdate(idx, 'description', val)}
+                      rows={4}
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
+                  <div className="mt-3">
+                    <label className="block text-xs font-semibold text-foreground mb-1">
                       Image URL
                     </label>
                     <input
                       type="text"
                       value={member.image}
                       onChange={(e) => handleTeamUpdate(idx, 'image', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Description
-                    </label>
-                    <EditableTextareaWrapper
-                      value={member.description}
-                      onChange={(val) => handleTeamUpdate(idx, 'description', val)}
-                      rows={3}
+                      className="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
               ))}
             </div>
-          </EditableSection>
-
-          {/* Help Note */}
-          <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Editing Tips:</h3>
-            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-              <li>Click on any text to edit it inline</li>
-              <li>Team members and values can be edited in their respective sections</li>
-              <li>Use Undo/Redo for quick corrections</li>
-              <li>All changes are automatically tracked</li>
-            </ul>
           </div>
-        </div>
+        </section>
+
+        <Footer />
       </main>
     </>
   )
