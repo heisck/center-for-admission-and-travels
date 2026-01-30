@@ -3,7 +3,7 @@
 import { ReactNode, useState } from 'react'
 import { EditableText } from './editable-text'
 import { ImageEditor } from './image-editor'
-import { Edit2, X } from 'lucide-react'
+import { Edit2, X, Check } from 'lucide-react'
 
 /**
  * Unified EditableContent wrapper component
@@ -86,15 +86,17 @@ export function EditableTextareaWrapper({
         <div className="flex gap-2">
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            title="Save"
           >
-            Save
+            <Check size={18} />
           </button>
           <button
             onClick={handleCancel}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            className="p-2 bg-slate-200 text-foreground rounded-lg hover:bg-slate-300 transition"
+            title="Cancel"
           >
-            Cancel
+            <X size={18} />
           </button>
         </div>
       </div>
@@ -178,13 +180,15 @@ export function EditableListItem({
         />
         <button
           onClick={handleSave}
-          className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+          className="p-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition"
+          title="Save"
         >
-          Save
+          <Check size={16} />
         </button>
         <button
           onClick={onRemove}
-          className="p-1 text-red-600 hover:bg-red-100 rounded transition"
+          className="p-1.5 text-red-600 hover:bg-red-100 rounded transition"
+          title="Remove"
         >
           <X size={16} />
         </button>
@@ -290,18 +294,20 @@ export function EditableListWrapper({
           <button
             onClick={handleAddItem}
             disabled={!newItem.trim()}
-            className="px-3 py-1 bg-primary text-white rounded text-sm hover:shadow transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-1.5 bg-primary text-white rounded hover:shadow transition disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Add"
           >
-            Add
+            <Check size={16} />
           </button>
           <button
             onClick={() => {
               setShowAddForm(false)
               setNewItem('')
             }}
-            className="px-3 py-1 bg-slate-300 text-foreground rounded text-sm hover:bg-slate-400"
+            className="p-1.5 bg-slate-200 text-foreground rounded hover:bg-slate-300 transition"
+            title="Cancel"
           >
-            Cancel
+            <X size={16} />
           </button>
         </div>
       ) : (

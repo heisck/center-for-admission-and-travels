@@ -5,19 +5,11 @@ import {
   EditableTextWrapper,
   EditableTextareaWrapper,
 } from '@/components/admin/editable-content'
-import ServicesGrid from '@/components/services-grid'
+import { EditableServicesGrid } from '@/components/admin/editable-services-grid'
 import CTASection from '@/components/cta-section'
 import Footer from '@/components/footer'
-import Masonry from '@/components/Masonry'
+import { EditableMasonry } from '@/components/admin/editable-masonry'
 import { useState, useEffect } from 'react'
-
-const items = [
-  { id: '1', img: '/images/thisshouldbeintegrated5.jpg', url: '#', height: 400 },
-  { id: '2', img: '/images/integrate2.jpg', url: '#', height: 350 },
-  { id: '3', img: '/images/integrate.jpg', url: '#', height: 400 },
-  { id: '4', img: '/images/integrate1.jpg', url: '#', height: 600 },
-  { id: '5', img: '/images/integrate3.jpg', url: '#', height: 300 },
-]
 
 export default function AdminHomePage() {
   const { content, updateHomeHero } = useAdmin()
@@ -39,16 +31,9 @@ export default function AdminHomePage() {
         <div className="md:hidden relative w-full" style={{ minHeight: '420px', zIndex: 10 }}>
           <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 5 }}>
             <div style={{ width: '100%', height: '100%' }}>
-              <Masonry
-                items={items}
-                ease="power3.out"
-                duration={0.6}
-                stagger={0.05}
-                animateFrom="bottom"
-                scaleOnHover={true}
-                hoverScale={0.95}
-                blurToFocus={true}
-                colorShiftOnHover={true}
+              <EditableMasonry
+                images={hero.images}
+                onChange={(images) => updateHomeHero({ images })}
               />
             </div>
           </div>
@@ -69,18 +54,22 @@ export default function AdminHomePage() {
             </div>
 
             <div className="flex gap-4 flex-wrap px-4">
-              <a
-                href="#services"
-                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
-              >
-                {hero.cta1Text || 'View Our Services'}
-              </a>
-              <a
-                href="/admin/contact"
-                className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
-              >
-                {hero.cta2Text || 'Contact Us'}
-              </a>
+              <div className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105">
+                <EditableTextWrapper
+                  value={hero.cta1Text}
+                  onChange={(value) => updateHomeHero({ cta1Text: value })}
+                  variant="body"
+                  className="text-white font-semibold"
+                />
+              </div>
+              <div className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition">
+                <EditableTextWrapper
+                  value={hero.cta2Text}
+                  onChange={(value) => updateHomeHero({ cta2Text: value })}
+                  variant="body"
+                  className="text-primary font-semibold"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-6 pt-8 px-4">
@@ -132,18 +121,22 @@ export default function AdminHomePage() {
               </div>
 
               <div className="relative z-20 flex gap-4 flex-wrap">
-                <a
-                  href="#services"
-                  className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
-                >
-                  {hero.cta1Text || 'View Our Services'}
-                </a>
-                <a
-                  href="/admin/contact"
-                  className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
-                >
-                  {hero.cta2Text || 'Contact Us'}
-                </a>
+                <div className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105">
+                  <EditableTextWrapper
+                    value={hero.cta1Text}
+                    onChange={(value) => updateHomeHero({ cta1Text: value })}
+                    variant="body"
+                    className="text-white font-semibold"
+                  />
+                </div>
+                <div className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition">
+                  <EditableTextWrapper
+                    value={hero.cta2Text}
+                    onChange={(value) => updateHomeHero({ cta2Text: value })}
+                    variant="body"
+                    className="text-primary font-semibold"
+                  />
+                </div>
               </div>
 
               <div className="relative z-20 grid grid-cols-3 md:gap-6 pt-8">
@@ -176,16 +169,9 @@ export default function AdminHomePage() {
 
             <div className="relative h-full">
               <div className="relative w-full h-96 rounded-2xl">
-                <Masonry
-                  items={items}
-                  ease="power3.out"
-                  duration={0.6}
-                  stagger={0.05}
-                  animateFrom="bottom"
-                  scaleOnHover={true}
-                  hoverScale={0.95}
-                  blurToFocus={true}
-                  colorShiftOnHover={true}
+                <EditableMasonry
+                  images={hero.images}
+                  onChange={(images) => updateHomeHero({ images })}
                 />
               </div>
             </div>
@@ -193,7 +179,7 @@ export default function AdminHomePage() {
         </div>
       </section>
 
-      <ServicesGrid />
+      <EditableServicesGrid />
       <CTASection />
       <Footer />
     </main>

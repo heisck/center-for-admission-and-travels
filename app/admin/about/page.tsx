@@ -1,8 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { useAdmin } from '@/context/admin-context'
-import { AdminToolbar } from '@/components/admin/admin-toolbar'
+import { EditableImage } from '@/components/admin/editable-image'
 import {
   EditableTextWrapper,
   EditableTextareaWrapper,
@@ -47,15 +46,16 @@ export default function AdminAboutPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               {/* Image */}
-              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1 bg-slate-200">
-                {about.heroImage && (
-                  <Image
-                    src={about.heroImage}
-                    alt="About hero"
-                    fill
-                    className="object-cover object-top"
-                  />
-                )}
+              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
+                <EditableImage
+                  src={about.heroImage}
+                  alt="About hero"
+                  onChange={(value) => updateAbout({ heroImage: value })}
+                  fill
+                  className="rounded-2xl"
+                  objectFit="cover"
+                  objectPosition="top"
+                />
               </div>
 
               {/* Content */}
@@ -160,15 +160,15 @@ export default function AdminAboutPage() {
               <div className="relative h-96 md:h-full">
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-3xl opacity-20 blur-3xl"></div>
                 <div className="relative bg-white rounded-3xl p-3 shadow-2xl overflow-hidden">
-                  <div className="relative h-96 bg-slate-200 rounded-2xl">
-                    {about.founder.image && (
-                      <Image
-                        src={about.founder.image}
-                        alt={about.founder.name}
-                        fill
-                        className="object-cover rounded-2xl"
-                      />
-                    )}
+                  <div className="relative h-96 rounded-2xl">
+                    <EditableImage
+                      src={about.founder.image}
+                      alt={about.founder.name}
+                      onChange={(value) => updateAbout({ founder: { ...about.founder, image: value } })}
+                      fill
+                      className="rounded-2xl"
+                      objectFit="cover"
+                    />
                   </div>
                 </div>
               </div>
@@ -227,17 +227,6 @@ export default function AdminAboutPage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <label className="block text-xs font-semibold text-foreground mb-1">
-                    Founder Image URL
-                  </label>
-                  <input
-                    type="text"
-                    value={about.founder.image}
-                    onChange={(e) => updateAbout({ founder: { ...about.founder, image: e.target.value } })}
-                    className="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -258,15 +247,16 @@ export default function AdminAboutPage() {
             <div className="grid md:grid-cols-4 gap-8">
               {about.team.map((member, idx) => (
                 <div key={idx} className="group">
-                  <div className="relative h-64 mb-4 rounded-xl overflow-hidden shadow-lg bg-slate-200">
-                    {member.image && (
-                      <Image
-                        src={member.image}
-                        alt={member.name}
-                        fill
-                        className="w-full h-full object-cover object-top group-hover:scale-110 transition duration-300"
-                      />
-                    )}
+                  <div className="relative h-64 mb-4 rounded-xl overflow-hidden shadow-lg">
+                    <EditableImage
+                      src={member.image}
+                      alt={member.name}
+                      onChange={(value) => handleTeamUpdate(idx, 'image', value)}
+                      fill
+                      className="rounded-xl"
+                      objectFit="cover"
+                      objectPosition="top"
+                    />
                   </div>
                   <EditableTextWrapper
                     value={member.name}
@@ -284,17 +274,6 @@ export default function AdminAboutPage() {
                       value={member.description}
                       onChange={(val) => handleTeamUpdate(idx, 'description', val)}
                       rows={4}
-                    />
-                  </div>
-                  <div className="mt-3">
-                    <label className="block text-xs font-semibold text-foreground mb-1">
-                      Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={member.image}
-                      onChange={(e) => handleTeamUpdate(idx, 'image', e.target.value)}
-                      className="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>

@@ -2,11 +2,10 @@
 
 import { useAdmin } from '@/context/admin-context'
 import Footer from '@/components/footer'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
-import { MapPin, Clock, DollarSign, CheckCircle } from 'lucide-react'
-import DomeGallery from '@/app/travel-tours/DomeGallery'
+import { MapPin, Clock, DollarSign, CheckCircle, Plus, Trash2 } from 'lucide-react'
+import { EditableImage } from '@/components/admin/editable-image'
 import {
   EditableTextWrapper,
   EditableTextareaWrapper,
@@ -24,16 +23,40 @@ export default function AdminTravelToursPage() {
     updateTravelToursFeatured(newFeatured)
   }
 
+  const handleAddPackage = () => {
+    const newPackage = {
+      id: Date.now().toString(),
+      name: 'New Package',
+      description: 'Package description',
+      duration: '3 Days',
+      price: 500,
+      image: '',
+      highlights: ['Highlight 1', 'Highlight 2'],
+    }
+    updateTravelToursFeatured([...travelTours.featured, newPackage])
+  }
+
+  const handleDeletePackage = (id: string) => {
+    if (confirm('Are you sure you want to delete this package?')) {
+      updateTravelToursFeatured(travelTours.featured.filter((p) => p.id !== id))
+    }
+  }
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section - mirrors main travel-tours hero */}
       <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-            <div className="relative h-80 rounded-2xl overflow-hidden">
-              <div style={{ width: '100%', height: '100%' }}>
-                <DomeGallery />
-              </div>
+            <div className="relative h-80 rounded-2xl overflow-hidden bg-slate-200">
+              <EditableImage
+                src={travelTours.hero.image}
+                alt="Travel hero"
+                onChange={(value) => updateTravelToursHero({ image: value })}
+                fill
+                className="rounded-2xl"
+                objectFit="cover"
+              />
             </div>
 
             <div>
@@ -72,6 +95,13 @@ export default function AdminTravelToursPage() {
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Choose from our curated destinations and create your perfect travel experience
             </p>
+            <button
+              onClick={handleAddPackage}
+              className="mt-4 px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:shadow-lg transition flex items-center gap-2 mx-auto"
+            >
+              <Plus size={20} />
+              Add Package
+            </button>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -80,24 +110,35 @@ export default function AdminTravelToursPage() {
                 key={pkg.id}
                 className="group bg-white border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
               >
-                <div className="h-64 relative overflow-hidden bg-gray-200">
-                  {pkg.image && (
-                    <Image
-                      src={pkg.image}
-                      alt={pkg.name}
-                      fill
-                      className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition"></div>
+                <div className="h-64 relative overflow-hidden bg-gray-200 rounded-t-2xl">
+                  <EditableImage
+                    src={pkg.image}
+                    alt={pkg.name}
+                    onChange={(value) => {
+                      const idx = travelTours.featured.findIndex((f) => f.id === pkg.id)
+                      handleFeaturedUpdate(idx, 'image', value)
+                    }}
+                    fill
+                    className="rounded-t-2xl"
+                    objectFit="cover"
+                  />
                 </div>
 
                 <div className="p-8">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold text-primary uppercase">
-                      {pkg.name.split(' ')[0]}
-                    </span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold text-primary uppercase">
+                        {pkg.name.split(' ')[0]}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleDeletePackage(pkg.id)}
+                      className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
+                      title="Delete package"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
 
                   <EditableTextWrapper
@@ -195,20 +236,6 @@ export default function AdminTravelToursPage() {
                         label="Highlights"
                         placeholder="Add highlight"
                       />
-                      <div className="mt-4">
-                        <label className="block text-xs font-semibold text-foreground mb-1">
-                          Image URL
-                        </label>
-                        <input
-                          type="text"
-                          value={pkg.image}
-                          onChange={(e) => {
-                            const idx = travelTours.featured.findIndex((f) => f.id === pkg.id)
-                            handleFeaturedUpdate(idx, 'image', e.target.value)
-                          }}
-                          className="w-full px-2 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
                     </div>
                   )}
                 </div>

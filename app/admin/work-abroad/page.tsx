@@ -2,10 +2,10 @@
 
 import { useAdmin } from '@/context/admin-context'
 import Footer from '@/components/footer'
-import Image from 'next/image'
 import { CheckCircle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { services } from '@/data/services'
+import { EditableImage } from '@/components/admin/editable-image'
 import {
   EditableTextWrapper,
   EditableTextareaWrapper,
@@ -25,11 +25,13 @@ export default function AdminWorkAbroadPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
-              <Image
+              <EditableImage
                 src={service.heroImage}
                 alt={service.bannerTitle}
+                onChange={() => {}}
                 fill
-                className="object-cover object-center"
+                className="rounded-2xl"
+                objectFit="cover"
               />
             </div>
 
@@ -141,35 +143,25 @@ export default function AdminWorkAbroadPage() {
                 key={idx}
                 className="group bg-white border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary transition-all duration-300 transform hover:-translate-y-2"
               >
-                {country.image && (
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={country.image}
-                      alt={country.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <EditableTextWrapper
-                        value={country.name}
-                        onChange={() => {}}
-                        variant="heading"
-                        className="text-2xl font-bold text-white"
-                      />
-                    </div>
-                  </div>
-                )}
-                {!country.image && (
-                  <div className="p-6 pb-3">
+                <div className="relative h-48 overflow-hidden">
+                  <EditableImage
+                    src={country.image || ''}
+                    alt={country.name}
+                    onChange={() => {}}
+                    fill
+                    className="rounded-t-xl"
+                    objectFit="cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                  <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
                     <EditableTextWrapper
                       value={country.name}
                       onChange={() => {}}
                       variant="heading"
-                      className="text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition"
+                      className="text-2xl font-bold text-white"
                     />
                   </div>
-                )}
+                </div>
                 <div className="p-6 pt-4">
                   <EditableTextareaWrapper
                     value={country.description}
