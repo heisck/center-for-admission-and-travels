@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback } from 'react'
+import { services as servicesData } from '@/data/services'
 
 export interface AdminContent {
   home: {
@@ -102,6 +103,39 @@ export interface AdminContent {
       url: string
     }>
   }
+  servicePages: Array<{
+    id: string
+    title: string
+    description: string
+    icon: string
+    route: string
+    heroImage: string
+    bannerTitle: string
+    bannerSubtitle: string
+    overview?: string
+    whyStudyOutsideThisCountry?: {
+      title: string
+      highlights: string[]
+    }
+    benefits: string[]
+    requirements: string[]
+    countries: Array<{
+      name: string
+      description: string
+      image: string
+    }>
+    visaGuidance: string
+    successStories?: Array<{
+      name: string
+      program: string
+      quote: string
+    }>
+    scholarships?: Array<{
+      name: string
+      amount: string
+      description: string
+    }>
+  }>
 }
 
 interface HistoryState {
@@ -124,6 +158,7 @@ interface AdminContextType {
   updateTravelToursFeatured: (featured: AdminContent['travelTours']['featured']) => void
   updateContact: (updates: Partial<AdminContent['contact']>) => void
   updateFooter: (updates: Partial<AdminContent['footer']>) => void
+  updateServicePage: (serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => void
   undo: () => void
   redo: () => void
   canUndo: boolean
@@ -403,6 +438,24 @@ const defaultContent: AdminContent = {
       { platform: 'Twitter', url: 'https://twitter.com' },
     ],
   },
+  servicePages: servicesData.map((service) => ({
+    id: service.id,
+    title: service.title,
+    description: service.description,
+    icon: service.icon,
+    route: service.route,
+    heroImage: service.heroImage,
+    bannerTitle: service.bannerTitle,
+    bannerSubtitle: service.bannerSubtitle,
+    overview: service.overview,
+    whyStudyOutsideThisCountry: service.whyStudyOutsideThisCountry,
+    benefits: service.benefits || [],
+    requirements: service.requirements || [],
+    countries: service.countries || [],
+    visaGuidance: service.visaGuidance || '',
+    successStories: service.successStories,
+    scholarships: service.scholarships,
+  })),
 }
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
@@ -534,6 +587,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     updateHistory(newContent)
   }, [content, updateHistory])
 
+  const updateServicePage = useCallback((serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => {
+    const newServicePages = content.servicePages.map((service) =>
+      service.id === serviceId ? { ...service, ...updates } : service
+    )
+    const newContent = {
+      ...content,
+      servicePages: newServicePages,
+    }
+    updateHistory(newContent)
+  }, [content, updateHistory])
+
   const resetToDefault = useCallback(() => {
     const newHistory = [{ content: defaultContent, timestamp: Date.now() }]
     setHistory(newHistory)
@@ -558,6 +622,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         updateTravelToursFeatured,
         updateContact,
         updateFooter,
+        updateServicePage,
         undo,
         redo,
         canUndo: historyIndex > 0,

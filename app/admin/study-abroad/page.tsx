@@ -4,7 +4,6 @@ import { useAdmin } from '@/context/admin-context'
 import Footer from '@/components/footer'
 import { CheckCircle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { services } from '@/data/services'
 import { EditableImage } from '@/components/admin/editable-image'
 import {
   EditableTextWrapper,
@@ -13,12 +12,45 @@ import {
 } from '@/components/admin/editable-content'
 
 export default function AdminStudyAbroadPage() {
-  const service = services.find((s) => s.id === 'study-abroad')
-  const { content } = useAdmin()
-  // For now, use public service data - can be extended to use admin context later
+  const { content, updateServicePage } = useAdmin()
+  const service = content.servicePages.find((s) => s.id === 'study-abroad')
 
   if (!service) {
     return <div>Service not found</div>
+  }
+
+  const handleUpdate = (field: string, value: any) => {
+    updateServicePage('study-abroad', { [field]: value })
+  }
+
+  const handleCountryUpdate = (idx: number, field: string, value: any) => {
+    const newCountries = [...service.countries]
+    newCountries[idx] = { ...newCountries[idx], [field]: value }
+    updateServicePage('study-abroad', { countries: newCountries })
+  }
+
+  const handleBenefitsUpdate = (idx: number, value: string) => {
+    const newBenefits = [...service.benefits]
+    newBenefits[idx] = value
+    updateServicePage('study-abroad', { benefits: newBenefits })
+  }
+
+  const handleRequirementsUpdate = (idx: number, value: string) => {
+    const newRequirements = [...service.requirements]
+    newRequirements[idx] = value
+    updateServicePage('study-abroad', { requirements: newRequirements })
+  }
+
+  const handleHighlightsUpdate = (idx: number, value: string) => {
+    if (!service.whyStudyOutsideThisCountry) return
+    const newHighlights = [...service.whyStudyOutsideThisCountry.highlights]
+    newHighlights[idx] = value
+    updateServicePage('study-abroad', {
+      whyStudyOutsideThisCountry: {
+        ...service.whyStudyOutsideThisCountry,
+        highlights: newHighlights,
+      },
+    })
   }
 
   return (
@@ -31,7 +63,7 @@ export default function AdminStudyAbroadPage() {
               <EditableImage
                 src={service.heroImage}
                 alt={service.bannerTitle}
-                onChange={() => {}}
+                onChange={(value) => handleUpdate('heroImage', value)}
                 fill
                 className="rounded-2xl"
                 objectFit="cover"
@@ -41,13 +73,13 @@ export default function AdminStudyAbroadPage() {
             <div className="order-1 md:order-2">
               <EditableTextWrapper
                 value={service.bannerTitle}
-                onChange={() => {}}
+                onChange={(value) => handleUpdate('bannerTitle', value)}
                 variant="title"
                 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4"
               />
               <EditableTextareaWrapper
                 value={service.bannerSubtitle}
-                onChange={() => {}}
+                onChange={(value) => handleUpdate('bannerSubtitle', value)}
                 rows={2}
                 className="text-xl text-muted-foreground mb-6"
               />
@@ -77,8 +109,8 @@ export default function AdminStudyAbroadPage() {
                 About This Service
               </h2>
               <EditableTextareaWrapper
-                value={service.overview}
-                onChange={() => {}}
+                value={service.overview || ''}
+                onChange={(value) => handleUpdate('overview', value)}
                 rows={8}
                 className="text-lg text-foreground leading-relaxed"
               />
@@ -105,7 +137,7 @@ export default function AdminStudyAbroadPage() {
                 <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                 <EditableTextareaWrapper
                   value={benefit}
-                  onChange={() => {}}
+                  onChange={(value) => handleBenefitsUpdate(idx, value)}
                   rows={2}
                   className="text-foreground leading-relaxed flex-1"
                 />
@@ -121,7 +153,14 @@ export default function AdminStudyAbroadPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <EditableTextWrapper
               value={service.whyStudyOutsideThisCountry.title}
-              onChange={() => {}}
+              onChange={(value) =>
+                updateServicePage('study-abroad', {
+                  whyStudyOutsideThisCountry: {
+                    ...service.whyStudyOutsideThisCountry,
+                    title: value,
+                  },
+                })
+              }
               variant="title"
               className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4"
             />
@@ -140,7 +179,7 @@ export default function AdminStudyAbroadPage() {
                     </div>
                     <EditableTextareaWrapper
                       value={highlight}
-                      onChange={() => {}}
+                      onChange={(value) => handleHighlightsUpdate(idx, value)}
                       rows={3}
                       className="text-foreground leading-relaxed flex-1"
                     />
@@ -173,7 +212,7 @@ export default function AdminStudyAbroadPage() {
                   </div>
                   <EditableTextareaWrapper
                     value={req}
-                    onChange={() => {}}
+                    onChange={(value) => handleRequirementsUpdate(idx, value)}
                     rows={2}
                     className="text-foreground leading-relaxed flex-1"
                   />
@@ -206,7 +245,7 @@ export default function AdminStudyAbroadPage() {
                   <EditableImage
                     src={country.image || ''}
                     alt={country.name}
-                    onChange={() => {}}
+                    onChange={(value) => handleCountryUpdate(idx, 'image', value)}
                     fill
                     className="rounded-t-xl"
                     objectFit="cover"
@@ -215,7 +254,7 @@ export default function AdminStudyAbroadPage() {
                   <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
                     <EditableTextWrapper
                       value={country.name}
-                      onChange={() => {}}
+                      onChange={(value) => handleCountryUpdate(idx, 'name', value)}
                       variant="heading"
                       className="text-2xl font-bold text-white"
                     />
@@ -224,7 +263,7 @@ export default function AdminStudyAbroadPage() {
                 <div className="p-6 pt-4">
                   <EditableTextareaWrapper
                     value={country.description}
-                    onChange={() => {}}
+                    onChange={(value) => handleCountryUpdate(idx, 'description', value)}
                     rows={3}
                     className="text-muted-foreground leading-relaxed"
                   />
@@ -247,7 +286,7 @@ export default function AdminStudyAbroadPage() {
           <div className="max-w-3xl mx-auto bg-white rounded-xl p-8 shadow-lg">
             <EditableTextareaWrapper
               value={service.visaGuidance}
-              onChange={() => {}}
+              onChange={(value) => handleUpdate('visaGuidance', value)}
               rows={6}
               className="text-lg text-foreground leading-relaxed"
             />

@@ -4,7 +4,6 @@ import { useAdmin } from '@/context/admin-context'
 import Footer from '@/components/footer'
 import { CheckCircle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { services } from '@/data/services'
 import { EditableImage } from '@/components/admin/editable-image'
 import {
   EditableTextWrapper,
@@ -12,10 +11,33 @@ import {
 } from '@/components/admin/editable-content'
 
 export default function AdminGlobalNetworkPage() {
-  const service = services.find((s) => s.id === 'global-network')
+  const { content, updateServicePage } = useAdmin()
+  const service = content.servicePages.find((s) => s.id === 'global-network')
 
   if (!service) {
     return <div>Service not found</div>
+  }
+
+  const handleUpdate = (field: string, value: any) => {
+    updateServicePage('global-network', { [field]: value })
+  }
+
+  const handleCountryUpdate = (idx: number, field: string, value: any) => {
+    const newCountries = [...service.countries]
+    newCountries[idx] = { ...newCountries[idx], [field]: value }
+    updateServicePage('global-network', { countries: newCountries })
+  }
+
+  const handleBenefitsUpdate = (idx: number, value: string) => {
+    const newBenefits = [...service.benefits]
+    newBenefits[idx] = value
+    updateServicePage('global-network', { benefits: newBenefits })
+  }
+
+  const handleRequirementsUpdate = (idx: number, value: string) => {
+    const newRequirements = [...service.requirements]
+    newRequirements[idx] = value
+    updateServicePage('global-network', { requirements: newRequirements })
   }
 
   return (
@@ -28,7 +50,7 @@ export default function AdminGlobalNetworkPage() {
               <EditableImage
                 src={service.heroImage}
                 alt={service.bannerTitle}
-                onChange={() => {}}
+                onChange={(value) => handleUpdate('heroImage', value)}
                 fill
                 className="rounded-2xl"
                 objectFit="cover"
@@ -38,13 +60,13 @@ export default function AdminGlobalNetworkPage() {
             <div className="order-1 md:order-2">
               <EditableTextWrapper
                 value={service.bannerTitle}
-                onChange={() => {}}
+                onChange={(value) => handleUpdate('bannerTitle', value)}
                 variant="title"
                 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4"
               />
               <EditableTextareaWrapper
                 value={service.bannerSubtitle}
-                onChange={() => {}}
+                onChange={(value) => handleUpdate('bannerSubtitle', value)}
                 rows={2}
                 className="text-xl text-muted-foreground mb-6"
               />
@@ -83,7 +105,7 @@ export default function AdminGlobalNetworkPage() {
                 <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                 <EditableTextareaWrapper
                   value={benefit}
-                  onChange={() => {}}
+                  onChange={(value) => handleBenefitsUpdate(idx, value)}
                   rows={2}
                   className="text-foreground leading-relaxed flex-1"
                 />
@@ -114,7 +136,7 @@ export default function AdminGlobalNetworkPage() {
                   </div>
                   <EditableTextareaWrapper
                     value={req}
-                    onChange={() => {}}
+                    onChange={(value) => handleRequirementsUpdate(idx, value)}
                     rows={2}
                     className="text-foreground leading-relaxed flex-1"
                   />
@@ -147,7 +169,7 @@ export default function AdminGlobalNetworkPage() {
                   <EditableImage
                     src={country.image || ''}
                     alt={country.name}
-                    onChange={() => {}}
+                    onChange={(value) => handleCountryUpdate(idx, 'image', value)}
                     fill
                     className="rounded-t-xl"
                     objectFit="cover"
@@ -156,7 +178,7 @@ export default function AdminGlobalNetworkPage() {
                   <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
                     <EditableTextWrapper
                       value={country.name}
-                      onChange={() => {}}
+                      onChange={(value) => handleCountryUpdate(idx, 'name', value)}
                       variant="heading"
                       className="text-2xl font-bold text-white"
                     />
@@ -165,7 +187,7 @@ export default function AdminGlobalNetworkPage() {
                 <div className="p-6 pt-4">
                   <EditableTextareaWrapper
                     value={country.description}
-                    onChange={() => {}}
+                    onChange={(value) => handleCountryUpdate(idx, 'description', value)}
                     rows={3}
                     className="text-muted-foreground leading-relaxed"
                   />
@@ -188,7 +210,7 @@ export default function AdminGlobalNetworkPage() {
           <div className="max-w-3xl mx-auto bg-white rounded-xl p-8 shadow-lg">
             <EditableTextareaWrapper
               value={service.visaGuidance}
-              onChange={() => {}}
+              onChange={(value) => handleUpdate('visaGuidance', value)}
               rows={6}
               className="text-lg text-foreground leading-relaxed"
             />
