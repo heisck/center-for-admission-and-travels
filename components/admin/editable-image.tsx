@@ -35,7 +35,7 @@ export function EditableImage({
 
   if (isEditing) {
     return (
-      <div className="relative z-50">
+      <div className="absolute inset-0 w-full h-full z-50">
         <SingleImageUpload
           currentImage={src}
           onChange={(newSrc) => {
