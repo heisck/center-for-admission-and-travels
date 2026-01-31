@@ -1,8 +1,15 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter } from "lucide-react"
+import { usePublicContent } from "@/context/public-content-context"
 
 export default function Footer() {
+  const { content } = usePublicContent()
+  
+  const contact = content?.contact
+  const footer = content?.footer
   return (
     <footer className="bg-slate-900 text-white pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +26,9 @@ export default function Footer() {
               />
               <span className="text-sm font-bold">Center for Admission & Travels</span>
             </div>
-            <p className="text-slate-400 text-sm">Unlocking global opportunities for education, work, and travel.</p>
+            <p className="text-slate-400 text-sm">
+              {footer?.companyDescription || "Unlocking global opportunities for education, work, and travel."}
+            </p>
           </div>
 
           {/* Quick Links */}
@@ -72,15 +81,21 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-2 text-slate-400">
                 <Phone size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <a href="tel:+233248422663" className="hover:text-primary transition">+233 248 422 663</a>
+                <a href={`tel:${contact?.phone?.replace(/\s/g, '') || '+233248422663'}`} className="hover:text-primary transition">
+                  {contact?.phone || '+233 248 422 663'}
+                </a>
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <Mail size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <a href="mailto:info@centerforadmissionandtravels.com" className="break-all hover:text-primary transition">info@centerforadmissionandtravels.com</a>
+                <a href={`mailto:${contact?.email || 'info@centerforadmissionandtravels.com'}`} className="break-all hover:text-primary transition">
+                  {contact?.email || 'info@centerforadmissionandtravels.com'}
+                </a>
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <MapPin size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span>Tamale, Northern Region, BA14 Chinkara Street, Gumani</span>
+                <span>
+                  {contact?.address?.city || 'Tamale'}, {contact?.address?.region || 'Northern Region'}, {contact?.address?.street || 'BA14 Chinkara Street, Gumani'}
+                </span>
               </li>
             </ul>
           </div>
@@ -93,15 +108,26 @@ export default function Footer() {
               © 2025 Center for Admission and Travels (CFAAT). All rights reserved.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-slate-400 hover:text-primary transition">
-                <Facebook size={20} />
-              </a>
-              <a href="#" className="text-slate-400 hover:text-primary transition">
-                <Linkedin size={20} />
-              </a>
-              <a href="#" className="text-slate-400 hover:text-primary transition">
-                <Twitter size={20} />
-              </a>
+              {footer?.socialLinks?.map((link) => {
+                const Icon = link.platform === 'Facebook' ? Facebook : link.platform === 'LinkedIn' ? Linkedin : Twitter
+                return (
+                  <a key={link.platform} href={link.url} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-primary transition">
+                    <Icon size={20} />
+                  </a>
+                )
+              }) || (
+                <>
+                  <a href="#" className="text-slate-400 hover:text-primary transition">
+                    <Facebook size={20} />
+                  </a>
+                  <a href="#" className="text-slate-400 hover:text-primary transition">
+                    <Linkedin size={20} />
+                  </a>
+                  <a href="#" className="text-slate-400 hover:text-primary transition">
+                    <Twitter size={20} />
+                  </a>
+                </>
+              )}
             </div>
           </div>
         </div>

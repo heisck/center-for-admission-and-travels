@@ -7,9 +7,11 @@ import Footer from "@/components/footer"
 import Image from "next/image"
 import { Phone, Mail, MapPin } from "lucide-react"
 import { useState } from "react"
+import { usePublicContent } from "@/context/public-content-context"
 
 export default function Contact() {
   useScrollToTop()
+  const { content, loading } = usePublicContent()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,6 +31,19 @@ export default function Contact() {
     setTimeout(() => setSubmitted(false), 5000)
     setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
   }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
+  const contact = content?.contact
 
   return (
     <main className="min-h-screen bg-background">
@@ -145,7 +160,9 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Phone</h4>
-                    <p className="text-muted-foreground">+233 248 422 663</p>
+                    <a href={`tel:${contact?.phone?.replace(/\s/g, '') || '+233248422663'}`} className="text-muted-foreground hover:text-primary transition">
+                      {contact?.phone || '+233 248 422 663'}
+                    </a>
                   </div>
                 </div>
 
@@ -155,7 +172,9 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Email</h4>
-                    <p className="text-muted-foreground break-all">info@centerforadmissionandtravels.com</p>
+                    <a href={`mailto:${contact?.email || 'info@centerforadmissionandtravels.com'}`} className="text-muted-foreground break-all hover:text-primary transition">
+                      {contact?.email || 'info@centerforadmissionandtravels.com'}
+                    </a>
                   </div>
                 </div>
 
@@ -165,9 +184,9 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Office Location</h4>
-                    <p className="text-muted-foreground">Tamale, Northern Region</p>
-                    <p className="text-muted-foreground">BA14 Chinkara Street, Gumani</p>
-                    <p className="text-muted-foreground">Ghana</p>
+                    <p className="text-muted-foreground">{contact?.address?.city || 'Tamale'}, {contact?.address?.region || 'Northern Region'}</p>
+                    <p className="text-muted-foreground">{contact?.address?.street || 'BA14 Chinkara Street, Gumani'}</p>
+                    <p className="text-muted-foreground">{contact?.address?.country || 'Ghana'}</p>
                   </div>
                 </div>
               </div>
@@ -198,7 +217,7 @@ export default function Contact() {
               {/* WhatsApp CTA */}
               <div className="pt-4 border-t">
                 <a
-                  href="https://wa.me/233248422663"
+                  href={`https://wa.me/${contact?.whatsappNumber?.replace(/\s/g, '').replace('+', '') || '233248422663'}`}
                   className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition"
                 >
                   Chat on WhatsApp

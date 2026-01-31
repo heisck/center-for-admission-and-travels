@@ -248,6 +248,10 @@ export async function PUT(
             heroImageUrl: body.hero.image,
           })
         }
+        if (body.featured) {
+          // Update featured packages
+          await contentHelpers.updateTravelToursFeaturedPackages(body.featured)
+        }
         break
       case 'service-pages':
         // Service pages are updated individually by serviceId

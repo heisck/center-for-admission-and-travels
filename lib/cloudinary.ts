@@ -1,16 +1,18 @@
 /**
  * CLOUDINARY UTILITY FUNCTIONS
  * 
- * Prepared for Cloudinary integration. Currently returns mock URLs.
- * 
- * TODO: When Cloudinary is integrated:
- * 1. Install: npm install cloudinary
- * 2. Set environment variables:
- *    - CLOUDINARY_CLOUD_NAME
- *    - CLOUDINARY_API_KEY
- *    - CLOUDINARY_API_SECRET
- * 3. Replace mock functions with real Cloudinary SDK calls
+ * Real Cloudinary integration using the SDK
  */
+
+import { v2 as cloudinary } from 'cloudinary'
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name',
+  api_key: process.env.CLOUDINARY_API_KEY || '',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '',
+  secure: true,
+})
 
 /**
  * Upload image to Cloudinary
@@ -18,37 +20,39 @@
  * @param file - File object or base64 string
  * @param folder - Optional folder path in Cloudinary
  * @returns Cloudinary URL
- * 
- * TODO: Replace with real Cloudinary upload
  */
 export async function uploadImage(
   file: File | string,
   folder?: string
 ): Promise<string> {
-  // Mock: Return placeholder URL
-  // TODO: Replace with actual Cloudinary upload
-  
-  if (typeof file === 'string') {
-    // Base64 string
-    // TODO: Convert base64 to buffer and upload to Cloudinary
-    return `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME || 'demo'}/image/upload/v${Date.now()}/placeholder.jpg`
+  try {
+    let uploadOptions: any = {
+      resource_type: 'image' as const,
+      folder: folder || 'center-for-admission-and-travels',
+    }
+
+    if (typeof file === 'string') {
+      // Base64 string
+      uploadOptions.data_uri = file
+    } else {
+      // File object - convert to base64
+      const arrayBuffer = await file.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      const base64 = buffer.toString('base64')
+      const dataUri = `data:${file.type};base64,${base64}`
+      uploadOptions.data_uri = dataUri
+    }
+
+    const result = await cloudinary.uploader.upload(uploadOptions.data_uri, {
+      folder: uploadOptions.folder,
+      resource_type: 'image',
+    })
+
+    return result.secure_url
+  } catch (error: any) {
+    console.error('Cloudinary upload error:', error)
+    throw new Error(`Failed to upload image: ${error.message}`)
   }
-
-  // File object
-  // TODO: Upload file to Cloudinary
-  // Example:
-  // const formData = new FormData()
-  // formData.append('file', file)
-  // formData.append('upload_preset', process.env.CLOUDINARY_UPLOAD_PRESET!)
-  // 
-  // const response = await fetch(
-  //   `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
-  //   { method: 'POST', body: formData }
-  // )
-  // const data = await response.json()
-  // return data.secure_url
-
-  return `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME || 'demo'}/image/upload/v${Date.now()}/${file.name || 'image.jpg'}`
 }
 
 /**
@@ -56,31 +60,17 @@ export async function uploadImage(
  * 
  * @param publicId - Cloudinary public ID (extracted from URL)
  * @returns Success status
- * 
- * TODO: Replace with real Cloudinary delete
  */
 export async function deleteImage(publicId: string): Promise<boolean> {
-  // Mock: Return success
-  // TODO: Replace with actual Cloudinary delete
-  
-  // Example:
-  // const cloudinary = require('cloudinary').v2
-  // cloudinary.config({
-  //   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  //   api_key: process.env.CLOUDINARY_API_KEY,
-  //   api_secret: process.env.CLOUDINARY_API_SECRET,
-  // })
-  // 
-  // try {
-  //   await cloudinary.uploader.destroy(publicId)
-  //   return true
-  // } catch (error) {
-  //   console.error('Error deleting image:', error)
-  //   return false
-  // }
-
-  console.log(`[MOCK] Would delete image: ${publicId}`)
-  return true
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: 'image',
+    })
+    return result.result === 'ok'
+  } catch (error: any) {
+    console.error('Cloudinary delete error:', error)
+    return false
+  }
 }
 
 /**
@@ -90,18 +80,15 @@ export async function deleteImage(publicId: string): Promise<boolean> {
  * @param newFile - New file to upload
  * @param folder - Optional folder path
  * @returns New Cloudinary URL
- * 
- * TODO: Replace with real Cloudinary replace
  */
 export async function replaceImage(
   oldPublicId: string,
   newFile: File | string,
   folder?: string
 ): Promise<string> {
-  // Mock: Delete old and upload new
-  // TODO: Replace with actual Cloudinary replace
-  
+  // Delete old image
   await deleteImage(oldPublicId)
+  // Upload new image
   return await uploadImage(newFile, folder)
 }
 
@@ -132,23 +119,22 @@ export function getOptimizedImageUrl(
   height?: number,
   quality: number = 80
 ): string {
-  // Mock: Return original URL
-  // TODO: Add Cloudinary transformations
-  
   if (!url.includes('cloudinary.com')) {
     return url // Not a Cloudinary URL
   }
 
-  // Example transformation:
-  // const transformations = []
-  // if (width) transformations.push(`w_${width}`)
-  // if (height) transformations.push(`h_${height}`)
-  // transformations.push(`q_${quality}`)
-  // 
-  // const publicId = extractPublicId(url)
-  // return `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${transformations.join(',')}/${publicId}`
+  const publicId = extractPublicId(url)
+  if (!publicId) {
+    return url
+  }
 
-  return url
+  const transformations: string[] = []
+  if (width) transformations.push(`w_${width}`)
+  if (height) transformations.push(`h_${height}`)
+  transformations.push(`q_${quality}`)
+
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name'
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transformations.join(',')}/${publicId}`
 }
 
 /**

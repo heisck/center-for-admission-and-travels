@@ -6,85 +6,25 @@ import Footer from "@/components/footer"
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
-
-interface Package {
-  id: number
-  name: string
-  category: string
-  duration: string
-  price: number
-  description: string
-  highlights: string[]
-  image: string
-}
-
-const packages: Package[] = [
-  {
-    id: 1,
-    name: "Dubai Experience",
-    category: "travel",
-    duration: "6 Days",
-    price: 899,
-    description: "Discover luxury and adventure in the City of Gold",
-    highlights: ["Burj Khalifa", "Desert Safari", "Dhow Cruise Dinner", "Dubai Mall", "Palm Jumeirah"],
-    image: "/dubai-burj-khalifa-city-skyline.jpg",
-  },
-  {
-    id: 2,
-    name: "European Tour",
-    category: "travel",
-    duration: "7 Days",
-    price: 1299,
-    description: "Experience the charm of Europe this summer",
-    highlights: ["Paris", "Amsterdam", "Rome", "Guided Tours", "Museum Visits"],
-    image: "/europe-paris-eiffel-tower-landmarks.jpg",
-  },
-  {
-    id: 3,
-    name: "Asia Explorer",
-    category: "travel",
-    duration: "5 Days",
-    price: 799,
-    description: "Immerse yourself in the colors and cultures of Asia",
-    highlights: ["Thailand", "Singapore", "Malaysia", "City Tours", "Tropical Islands"],
-    image: "/asia-tropical-beaches-thailand-temples.jpg",
-  },
-  {
-    id: 4,
-    name: "UK Study Program",
-    category: "study",
-    duration: "Varies",
-    price: 299,
-    description: "University admission and visa support",
-    highlights: ["Top Universities", "Visa Guidance", "Accommodation", "Pre-departure Orientation"],
-    image: "/united-kingdom-big-ben-london-university.jpg",
-  },
-  {
-    id: 5,
-    name: "USA Education",
-    category: "study",
-    duration: "Varies",
-    price: 899,
-    description: "Gateway to American universities",
-    highlights: ["Ivy League Support", "Scholarship Assistance", "IELTS Prep", "Complete Support"],
-    image: "/statue-of-liberty-nyc.png",
-  },
-  {
-    id: 6,
-    name: "Canada Job Program",
-    category: "work",
-    duration: "Placement",
-    price: 999,
-    description: "Work visa and job placement support",
-    highlights: ["Job Matching", "Visa Processing", "Interview Coaching", "Relocation Support"],
-    image: "/canada-niagara-falls-toronto-city.jpg",
-  },
-]
+import { usePublicContent } from "@/context/public-content-context"
 
 export default function Packages() {
   useScrollToTop()
+  const { content, loading } = usePublicContent()
   const [filter, setFilter] = useState("all")
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
+  const packages = content?.packages || []
   const filtered = filter === "all" ? packages : packages.filter((p) => p.category === filter)
 
   return (
@@ -163,7 +103,7 @@ export default function Packages() {
               >
                 <div className="h-48 relative overflow-hidden bg-gray-200">
                   <Image
-                    src={pkg.image || "/placeholder.svg"}
+                    src={pkg.images?.[0] || "/placeholder.svg"}
                     alt={pkg.name}
                     fill
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
@@ -177,7 +117,7 @@ export default function Packages() {
                   <p className="font-semibold text-foreground mb-4">{pkg.duration}</p>
 
                   <div className="space-y-2 mb-6">
-                    {pkg.highlights.slice(0, 3).map((h, i) => (
+                    {pkg.highlights?.slice(0, 3).map((h, i) => (
                       <div key={i} className="flex items-center space-x-2 text-sm">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
                         <span className="text-foreground">{h}</span>

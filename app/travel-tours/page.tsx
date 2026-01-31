@@ -6,13 +6,28 @@ import Footer from "@/components/footer"
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
-import { travelPackages } from "@/data/packages"
+import { usePublicContent } from "@/context/public-content-context"
 import { MapPin, Clock, DollarSign, CheckCircle } from "lucide-react"
 import DomeGallery from './DomeGallery';
 
 export default function TravelTours() {
   useScrollToTop()
-  const [expandedPackage, setExpandedPackage] = useState<number | null>(null)
+  const { content, loading } = usePublicContent()
+  const [expandedPackage, setExpandedPackage] = useState<string | null>(null)
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </main>
+    )
+  }
+
+  const travelTours = content?.travelTours
+  const featuredPackages = travelTours?.featured || []
 
   return (
     <main className="min-h-screen bg-background">
@@ -36,14 +51,14 @@ export default function TravelTours() {
             <div>
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  Travel & Tours
+                  {travelTours?.hero?.title || "Travel & Tours"}
                 </span>
               </h1>
               <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                Explore our carefully curated collection of travel experiences designed to create unforgettable memories. From exotic beaches to historic landmarks, cultural immersion to adventure activities, we offer comprehensive travel packages with full support.
+                {travelTours?.hero?.description || "Explore our carefully curated collection of travel experiences designed to create unforgettable memories."}
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication to ensure your journey is smooth, enjoyable, and hassle-free.
+                {travelTours?.hero?.paragraph || "Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication."}
               </p>
             </div>
           </div>
@@ -64,14 +79,14 @@ export default function TravelTours() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {travelPackages.map((pkg) => (
+            {featuredPackages.map((pkg) => (
               <div
                 key={pkg.id}
                 className="group bg-white border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
               >
                 <div className="h-64 relative overflow-hidden bg-gray-200">
                   <Image
-                    src={pkg.images[0] || "/placeholder.svg"}
+                    src={pkg.image || "/placeholder.svg"}
                     alt={pkg.name}
                     fill
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
@@ -100,7 +115,7 @@ export default function TravelTours() {
                   </div>
 
                   <div className="space-y-2 mb-6">
-                    {pkg.highlights.slice(0, 3).map((h, i) => (
+                    {pkg.highlights?.slice(0, 3).map((h, i) => (
                       <div key={i} className="flex items-start space-x-2 text-sm">
                         <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                         <span className="text-foreground">{h}</span>
@@ -121,38 +136,6 @@ export default function TravelTours() {
                   >
                     Book Package
                   </Link>
-
-                  {expandedPackage === pkg.id && (
-                    <div className="mt-6 pt-6 border-t border-border animate-fade-in">
-                      <h4 className="font-bold text-foreground mb-3">Itinerary</h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line mb-4">{pkg.itinerary}</p>
-
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                          <h5 className="font-semibold text-foreground text-sm mb-2">Included</h5>
-                          <ul className="space-y-1 text-xs text-muted-foreground">
-                            {pkg.included.map((item, i) => (
-                              <li key={i} className="flex items-start gap-2">
-                                <span className="text-primary">✓</span>
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div>
-                          <h5 className="font-semibold text-foreground text-sm mb-2">Not Included</h5>
-                          <ul className="space-y-1 text-xs text-muted-foreground">
-                            {pkg.notIncluded.map((item, i) => (
-                              <li key={i} className="flex items-start gap-2">
-                                <span className="text-destructive">✗</span>
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

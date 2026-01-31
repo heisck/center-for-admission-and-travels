@@ -40,11 +40,15 @@ export async function POST(request: NextRequest) {
 
     // Upload to Cloudinary
     const url = await uploadImage(file, folder || undefined)
+    
+    // Extract public ID from URL
+    const publicIdMatch = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/)
+    const publicId = publicIdMatch ? publicIdMatch[1] : null
 
     return NextResponse.json({
       success: true,
       url,
-      publicId: url, // TODO: Extract actual public ID from Cloudinary response
+      publicId: publicId || url,
     })
   } catch (error: any) {
     console.error('Image upload error:', error)

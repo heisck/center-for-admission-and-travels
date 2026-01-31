@@ -738,27 +738,90 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [content, updateHistory])
 
-  const updatePackages = useCallback((packages: AdminContent['packages']) => {
+  const updatePackages = useCallback(async (packages: AdminContent['packages']) => {
+    // Optimistic update
     const newContent = { ...content, packages }
     updateHistory(newContent)
+
+    // Sync to database - packages are managed individually via their own endpoints
+    // This function is mainly for UI state updates
   }, [content, updateHistory])
 
-  const updatePackage = useCallback((id: number, updates: Partial<AdminContent['packages'][0]>) => {
+  const updatePackage = useCallback(async (id: string | number, updates: Partial<AdminContent['packages'][0]>) => {
+    // Optimistic update
     const newPackages = content.packages.map((pkg) =>
-      pkg.id === id ? { ...pkg, ...updates } : pkg
+      String(pkg.id) === String(id) ? { ...pkg, ...updates } : pkg
     )
-    updatePackages(newPackages)
-  }, [content.packages, updatePackages])
+    const newContent = { ...content, packages: newPackages }
+    updateHistory(newContent)
 
-  const addPackage = useCallback((pkg: AdminContent['packages'][0]) => {
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/packages', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: String(id), ...updates }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save package:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing package:', error)
+    }
+  }, [content, updateHistory])
+
+  const addPackage = useCallback(async (pkg: AdminContent['packages'][0]) => {
+    // Optimistic update
     const newPackages = [...content.packages, pkg]
-    updatePackages(newPackages)
-  }, [content.packages, updatePackages])
+    const newContent = { ...content, packages: newPackages }
+    updateHistory(newContent)
 
-  const deletePackage = useCallback((id: number) => {
-    const newPackages = content.packages.filter((pkg) => pkg.id !== id)
-    updatePackages(newPackages)
-  }, [content.packages, updatePackages])
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/packages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pkg),
+      })
+      const result = await response.json()
+      if (result.success && result.data) {
+        // Update with the actual ID from database
+        const updatedPackages = content.packages.map((p) =>
+          p.id === pkg.id ? { ...p, id: result.data.id } : p
+        )
+        setContent({ ...content, packages: updatedPackages })
+      } else {
+        console.error('Failed to create package:', result.error)
+      }
+    } catch (error) {
+      console.error('Error creating package:', error)
+    }
+  }, [content, updateHistory])
+
+  const deletePackage = useCallback(async (id: string | number) => {
+    // Optimistic update
+    const newPackages = content.packages.filter((pkg) => String(pkg.id) !== String(id))
+    const newContent = { ...content, packages: newPackages }
+    updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch(`/api/admin/content/packages?id=${id}`, {
+        method: 'DELETE',
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to delete package:', result.error)
+        // Revert on error
+        setContent(content)
+      }
+    } catch (error) {
+      console.error('Error deleting package:', error)
+      // Revert on error
+      setContent(content)
+    }
+  }, [content, updateHistory])
 
   const updateTravelTours = useCallback((updates: Partial<AdminContent['travelTours']>) => {
     const newContent = {
@@ -768,7 +831,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     updateHistory(newContent)
   }, [content, updateHistory])
 
-  const updateTravelToursHero = useCallback((updates: Partial<AdminContent['travelTours']['hero']>) => {
+  const updateTravelToursHero = useCallback(async (updates: Partial<AdminContent['travelTours']['hero']>) => {
+    // Optimistic update
     const newContent = {
       ...content,
       travelTours: {
@@ -777,14 +841,45 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/travel-tours', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hero: newContent.travelTours.hero }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save travel tours hero:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing travel tours hero:', error)
+    }
   }, [content, updateHistory])
 
-  const updateTravelToursFeatured = useCallback((featured: AdminContent['travelTours']['featured']) => {
+  const updateTravelToursFeatured = useCallback(async (featured: AdminContent['travelTours']['featured']) => {
+    // Optimistic update
     const newContent = {
       ...content,
       travelTours: { ...content.travelTours, featured },
     }
     updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/travel-tours', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save travel tours featured:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing travel tours featured:', error)
+    }
   }, [content, updateHistory])
 
   const undo = useCallback(() => {

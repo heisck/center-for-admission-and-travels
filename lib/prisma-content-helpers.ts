@@ -384,6 +384,52 @@ export async function updateTravelToursPage(data: {
   })
 }
 
+export async function updateTravelToursFeaturedPackages(featured: Array<{
+  id?: string
+  name: string
+  description: string
+  duration: string
+  price: number
+  image: string
+  highlights: string[]
+}>) {
+  const travelToursPage = await prisma.travelToursPage.findUnique({ where: { id: 'travel-tours' } })
+  if (!travelToursPage) {
+    await prisma.travelToursPage.create({
+      data: { id: 'travel-tours', heroTitle: '', heroDescription: '', heroParagraph: '', heroImageUrl: '' },
+    })
+  }
+
+  // Delete existing featured packages (cascade will delete highlights)
+  await prisma.travelToursFeaturedPackage.deleteMany({ where: { travelToursPageId: 'travel-tours' } })
+
+  // Create new featured packages with highlights
+  for (const [index, fp] of featured.entries()) {
+    const featuredPkg = await prisma.travelToursFeaturedPackage.create({
+      data: {
+        travelToursPageId: 'travel-tours',
+        name: fp.name,
+        description: fp.description,
+        duration: fp.duration,
+        price: fp.price,
+        imageUrl: fp.image,
+        order: index,
+      },
+    })
+
+    // Create highlights
+    if (fp.highlights && fp.highlights.length > 0) {
+      await prisma.travelToursFeaturedPackageHighlight.createMany({
+        data: fp.highlights.map((text, hIndex) => ({
+          featuredPackageId: featuredPkg.id,
+          text,
+          order: hIndex,
+        })),
+      })
+    }
+  }
+}
+
 // ============================================================================
 // SERVICE PAGES
 // ============================================================================
