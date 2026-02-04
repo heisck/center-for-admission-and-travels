@@ -169,6 +169,7 @@ model AboutPage {
   coreValues   AboutCoreValue[]
   founder      AboutFounder?
   teamMembers  AboutTeamMember[]
+  successStories AboutSuccessStory[]
 
   @@map("about_page")
 }
@@ -270,6 +271,21 @@ model AboutTeamMember {
 
   @@index([aboutPageId])
   @@map("about_team_members")
+}
+
+model AboutSuccessStory {
+  id          String   @id @default(cuid())
+  aboutPageId String
+  name        String
+  program     String   // e.g., "Computer Science at Oxford University"
+  quote       String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  aboutPage   AboutPage @relation(fields: [aboutPageId], references: [id], onDelete: Cascade)
+
+  @@index([aboutPageId])
+  @@map("about_success_stories")
 }
 
 // ============================================================================

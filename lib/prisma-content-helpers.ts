@@ -232,6 +232,24 @@ export async function updateAboutTeamMembers(members: Array<{ id?: string; name:
   })
 }
 
+export async function updateAboutSuccessStories(stories: Array<{ id?: string; name: string; program: string; quote: string }>) {
+  const aboutPage = await prisma.aboutPage.findUnique({ where: { id: 'about' } })
+  if (!aboutPage) {
+    await prisma.aboutPage.create({ data: { id: 'about', heroTitle: '', heroSubtitle: '', heroImageUrl: '' } })
+  }
+
+  await prisma.aboutSuccessStory.deleteMany({ where: { aboutPageId: 'about' } })
+  await prisma.aboutSuccessStory.createMany({
+    data: stories.map((story, index) => ({
+      aboutPageId: 'about',
+      name: story.name,
+      program: story.program,
+      quote: story.quote,
+      order: index,
+    })),
+  })
+}
+
 // ============================================================================
 // PACKAGES
 // ============================================================================
@@ -447,6 +465,9 @@ export async function updateServicePage(serviceId: string, data: {
   benefits?: string[]
   requirements?: string[]
   countries?: Array<{ name: string; description: string; image: string }>
+  successStories?: Array<{ name: string; program: string; quote: string }>
+  scholarships?: Array<{ name: string; amount: string; description: string }>
+  whyStudyOutsideThisCountry?: { title: string; highlights: string[] }
 }) {
   const service = await prisma.servicePage.upsert({
     where: { serviceId },
@@ -474,6 +495,31 @@ export async function updateServicePage(serviceId: string, data: {
       visaGuidance: data.visaGuidance || '',
     },
   })
+
+  // Why Study Section
+  if (data.whyStudyOutsideThisCountry) {
+    const whyStudySection = await prisma.serviceWhyStudySection.upsert({
+      where: { servicePageId: service.id },
+      update: {
+        title: data.whyStudyOutsideThisCountry.title,
+      },
+      create: {
+        servicePageId: service.id,
+        title: data.whyStudyOutsideThisCountry.title,
+      },
+    })
+
+    if (data.whyStudyOutsideThisCountry.highlights) {
+      await prisma.serviceWhyStudyHighlight.deleteMany({ where: { sectionId: whyStudySection.id } })
+      await prisma.serviceWhyStudyHighlight.createMany({
+        data: data.whyStudyOutsideThisCountry.highlights.map((text, index) => ({
+          sectionId: whyStudySection.id,
+          text,
+          order: index,
+        })),
+      })
+    }
+  }
 
   if (data.benefits) {
     await prisma.serviceBenefit.deleteMany({ where: { servicePageId: service.id } })
@@ -505,6 +551,32 @@ export async function updateServicePage(serviceId: string, data: {
         name: country.name,
         description: country.description,
         imageUrl: country.image,
+        order: index,
+      })),
+    })
+  }
+
+  if (data.successStories) {
+    await prisma.serviceSuccessStory.deleteMany({ where: { servicePageId: service.id } })
+    await prisma.serviceSuccessStory.createMany({
+      data: data.successStories.map((story, index) => ({
+        servicePageId: service.id,
+        name: story.name,
+        program: story.program,
+        quote: story.quote,
+        order: index,
+      })),
+    })
+  }
+
+  if (data.scholarships) {
+    await prisma.serviceScholarship.deleteMany({ where: { servicePageId: service.id } })
+    await prisma.serviceScholarship.createMany({
+      data: data.scholarships.map((scholarship, index) => ({
+        servicePageId: service.id,
+        name: scholarship.name,
+        amount: scholarship.amount,
+        description: scholarship.description,
         order: index,
       })),
     })

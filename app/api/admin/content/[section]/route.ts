@@ -234,6 +234,16 @@ export async function PUT(
             }))
           )
         }
+        // Update success stories if provided
+        if (body.successStories && Array.isArray(body.successStories)) {
+          await contentHelpers.updateAboutSuccessStories(
+            body.successStories.map((ss: any) => ({
+              name: ss.name,
+              program: ss.program,
+              quote: ss.quote,
+            }))
+          )
+        }
         break
       case 'packages':
         // Handle package updates (create/update/delete)

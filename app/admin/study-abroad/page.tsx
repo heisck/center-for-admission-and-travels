@@ -2,7 +2,7 @@
 
 import { useAdmin } from '@/context/admin-context'
 import Footer from '@/components/footer'
-import { CheckCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle, ArrowRight, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { EditableImage } from '@/components/admin/editable-image'
 import {
@@ -51,6 +51,26 @@ export default function AdminStudyAbroadPage() {
         highlights: newHighlights,
       },
     })
+  }
+
+  const handleSuccessStoriesUpdate = (idx: number, field: string, value: string) => {
+    const newStories = [...(service.successStories || [])]
+    newStories[idx] = { ...newStories[idx], [field]: value }
+    updateServicePage('study-abroad', { successStories: newStories })
+  }
+
+  const addSuccessStory = () => {
+    updateServicePage('study-abroad', {
+      successStories: [
+        ...(service.successStories || []),
+        { name: 'New Student', program: 'Program', quote: 'Quote' },
+      ],
+    })
+  }
+
+  const deleteSuccessStory = (idx: number) => {
+    const newStories = (service.successStories || []).filter((_, i) => i !== idx)
+    updateServicePage('study-abroad', { successStories: newStories })
   }
 
   return (
@@ -294,6 +314,63 @@ export default function AdminStudyAbroadPage() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Success Stories */}
+      <section className="py-12 sm:py-16 md:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
+            <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              Success Stories
+            </span>
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Hear from our satisfied clients about their transformative journeys
+          </p>
+          <div className="space-y-6">
+            {(service.successStories || []).map((story, idx) => (
+              <div key={idx} className="bg-slate-50 border border-border rounded-lg p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <EditableTextWrapper
+                    value={story.name}
+                    onChange={(value) => handleSuccessStoriesUpdate(idx, 'name', value)}
+                    variant="heading"
+                    className="text-lg font-semibold flex-1"
+                  />
+                  <button
+                    onClick={() => deleteSuccessStory(idx)}
+                    className="p-2 hover:bg-red-50 rounded-lg transition text-red-600 ml-2 flex-shrink-0"
+                    title="Delete success story"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+                <EditableTextWrapper
+                  value={story.program}
+                  onChange={(value) => handleSuccessStoriesUpdate(idx, 'program', value)}
+                  variant="body"
+                  className="text-primary font-semibold mb-2"
+                />
+                <EditableTextareaWrapper
+                  value={story.quote}
+                  onChange={(value) => handleSuccessStoriesUpdate(idx, 'quote', value)}
+                  rows={4}
+                />
+              </div>
+            ))}
+          </div>
+          {(!service.successStories || service.successStories.length === 0) && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No success stories yet</p>
+            </div>
+          )}
+          <button
+            onClick={addSuccessStory}
+            className="mt-8 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:shadow-lg transition flex items-center gap-2"
+          >
+            <Plus size={16} /> Add Success Story
+          </button>
         </div>
       </section>
 

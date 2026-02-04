@@ -11,7 +11,8 @@ import { updateServicePage } from '@/lib/prisma-content-helpers'
 // PUT /api/admin/content/service-pages/[serviceId]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { serviceId: string } }
+  // Handle both Promise and direct params (Next.js 15+ vs 14/16)
+  { params }: { params: Promise<{ serviceId: string }> | { serviceId: string } }
 ) {
   try {
     const session = await verifyAdminSession(request)
@@ -19,7 +20,16 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { serviceId } = params
+    // Resolve params in case it's a Promise (framework version differences)
+    const resolvedParams = await Promise.resolve(params)
+    const { serviceId } = resolvedParams
+
+    if (!serviceId) {
+      return NextResponse.json(
+        { success: false, error: 'Missing serviceId in route params' },
+        { status: 400 }
+      )
+    }
     const body = await request.json()
 
     // Transform frontend format to database format
@@ -40,13 +50,17 @@ export async function PUT(
         description: c.description,
         image: c.image,
       })),
+      successStories: body.successStories,
+      scholarships: body.scholarships,
+      whyStudyOutsideThisCountry: body.whyStudyOutsideThisCountry,
     }
 
     await updateServicePage(serviceId, updateData)
 
     return NextResponse.json({ success: true, message: `Service page ${serviceId} updated` })
   } catch (error: any) {
-    console.error(`Error updating service page ${params.serviceId}:`, error)
+    const resolvedParams = await Promise.resolve(params as any)
+    console.error(`Error updating service page ${resolvedParams.serviceId}:`, error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

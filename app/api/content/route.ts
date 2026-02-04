@@ -34,6 +34,7 @@ export async function GET() {
           coreValues: { orderBy: { order: 'asc' } },
           founder: true,
           teamMembers: { orderBy: { order: 'asc' } },
+          successStories: { orderBy: { order: 'asc' } },
         },
       }),
       // Packages
@@ -132,6 +133,12 @@ export async function GET() {
           role: tm.role,
           image: tm.imageUrl,
           description: tm.description,
+        })) || [],
+        successStories: aboutPage?.successStories.map((ss) => ({
+          id: ss.id,
+          name: ss.name,
+          program: ss.program,
+          quote: ss.quote,
         })) || [],
       },
       packages: packages.map((pkg) => ({

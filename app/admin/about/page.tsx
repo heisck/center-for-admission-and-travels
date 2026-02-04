@@ -37,6 +37,7 @@ export default function AdminAboutPage() {
     })
   }
 
+
   return (
     <>
 
@@ -231,6 +232,7 @@ export default function AdminAboutPage() {
             </div>
           </div>
         </section>
+
 
         {/* Team section - mirrors main team grid */}
         <section className="py-20 bg-white">

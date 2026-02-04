@@ -7,6 +7,7 @@ import Footer from "@/components/footer"
 import Image from "next/image"
 import { CheckCircle } from "lucide-react"
 import FounderSection from "@/components/founder-section"
+import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom"
 import { usePublicContent } from "@/context/public-content-context"
 
 export default function About() {
@@ -118,6 +119,20 @@ export default function About() {
         </div>
       </section>
       <FounderSection />
+      
+      {/* Success Stories */}
+      {about.successStories && about.successStories.length > 0 && (
+        <TestimonialsCustom
+          testimonials={about.successStories.map((ss) => ({
+            name: ss.name,
+            role: ss.program,
+            content: ss.quote,
+          }))}
+          title="Success Stories"
+          subtitle="Hear from our satisfied clients about their transformative journeys"
+        />
+      )}
+
       {/* Team */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

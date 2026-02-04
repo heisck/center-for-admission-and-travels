@@ -56,6 +56,12 @@ export interface AdminContent {
       image: string
       description: string
     }>
+    successStories: Array<{
+      id?: string
+      name: string
+      program: string
+      quote: string
+    }>
   }
   packages: Array<{
     id: string
@@ -281,6 +287,23 @@ const defaultContent: AdminContent = {
         role: 'Administrative & Front Desk Officer',
         image: '/images/team3.jpg',
         description: 'Esther Adjei Konamah ensures the smooth daily operation of our office. As the Administrative and Front Desk Officer, she warmly welcomes clients, manages enquiries, organizes appointments, and maintains efficient office systems.',
+      },
+    ],
+    successStories: [
+      {
+        name: 'Ama Boateng',
+        program: 'Computer Science at Oxford University',
+        quote: 'CFAAT made my dream of studying at Oxford a reality. Their guidance was invaluable throughout the entire process.',
+      },
+      {
+        name: 'Kwame Mensah',
+        program: 'Medicine at Cambridge University',
+        quote: 'From application to visa approval, CFAAT was with me every step. I highly recommend their services to anyone serious about studying abroad.',
+      },
+      {
+        name: 'Abena Osei',
+        program: 'Business Administration at Harvard University',
+        quote: 'The team at CFAAT understood my goals and matched me with the perfect university. Life-changing experience!',
       },
     ],
   },
