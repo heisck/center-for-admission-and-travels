@@ -131,6 +131,20 @@ export default function TravelTours() {
                     {expandedPackage === pkg.id ? "Hide Details" : "View Details"}
                   </button>
 
+                  {expandedPackage === pkg.id && (
+                    <div className="mt-6 pt-6 border-t border-border animate-fade-in mb-6">
+                      <h4 className="font-bold text-foreground mb-3">All Highlights</h4>
+                      <div className="space-y-2">
+                        {pkg.highlights?.map((h, i) => (
+                          <div key={i} className="flex items-start space-x-2 text-sm">
+                            <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                            <span className="text-foreground">{h}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <Link
                     href={`/checkout?id=${pkg.id}`}
                     className="w-full inline-block px-4 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold hover:shadow-lg transition"
