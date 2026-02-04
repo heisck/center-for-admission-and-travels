@@ -8,10 +8,21 @@ import {
   EditableTextareaWrapper,
 } from '@/components/admin/editable-content'
 import Footer from '@/components/footer'
+import Masonry from '@/components/Masonry'
+import { ImageEditor } from '@/components/admin/image-editor'
 
 export default function AdminHomePage() {
-  const { content, updateHomeHero, updateServices } = useAdmin()
+  const { content, updateHomeHero, updateServices, updateHomeHeroImages } = useAdmin()
   const { hero, services } = content.home
+  
+  // Convert images to Masonry items format
+  const heroImages = hero.images || []
+  const masonryItems = heroImages.map((img, index) => ({
+    id: String(index + 1),
+    img: img,
+    url: "#",
+    height: [400, 350, 400, 600, 300][index % 5] || 400,
+  }))
 
   return (
     <>
@@ -87,11 +98,36 @@ export default function AdminHomePage() {
                 </div>
               </div>
 
-              {/* Visual placeholder to mirror hero imagery area */}
-              <div className="relative h-72 md:h-96 rounded-2xl bg-slate-200 border border-dashed border-slate-400 flex items-center justify-center text-slate-500 text-sm text-center px-4">
-                Hero imagery & Masonry-style visuals appear here on the live site.
-                <br />
-                (Design-only area – content is managed separately.)
+              {/* Masonry Animation - mirrors main page exactly */}
+              <div className="relative h-full">
+                <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden">
+                  {masonryItems.length > 0 ? (
+                    <Masonry
+                      items={masonryItems}
+                      ease="power3.out"
+                      duration={0.6}
+                      stagger={0.05}
+                      animateFrom="bottom"
+                      scaleOnHover={true}
+                      hoverScale={0.95}
+                      blurToFocus={true}
+                      colorShiftOnHover={true}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-200 border-2 border-dashed border-slate-400 flex items-center justify-center text-slate-500 text-sm text-center px-4">
+                      No images yet. Add images below to see the animation.
+                    </div>
+                  )}
+                </div>
+                {/* Image Editor for Masonry */}
+                <div className="mt-4 p-4 bg-white rounded-lg border border-border">
+                  <ImageEditor
+                    images={heroImages}
+                    onChange={updateHomeHeroImages}
+                    maxImages={10}
+                    label="Hero Gallery Images (for Masonry Animation)"
+                  />
+                </div>
               </div>
             </div>
           </div>

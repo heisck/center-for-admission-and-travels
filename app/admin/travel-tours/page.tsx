@@ -11,11 +11,15 @@ import {
   EditableTextareaWrapper,
   EditableListWrapper,
 } from '@/components/admin/editable-content'
+import DomeGallery from '@/app/travel-tours/DomeGallery'
+import { ImageEditor } from '@/components/admin/image-editor'
 
 export default function AdminTravelToursPage() {
-  const { content, updateTravelToursHero, updateTravelToursFeatured, updateTravelToursBenefits } = useAdmin()
+  const { content, updateTravelToursHero, updateTravelToursFeatured, updateTravelToursBenefits, updateTravelToursGalleryImages } = useAdmin()
   const { travelTours } = content
   const [expandedPackage, setExpandedPackage] = useState<string | null>(null)
+  
+  const galleryImages = travelTours.galleryImages || []
 
   const handleFeaturedUpdate = (idx: number, field: string, value: any) => {
     const newFeatured = [...travelTours.featured]
@@ -48,15 +52,26 @@ export default function AdminTravelToursPage() {
       <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-            <div className="relative h-80 rounded-2xl overflow-hidden bg-slate-200">
-              <EditableImage
-                src={travelTours.hero.image}
-                alt="Travel hero"
-                onChange={(value) => updateTravelToursHero({ image: value })}
-                fill
-                className="rounded-2xl"
-                objectFit="cover"
-              />
+            {/* DomeGallery Animation - mirrors main page exactly */}
+            <div className="relative">
+              <div className="relative h-80 rounded-2xl overflow-hidden">
+                {galleryImages.length > 0 ? (
+                  <DomeGallery images={galleryImages.map(img => ({ src: img, alt: '' }))} />
+                ) : (
+                  <div className="w-full h-full bg-slate-200 border-2 border-dashed border-slate-400 flex items-center justify-center text-slate-500 text-sm text-center px-4">
+                    No images yet. Add images below to see the animation.
+                  </div>
+                )}
+              </div>
+              {/* Image Editor for DomeGallery */}
+              <div className="mt-4 p-4 bg-white rounded-lg border border-border">
+                <ImageEditor
+                  images={galleryImages}
+                  onChange={updateTravelToursGalleryImages}
+                  maxImages={20}
+                  label="Gallery Images (for Dome Animation)"
+                />
+              </div>
             </div>
 
             <div>

@@ -102,12 +102,14 @@ export async function GET(
               include: { highlights: { orderBy: { order: 'asc' } } },
             },
             benefits: { orderBy: { order: 'asc' } },
+            galleryImages: { orderBy: { order: 'asc' } },
           },
         })
         data = {
           hero: travelToursPage,
           featured: travelToursPage?.featuredPackages || [],
           benefits: travelToursPage?.benefits || [],
+          galleryImages: travelToursPage?.galleryImages.map((img) => img.url) || [],
         }
         break
       }
@@ -267,6 +269,10 @@ export async function PUT(
         if (body.benefits) {
           // Update benefits
           await contentHelpers.updateTravelToursBenefits(body.benefits)
+        }
+        if (body.galleryImages && Array.isArray(body.galleryImages)) {
+          // Update gallery images
+          await contentHelpers.updateTravelToursGalleryImages(body.galleryImages)
         }
         break
       case 'service-pages':

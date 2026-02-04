@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Trash2, Plus, Upload, ImageIcon, X, Check } from 'lucide-react'
+import { Trash2, Plus, Upload, ImageIcon, X, Check, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 interface ImageEditorProps {
   images: string[]
@@ -19,10 +20,11 @@ export function ImageEditor({
 }: ImageEditorProps) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
 
-  const handleFileSelect = (files: FileList | null) => {
+  const handleFileSelect = async (files: FileList | null) => {
     if (!files) return
 
     const filesArray = Array.from(files)
@@ -32,31 +34,74 @@ export function ImageEditor({
 
     if (filesToProcess.length === 0) {
       if (filesArray.length > 0) {
-        alert('Please select image files only')
+        toast.error('Please select image files only')
       }
       return
     }
 
-    const newImages: string[] = []
-    let loadedCount = 0
+    setIsUploading(true)
 
-    filesToProcess.forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        newImages.push(result)
-        loadedCount++
-        
-        if (loadedCount === filesToProcess.length) {
-          onChange([...images, ...newImages])
-          setShowAddForm(false)
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ''
+    try {
+      // Upload each file to Cloudinary
+      const uploadPromises = filesToProcess.map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'center-for-admission-and-travels')
+
+        try {
+          const response = await fetch('/api/admin/images/upload', {
+            method: 'POST',
+            body: formData,
+          })
+          const result = await response.json()
+          if (result.success) {
+            return result.url
+          } else {
+            throw new Error(result.error || 'Upload failed')
           }
+        } catch (error: any) {
+          console.error('Upload error:', error)
+          toast.error(`Failed to upload ${file.name}: ${error.message}`)
+          return null
+        }
+      })
+
+      const uploadedUrls = await Promise.all(uploadPromises)
+      const validUrls = uploadedUrls.filter((url): url is string => url !== null)
+      
+      if (validUrls.length > 0) {
+        onChange([...images, ...validUrls])
+        toast.success(`Successfully uploaded ${validUrls.length} image(s)`)
+        setShowAddForm(false)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
         }
       }
-      reader.readAsDataURL(file)
-    })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+  
+  const handleRemoveImage = async (index: number) => {
+    const imageToRemove = images[index]
+    
+    // If it's a Cloudinary URL, delete it from Cloudinary
+    if (imageToRemove && imageToRemove.includes('cloudinary.com')) {
+      try {
+        const response = await fetch(`/api/admin/images/delete?url=${encodeURIComponent(imageToRemove)}`, {
+          method: 'DELETE',
+        })
+        const result = await response.json()
+        if (!result.success) {
+          console.warn('Failed to delete from Cloudinary:', result.error)
+        }
+      } catch (error) {
+        console.error('Delete error:', error)
+      }
+    }
+    
+    onChange(images.filter((_, i) => i !== index))
+    toast.success('Image removed')
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -78,9 +123,6 @@ export function ImageEditor({
     handleFileSelect(e.dataTransfer.files)
   }
 
-  const handleRemoveImage = (index: number) => {
-    onChange(images.filter((_, i) => i !== index))
-  }
 
 
   return (
@@ -122,7 +164,8 @@ export function ImageEditor({
               {/* Remove Button */}
               <button
                 onClick={() => handleRemoveImage(idx)}
-                className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-lg opacity-0 group-hover:opacity-100"
+                disabled={isUploading}
+                className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-lg opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Remove"
               >
                 <X size={14} />
@@ -155,13 +198,17 @@ export function ImageEditor({
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="flex flex-col items-center gap-2">
-              <Upload size={32} className="text-primary" />
+              {isUploading ? (
+                <Loader2 size={32} className="text-primary animate-spin" />
+              ) : (
+                <Upload size={32} className="text-primary" />
+              )}
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  Drag & drop images here or click to browse
+                  {isUploading ? 'Uploading...' : 'Drag & drop images here or click to browse'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Supported: JPG, PNG, GIF, WebP
+                  {isUploading ? 'Please wait' : 'Supported: JPG, PNG, GIF, WebP • Max 10MB per image'}
                 </p>
               </div>
             </div>

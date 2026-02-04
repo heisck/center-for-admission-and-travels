@@ -29,6 +29,7 @@ export default function TravelTours() {
   const travelTours = content?.travelTours
   const featuredPackages = travelTours?.featured || []
   const benefits = travelTours?.benefits || []
+  const galleryImages = travelTours?.galleryImages || []
 
   return (
     <main className="min-h-screen bg-background">
@@ -39,7 +40,7 @@ export default function TravelTours() {
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
             <div className="relative h-80 rounded-2xl overflow-hidden ">
               <div style={{ width: '100%', height: '100%' }}>
-                <DomeGallery />
+                <DomeGallery images={galleryImages.length > 0 ? galleryImages.map(img => ({ src: img, alt: '' })) : undefined} />
               </div>
               {/* <Image
                 src="/images/travel.jpg"

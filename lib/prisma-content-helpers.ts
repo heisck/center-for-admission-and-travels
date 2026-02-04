@@ -448,6 +448,35 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
   }
 }
 
+export async function updateTravelToursGalleryImages(images: string[]) {
+  const page = await prisma.travelToursPage.findUnique({
+    where: { id: 'travel-tours' },
+  })
+  if (!page) {
+    await prisma.travelToursPage.create({
+      data: {
+        id: 'travel-tours',
+        heroTitle: '',
+        heroDescription: '',
+        heroParagraph: '',
+        heroImageUrl: '',
+      },
+    })
+  }
+
+  // Delete existing gallery images
+  await prisma.travelToursGalleryImage.deleteMany({ where: { pageId: 'travel-tours' } })
+
+  // Create new gallery images
+  await prisma.travelToursGalleryImage.createMany({
+    data: images.map((url, index) => ({
+      pageId: 'travel-tours',
+      url,
+      order: index,
+    })),
+  })
+}
+
 export async function updateTravelToursBenefits(benefits: Array<{
   id?: string
   title: string

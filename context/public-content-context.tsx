@@ -98,6 +98,7 @@ export interface PublicContent {
       title: string
       description: string
     }>
+    galleryImages: string[] // Images for DomeGallery animation
   }
   contact: {
     phone: string

@@ -56,6 +56,7 @@ export async function GET() {
             include: { highlights: { orderBy: { order: 'asc' } } },
           },
           benefits: { orderBy: { order: 'asc' } },
+          galleryImages: { orderBy: { order: 'asc' } },
         },
       }),
       // Contact Info
@@ -174,6 +175,7 @@ export async function GET() {
           title: b.title,
           description: b.description,
         })) || [],
+        galleryImages: travelToursPage?.galleryImages.map((img) => img.url) || [],
       },
       contact: {
         phone: contactInfo?.phone || '',

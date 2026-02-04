@@ -383,8 +383,23 @@ model TravelToursPage {
 
   featuredPackages TravelToursFeaturedPackage[]
   benefits         TravelToursBenefit[]
+  galleryImages    TravelToursGalleryImage[] // Images for DomeGallery animation
 
   @@map("travel_tours_page")
+}
+
+model TravelToursGalleryImage {
+  id          String   @id @default(cuid())
+  pageId      String
+  url         String   // Cloudinary URL
+  alt         String?  @default("")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  page        TravelToursPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@map("travel_tours_gallery_images")
 }
 
 model TravelToursFeaturedPackage {

@@ -95,6 +95,7 @@ export interface AdminContent {
       title: string
       description: string
     }>
+    galleryImages: string[] // Images for DomeGallery animation
   }
   contact: {
     phone: string
@@ -168,6 +169,8 @@ interface AdminContextType {
   updateTravelToursHero: (updates: Partial<AdminContent['travelTours']['hero']>) => void
   updateTravelToursFeatured: (featured: AdminContent['travelTours']['featured']) => void
   updateTravelToursBenefits: (benefits: AdminContent['travelTours']['benefits']) => void
+  updateTravelToursGalleryImages: (images: string[]) => void
+  updateHomeHeroImages: (images: string[]) => void
   updateContact: (updates: Partial<AdminContent['contact']>) => void
   updateFooter: (updates: Partial<AdminContent['footer']>) => void
   updateServicePage: (serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => void
@@ -315,7 +318,7 @@ const defaultContent: AdminContent = {
   },
   packages: [
     {
-      id: 1,
+      id: '1',
       name: 'Dubai Experience',
       category: 'travel',
       duration: '6 Days / 5 Nights',
@@ -335,7 +338,7 @@ const defaultContent: AdminContent = {
       notIncluded: ['International flights', 'Visa', 'Personal expenses'],
     },
     {
-      id: 2,
+      id: '2',
       name: 'Europe Multi-City',
       category: 'travel',
       duration: '10 Days / 9 Nights',
@@ -479,6 +482,7 @@ const defaultContent: AdminContent = {
         description: 'Easy modification and cancellation policies for your peace of mind',
       },
     ],
+    galleryImages: [], // Images for DomeGallery animation
   },
   contact: {
     phone: '+233 248 422 663',
@@ -967,6 +971,57 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [content, updateHistory])
 
+  const updateTravelToursGalleryImages = useCallback(async (images: string[]) => {
+    // Optimistic update
+    const newContent = {
+      ...content,
+      travelTours: { ...content.travelTours, galleryImages: images },
+    }
+    updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/travel-tours', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ galleryImages: images }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save travel tours gallery images:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing travel tours gallery images:', error)
+    }
+  }, [content, updateHistory])
+
+  const updateHomeHeroImages = useCallback(async (images: string[]) => {
+    // Optimistic update
+    const newContent = {
+      ...content,
+      home: {
+        ...content.home,
+        hero: { ...content.home.hero, images },
+      },
+    }
+    updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/home', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hero: { ...content.home.hero, images } }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save home hero images:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing home hero images:', error)
+    }
+  }, [content, updateHistory])
+
   const undo = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1
@@ -1088,6 +1143,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         updateTravelToursHero,
         updateTravelToursFeatured,
         updateTravelToursBenefits,
+        updateTravelToursGalleryImages,
+        updateHomeHeroImages,
         updateContact,
         updateFooter,
         updateServicePage,
