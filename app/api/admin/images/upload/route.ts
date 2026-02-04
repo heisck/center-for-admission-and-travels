@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth-helpers'
-import { uploadImage, validateImageFile } from '@/lib/cloudinary'
+import { uploadImage, validateImageFile, isCloudinaryConfigured, extractPublicId } from '@/lib/cloudinary'
 
 // POST /api/admin/images/upload
 export async function POST(request: NextRequest) {
@@ -29,6 +29,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if Cloudinary is configured
+    if (!isCloudinaryConfigured()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file.',
+        },
+        { status: 500 }
+      )
+    }
+
     // Validate file
     const validation = validateImageFile(file)
     if (!validation.valid) {
@@ -42,8 +54,7 @@ export async function POST(request: NextRequest) {
     const url = await uploadImage(file, folder || undefined)
     
     // Extract public ID from URL
-    const publicIdMatch = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/)
-    const publicId = publicIdMatch ? publicIdMatch[1] : null
+    const publicId = extractPublicId(url)
 
     return NextResponse.json({
       success: true,

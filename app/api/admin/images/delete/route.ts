@@ -29,13 +29,30 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const idToDelete = publicId || extractPublicId(url!) || url
+    // Extract public ID from URL if provided
+    let idToDelete = publicId
+    if (!idToDelete && url) {
+      idToDelete = extractPublicId(url)
+    }
+
+    // If still no public ID, try using the URL as-is (might be a public ID already)
+    if (!idToDelete) {
+      idToDelete = url || publicId || ''
+    }
 
     if (!idToDelete) {
       return NextResponse.json(
         { success: false, error: 'Invalid URL or publicId' },
         { status: 400 }
       )
+    }
+
+    // If it's not a Cloudinary URL, we can't delete it
+    if (url && !url.includes('cloudinary.com')) {
+      return NextResponse.json({
+        success: true,
+        message: 'Image is not stored in Cloudinary, skipping deletion',
+      })
     }
 
     const success = await deleteImage(idToDelete)

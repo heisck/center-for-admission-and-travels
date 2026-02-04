@@ -6,13 +6,44 @@
 
 import { v2 as cloudinary } from 'cloudinary'
 
+// Validate Cloudinary configuration
+function validateCloudinaryConfig() {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+  const apiKey = process.env.CLOUDINARY_API_KEY
+  const apiSecret = process.env.CLOUDINARY_API_SECRET
+
+  if (!cloudName || cloudName === 'your_cloud_name') {
+    console.warn('⚠️ CLOUDINARY_CLOUD_NAME is not set or is using default value')
+  }
+  if (!apiKey) {
+    console.warn('⚠️ CLOUDINARY_API_KEY is not set')
+  }
+  if (!apiSecret) {
+    console.warn('⚠️ CLOUDINARY_API_SECRET is not set')
+  }
+
+  return {
+    cloudName: cloudName || 'your_cloud_name',
+    apiKey: apiKey || '',
+    apiSecret: apiSecret || '',
+    isValid: !!(cloudName && cloudName !== 'your_cloud_name' && apiKey && apiSecret),
+  }
+}
+
+const config = validateCloudinaryConfig()
+
 // Configure Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name',
-  api_key: process.env.CLOUDINARY_API_KEY || '',
-  api_secret: process.env.CLOUDINARY_API_SECRET || '',
+  cloud_name: config.cloudName,
+  api_key: config.apiKey,
+  api_secret: config.apiSecret,
   secure: true,
 })
+
+// Export validation function
+export function isCloudinaryConfigured(): boolean {
+  return config.isValid
+}
 
 /**
  * Upload image to Cloudinary
@@ -25,33 +56,56 @@ export async function uploadImage(
   file: File | string,
   folder?: string
 ): Promise<string> {
+  if (!isCloudinaryConfigured()) {
+    throw new Error(
+      'Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file.'
+    )
+  }
+
   try {
-    let uploadOptions: any = {
-      resource_type: 'image' as const,
-      folder: folder || 'center-for-admission-and-travels',
+    const uploadOptions: {
+      folder?: string
+      resource_type: 'image'
+      use_filename?: boolean
+      unique_filename?: boolean
+      overwrite?: boolean
+    } = {
+      resource_type: 'image',
+      use_filename: true,
+      unique_filename: true,
+      overwrite: false,
     }
 
-    if (typeof file === 'string') {
-      // Base64 string
-      uploadOptions.data_uri = file
+    if (folder) {
+      uploadOptions.folder = folder
     } else {
-      // File object - convert to base64
+      uploadOptions.folder = 'center-for-admission-and-travels'
+    }
+
+    let result
+
+    if (typeof file === 'string') {
+      // Base64 string or data URI
+      if (file.startsWith('data:')) {
+        result = await cloudinary.uploader.upload(file, uploadOptions)
+      } else {
+        // Assume it's base64 without data URI prefix
+        const dataUri = `data:image/jpeg;base64,${file}`
+        result = await cloudinary.uploader.upload(dataUri, uploadOptions)
+      }
+    } else {
+      // File object - convert to base64 data URI
       const arrayBuffer = await file.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
       const base64 = buffer.toString('base64')
       const dataUri = `data:${file.type};base64,${base64}`
-      uploadOptions.data_uri = dataUri
+      result = await cloudinary.uploader.upload(dataUri, uploadOptions)
     }
-
-    const result = await cloudinary.uploader.upload(uploadOptions.data_uri, {
-      folder: uploadOptions.folder,
-      resource_type: 'image',
-    })
 
     return result.secure_url
   } catch (error: any) {
     console.error('Cloudinary upload error:', error)
-    throw new Error(`Failed to upload image: ${error.message}`)
+    throw new Error(`Failed to upload image: ${error.message || 'Unknown error'}`)
   }
 }
 
@@ -62,6 +116,11 @@ export async function uploadImage(
  * @returns Success status
  */
 export async function deleteImage(publicId: string): Promise<boolean> {
+  if (!isCloudinaryConfigured()) {
+    console.warn('Cloudinary is not configured. Skipping deletion.')
+    return false
+  }
+
   try {
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: 'image',
@@ -99,9 +158,46 @@ export async function replaceImage(
  * @returns Public ID or null
  */
 export function extractPublicId(url: string): string | null {
-  // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/image/upload/{transformations}/{public_id}.{format}
-  const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/)
-  return match ? match[1] : null
+  if (!url || !url.includes('cloudinary.com')) {
+    return null
+  }
+
+  try {
+    // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/image/upload/{transformations}/{public_id}.{format}
+    // Handle URLs with or without transformations
+    // Example: https://res.cloudinary.com/demo/image/upload/v1234567890/folder/image.jpg
+    // Example: https://res.cloudinary.com/demo/image/upload/w_500,h_500/folder/image.jpg
+    // Example: https://res.cloudinary.com/demo/image/upload/folder/image.jpg
+    
+    const urlObj = new URL(url)
+    const pathParts = urlObj.pathname.split('/')
+    
+    // Find the index of 'upload' in the path
+    const uploadIndex = pathParts.indexOf('upload')
+    if (uploadIndex === -1) {
+      return null
+    }
+    
+    // Everything after 'upload' is the path (may include version and transformations)
+    // Extract the public_id part (everything after upload, excluding version if present)
+    const afterUpload = pathParts.slice(uploadIndex + 1)
+    
+    // Remove version if present (v1234567890)
+    if (afterUpload.length > 0 && afterUpload[0].startsWith('v') && /^v\d+$/.test(afterUpload[0])) {
+      afterUpload.shift()
+    }
+    
+    // Join remaining parts to get public_id
+    const publicId = afterUpload.join('/')
+    
+    // Remove file extension if present
+    return publicId.replace(/\.[^.]+$/, '')
+  } catch (error) {
+    console.error('Error extracting public ID:', error)
+    // Fallback to regex
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/)
+    return match ? match[1] : null
+  }
 }
 
 /**

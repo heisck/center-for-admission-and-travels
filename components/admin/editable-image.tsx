@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Edit2, Trash2, Upload } from 'lucide-react'
 import { SingleImageUpload } from './single-image-upload'
+import { toast } from 'sonner'
 
 interface EditableImageProps {
   src: string
@@ -16,6 +17,7 @@ interface EditableImageProps {
   height?: number
   objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down'
   objectPosition?: string
+  folder?: string // Optional Cloudinary folder
 }
 
 export function EditableImage({
@@ -29,9 +31,40 @@ export function EditableImage({
   height,
   objectFit = 'cover',
   objectPosition = 'center',
+  folder,
 }: EditableImageProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+
+  const handleDelete = async () => {
+    // If image is a Cloudinary URL, delete it from Cloudinary
+    if (src && src.includes('cloudinary.com')) {
+      try {
+        const response = await fetch(`/api/admin/images/delete?url=${encodeURIComponent(src)}`, {
+          method: 'DELETE',
+        })
+        const result = await response.json()
+        if (!result.success) {
+          console.warn('Failed to delete from Cloudinary:', result.error)
+          toast.error('Failed to delete image from Cloudinary')
+          return
+        }
+        toast.success('Image deleted from Cloudinary')
+      } catch (error) {
+        console.error('Delete error:', error)
+        toast.error('Failed to delete image')
+        return
+      }
+    }
+
+    // Call the onDelete callback if provided
+    if (onDelete) {
+      onDelete()
+    } else {
+      // Otherwise, just clear the image
+      onChange('')
+    }
+  }
 
   if (isEditing) {
     return (
@@ -43,6 +76,7 @@ export function EditableImage({
             setIsEditing(false)
           }}
           onCancel={() => setIsEditing(false)}
+          folder={folder}
         />
       </div>
     )
@@ -93,9 +127,9 @@ export function EditableImage({
           >
             <Edit2 size={20} className="text-primary" />
           </button>
-          {onDelete && (
+          {(onDelete || src) && (
             <button
-              onClick={onDelete}
+              onClick={handleDelete}
               className="p-2 bg-white rounded-lg hover:bg-red-50 transition shadow-lg"
               title="Delete image"
             >
