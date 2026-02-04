@@ -33,16 +33,17 @@ async function main() {
   })
 
   // Home Stats
+  await prisma.homeStat.deleteMany({ where: { homePageId: homePage.id } })
   await prisma.homeStat.createMany({
     data: [
       { homePageId: homePage.id, value: '50+', label: 'Success Stories', order: 0 },
       { homePageId: homePage.id, value: '15+', label: 'Destinations', order: 1 },
       { homePageId: homePage.id, value: '100%', label: 'Satisfaction', order: 2 },
     ],
-    skipDuplicates: true,
   })
 
   // Home Services
+  await prisma.homeService.deleteMany({ where: { homePageId: homePage.id } })
   await prisma.homeService.createMany({
     data: [
       {
@@ -74,7 +75,6 @@ async function main() {
         order: 3,
       },
     ],
-    skipDuplicates: true,
   })
 
   // ============================================================================
