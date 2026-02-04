@@ -13,7 +13,7 @@ import {
 } from '@/components/admin/editable-content'
 
 export default function AdminTravelToursPage() {
-  const { content, updateTravelToursHero, updateTravelToursFeatured } = useAdmin()
+  const { content, updateTravelToursHero, updateTravelToursFeatured, updateTravelToursBenefits } = useAdmin()
   const { travelTours } = content
   const [expandedPackage, setExpandedPackage] = useState<string | null>(null)
 
@@ -255,37 +255,62 @@ export default function AdminTravelToursPage() {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: 'Expert Planning',
-                description: 'Our travel specialists design itineraries tailored to your preferences and budget',
-              },
-              {
-                title: '24/7 Support',
-                description: 'Round-the-clock customer service ensures help is always available during your journey',
-              },
-              {
-                title: 'Best Price Guarantee',
-                description: 'Competitive pricing with exclusive partnerships for exclusive travel deals',
-              },
-              {
-                title: 'Visa Assistance',
-                description: 'Complete visa documentation support and guidance for all destinations',
-              },
-              {
-                title: 'Travel Insurance',
-                description: 'Comprehensive travel insurance included to protect your investment',
-              },
-              {
-                title: 'Flexible Booking',
-                description: 'Easy modification and cancellation policies for your peace of mind',
-              },
-            ].map((benefit, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition">
-                <h3 className="text-lg font-bold text-primary mb-3">{benefit.title}</h3>
-                <p className="text-muted-foreground">{benefit.description}</p>
+            {travelTours.benefits?.map((benefit, idx) => (
+              <div key={benefit.id || idx} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition relative">
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to delete this benefit?')) {
+                      const newBenefits = travelTours.benefits.filter((_, i) => i !== idx)
+                      updateTravelToursBenefits(newBenefits)
+                    }
+                  }}
+                  className="absolute top-4 right-4 p-1 text-red-500 hover:text-red-700 transition"
+                  title="Delete benefit"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <EditableTextWrapper
+                  value={benefit.title}
+                  onChange={(value) => {
+                    const newBenefits = [...travelTours.benefits]
+                    newBenefits[idx] = { ...newBenefits[idx], title: value }
+                    updateTravelToursBenefits(newBenefits)
+                  }}
+                  variant="title"
+                  className="text-lg font-bold text-primary mb-3 pr-8"
+                />
+                <EditableTextareaWrapper
+                  value={benefit.description}
+                  onChange={(value) => {
+                    const newBenefits = [...travelTours.benefits]
+                    newBenefits[idx] = { ...newBenefits[idx], description: value }
+                    updateTravelToursBenefits(newBenefits)
+                  }}
+                  rows={2}
+                  className="text-muted-foreground"
+                />
               </div>
             ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => {
+                const newBenefits = [
+                  ...travelTours.benefits,
+                  {
+                    id: Date.now().toString(),
+                    title: 'New Benefit',
+                    description: 'Benefit description',
+                  },
+                ]
+                updateTravelToursBenefits(newBenefits)
+              }}
+              className="px-4 py-2 border border-primary text-primary rounded-lg text-sm font-semibold hover:bg-primary hover:text-white transition flex items-center gap-2 mx-auto"
+            >
+              <Plus className="w-4 h-4" />
+              Add Benefit
+            </button>
           </div>
         </div>
       </section>

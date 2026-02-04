@@ -90,6 +90,11 @@ export interface AdminContent {
       image: string
       highlights: string[]
     }>
+    benefits: Array<{
+      id: string
+      title: string
+      description: string
+    }>
   }
   contact: {
     phone: string
@@ -162,6 +167,7 @@ interface AdminContextType {
   updateTravelTours: (updates: Partial<AdminContent['travelTours']>) => void
   updateTravelToursHero: (updates: Partial<AdminContent['travelTours']['hero']>) => void
   updateTravelToursFeatured: (featured: AdminContent['travelTours']['featured']) => void
+  updateTravelToursBenefits: (benefits: AdminContent['travelTours']['benefits']) => void
   updateContact: (updates: Partial<AdminContent['contact']>) => void
   updateFooter: (updates: Partial<AdminContent['footer']>) => void
   updateServicePage: (serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => void
@@ -439,6 +445,38 @@ const defaultContent: AdminContent = {
         price: 799,
         image: '/asia-tropical-beaches-thailand-temples.jpg',
         highlights: ['Thailand', 'Singapore', 'Malaysia', 'City Tours', 'Tropical Islands'],
+      },
+    ],
+    benefits: [
+      {
+        id: '1',
+        title: 'Expert Planning',
+        description: 'Our travel specialists design itineraries tailored to your preferences and budget',
+      },
+      {
+        id: '2',
+        title: '24/7 Support',
+        description: 'Round-the-clock customer service ensures help is always available during your journey',
+      },
+      {
+        id: '3',
+        title: 'Best Price Guarantee',
+        description: 'Competitive pricing with exclusive partnerships for exclusive travel deals',
+      },
+      {
+        id: '4',
+        title: 'Visa Assistance',
+        description: 'Complete visa documentation support and guidance for all destinations',
+      },
+      {
+        id: '5',
+        title: 'Travel Insurance',
+        description: 'Comprehensive travel insurance included to protect your investment',
+      },
+      {
+        id: '6',
+        title: 'Flexible Booking',
+        description: 'Easy modification and cancellation policies for your peace of mind',
       },
     ],
   },
@@ -905,6 +943,30 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [content, updateHistory])
 
+  const updateTravelToursBenefits = useCallback(async (benefits: AdminContent['travelTours']['benefits']) => {
+    // Optimistic update
+    const newContent = {
+      ...content,
+      travelTours: { ...content.travelTours, benefits },
+    }
+    updateHistory(newContent)
+
+    // Sync to database
+    try {
+      const response = await fetch('/api/admin/content/travel-tours', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ benefits }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save travel tours benefits:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing travel tours benefits:', error)
+    }
+  }, [content, updateHistory])
+
   const undo = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1
@@ -1025,6 +1087,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         updateTravelTours,
         updateTravelToursHero,
         updateTravelToursFeatured,
+        updateTravelToursBenefits,
         updateContact,
         updateFooter,
         updateServicePage,

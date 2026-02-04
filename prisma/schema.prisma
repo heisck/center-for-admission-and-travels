@@ -382,6 +382,7 @@ model TravelToursPage {
   updatedAt   DateTime @updatedAt
 
   featuredPackages TravelToursFeaturedPackage[]
+  benefits         TravelToursBenefit[]
 
   @@map("travel_tours_page")
 }
@@ -415,6 +416,20 @@ model TravelToursHighlight {
 
   @@index([packageId])
   @@map("travel_tours_highlights")
+}
+
+model TravelToursBenefit {
+  id        String   @id @default(cuid())
+  pageId    String
+  title     String
+  description String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  page      TravelToursPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@map("travel_tours_benefits")
 }
 
 // ============================================================================

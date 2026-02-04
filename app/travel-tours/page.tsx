@@ -28,6 +28,7 @@ export default function TravelTours() {
 
   const travelTours = content?.travelTours
   const featuredPackages = travelTours?.featured || []
+  const benefits = travelTours?.benefits || []
 
   return (
     <main className="min-h-screen bg-background">
@@ -152,33 +153,8 @@ export default function TravelTours() {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Expert Planning",
-                description: "Our travel specialists design itineraries tailored to your preferences and budget",
-              },
-              {
-                title: "24/7 Support",
-                description: "Round-the-clock customer service ensures help is always available during your journey",
-              },
-              {
-                title: "Best Price Guarantee",
-                description: "Competitive pricing with exclusive partnerships for exclusive travel deals",
-              },
-              {
-                title: "Visa Assistance",
-                description: "Complete visa documentation support and guidance for all destinations",
-              },
-              {
-                title: "Travel Insurance",
-                description: "Comprehensive travel insurance included to protect your investment",
-              },
-              {
-                title: "Flexible Booking",
-                description: "Easy modification and cancellation policies for your peace of mind",
-              },
-            ].map((benefit, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition">
+            {benefits.map((benefit) => (
+              <div key={benefit.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition">
                 <h3 className="text-lg font-bold text-primary mb-3">{benefit.title}</h3>
                 <p className="text-muted-foreground">{benefit.description}</p>
               </div>

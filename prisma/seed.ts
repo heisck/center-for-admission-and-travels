@@ -747,6 +747,201 @@ async function main() {
   })
 
   // ============================================================================
+  // TRAVEL TOURS PAGE
+  // ============================================================================
+
+  const travelToursPage = await prisma.travelToursPage.upsert({
+    where: { id: 'travel-tours' },
+    update: {
+      heroTitle: 'Travel & Tours',
+      heroDescription:
+        'Explore our carefully curated collection of travel experiences designed to create unforgettable memories. From exotic beaches to historic landmarks, cultural immersion to adventure activities, we offer comprehensive travel packages with full support.',
+      heroParagraph:
+        'Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication to ensure your journey is smooth, enjoyable, and hassle-free.',
+      heroImageUrl: '/images/travel.jpg',
+    },
+    create: {
+      id: 'travel-tours',
+      heroTitle: 'Travel & Tours',
+      heroDescription:
+        'Explore our carefully curated collection of travel experiences designed to create unforgettable memories. From exotic beaches to historic landmarks, cultural immersion to adventure activities, we offer comprehensive travel packages with full support.',
+      heroParagraph:
+        'Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication to ensure your journey is smooth, enjoyable, and hassle-free.',
+      heroImageUrl: '/images/travel.jpg',
+    },
+  })
+
+  // Delete existing packages and highlights before creating new ones
+  await prisma.travelToursHighlight.deleteMany({
+    where: { package: { pageId: travelToursPage.id } },
+  })
+  await prisma.travelToursFeaturedPackage.deleteMany({
+    where: { pageId: travelToursPage.id },
+  })
+
+  // Featured Packages
+  const dubaiPackage = await prisma.travelToursFeaturedPackage.create({
+    data: {
+      pageId: travelToursPage.id,
+      name: 'Dubai Experience',
+      description:
+        'Discover the perfect blend of ultramodern luxury and Arabian heritage in the City of Gold. Experience world-class attractions, pristine beaches, and authentic cultural experiences.',
+      duration: '6 Days / 5 Nights',
+      price: 1299,
+      imageUrl: '/dubai-burj-khalifa-city-skyline.jpg',
+      order: 0,
+      highlights: {
+        create: [
+          {
+            text: 'Burj Khalifa - World\'s tallest building with breathtaking city views',
+            order: 0,
+          },
+          {
+            text: 'Desert Safari - Thrilling dune adventure with camel ride and sunset',
+            order: 1,
+          },
+          {
+            text: 'Dhow Cruise Dinner - Traditional sailing experience along Dubai Marina',
+            order: 2,
+          },
+        ],
+      },
+    },
+  })
+
+  const europePackage = await prisma.travelToursFeaturedPackage.create({
+    data: {
+      pageId: travelToursPage.id,
+      name: 'Europe Multi-City',
+      description:
+        'Experience the charm and elegance of three iconic European cities. From Paris\'s romance to Amsterdam\'s canals to Rome\'s ancient history, create unforgettable memories across the continent.',
+      duration: '10 Days / 9 Nights',
+      price: 1899,
+      imageUrl: '/europe-paris-eiffel-tower-landmarks.jpg',
+      order: 1,
+      highlights: {
+        create: [
+          {
+            text: 'Paris - Eiffel Tower, Louvre Museum, and charming neighborhoods',
+            order: 0,
+          },
+          {
+            text: 'Amsterdam - Canal tours, Anne Frank House, and windmills',
+            order: 1,
+          },
+          {
+            text: 'Rome - Colosseum, Vatican City, and ancient ruins',
+            order: 2,
+          },
+        ],
+      },
+    },
+  })
+
+  const asiaPackage = await prisma.travelToursFeaturedPackage.create({
+    data: {
+      pageId: travelToursPage.id,
+      name: 'Asia Cultural Tour',
+      description:
+        'Immerse yourself in the vibrant colors, flavors, and cultures of Southeast Asia. Discover ancient temples, tropical islands, bustling markets, and warm hospitality across multiple countries.',
+      duration: '12 Days / 11 Nights',
+      price: 1499,
+      imageUrl: '/asia-tropical-beaches-thailand-temples.jpg',
+      order: 2,
+      highlights: {
+        create: [
+          {
+            text: 'Thailand - Bangkok temples and Phuket beaches',
+            order: 0,
+          },
+          {
+            text: 'Cambodia - Angkor Wat ancient temple complex',
+            order: 1,
+          },
+          {
+            text: 'Vietnam - Hanoi culture and Ha Long Bay cruise',
+            order: 2,
+          },
+        ],
+      },
+    },
+  })
+
+  const usaPackage = await prisma.travelToursFeaturedPackage.create({
+    data: {
+      pageId: travelToursPage.id,
+      name: 'USA City Explorer',
+      description:
+        'Explore the diversity and energy of America\'s most iconic cities. From New York\'s skyscrapers to the liberty and monuments of Washington, experience the American spirit and culture.',
+      duration: '8 Days / 7 Nights',
+      price: 1699,
+      imageUrl: '/statue-of-liberty-nyc.png',
+      order: 3,
+      highlights: {
+        create: [
+          {
+            text: 'New York - Times Square, Statue of Liberty, Broadway shows',
+            order: 0,
+          },
+          {
+            text: 'Washington DC - National museums and monuments',
+            order: 1,
+          },
+          {
+            text: 'Philadelphia - Historic Independence Hall and Liberty Bell',
+            order: 2,
+          },
+        ],
+      },
+    },
+  })
+
+  // Benefits
+  await prisma.travelToursBenefit.deleteMany({
+    where: { pageId: travelToursPage.id },
+  })
+  await prisma.travelToursBenefit.createMany({
+    data: [
+      {
+        pageId: travelToursPage.id,
+        title: 'Expert Planning',
+        description: 'Our travel specialists design itineraries tailored to your preferences and budget',
+        order: 0,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: '24/7 Support',
+        description: 'Round-the-clock customer service ensures help is always available during your journey',
+        order: 1,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Best Price Guarantee',
+        description: 'Competitive pricing with exclusive partnerships for exclusive travel deals',
+        order: 2,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Visa Assistance',
+        description: 'Complete visa documentation support and guidance for all destinations',
+        order: 3,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Travel Insurance',
+        description: 'Comprehensive travel insurance included to protect your investment',
+        order: 4,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Flexible Booking',
+        description: 'Easy modification and cancellation policies for your peace of mind',
+        order: 5,
+      },
+    ],
+  })
+
+  // ============================================================================
   // ADMIN USER (Default credentials)
   // ============================================================================
 

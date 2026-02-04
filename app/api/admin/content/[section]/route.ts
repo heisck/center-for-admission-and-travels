@@ -101,11 +101,13 @@ export async function GET(
               orderBy: { order: 'asc' },
               include: { highlights: { orderBy: { order: 'asc' } } },
             },
+            benefits: { orderBy: { order: 'asc' } },
           },
         })
         data = {
           hero: travelToursPage,
           featured: travelToursPage?.featuredPackages || [],
+          benefits: travelToursPage?.benefits || [],
         }
         break
       }
@@ -261,6 +263,10 @@ export async function PUT(
         if (body.featured) {
           // Update featured packages
           await contentHelpers.updateTravelToursFeaturedPackages(body.featured)
+        }
+        if (body.benefits) {
+          // Update benefits
+          await contentHelpers.updateTravelToursBenefits(body.benefits)
         }
         break
       case 'service-pages':

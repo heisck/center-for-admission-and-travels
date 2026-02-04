@@ -55,6 +55,7 @@ export async function GET() {
             orderBy: { order: 'asc' },
             include: { highlights: { orderBy: { order: 'asc' } } },
           },
+          benefits: { orderBy: { order: 'asc' } },
         },
       }),
       // Contact Info
@@ -167,6 +168,11 @@ export async function GET() {
           price: fp.price,
           image: fp.imageUrl,
           highlights: fp.highlights.map((h) => h.text),
+        })) || [],
+        benefits: travelToursPage?.benefits.map((b) => ({
+          id: b.id,
+          title: b.title,
+          description: b.description,
         })) || [],
       },
       contact: {

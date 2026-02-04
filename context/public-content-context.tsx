@@ -93,6 +93,11 @@ export interface PublicContent {
       image: string
       highlights: string[]
     }>
+    benefits: Array<{
+      id: string
+      title: string
+      description: string
+    }>
   }
   contact: {
     phone: string

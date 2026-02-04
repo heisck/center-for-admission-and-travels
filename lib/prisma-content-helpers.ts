@@ -448,6 +448,37 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
   }
 }
 
+export async function updateTravelToursBenefits(benefits: Array<{
+  id?: string
+  title: string
+  description: string
+}>) {
+  const page = await prisma.travelToursPage.findUnique({
+    where: { id: 'travel-tours' },
+  })
+
+  if (!page) {
+    await prisma.travelToursPage.create({
+      data: { id: 'travel-tours', heroTitle: '', heroDescription: '', heroParagraph: '', heroImageUrl: '' },
+    })
+  }
+
+  // Delete existing benefits
+  await prisma.travelToursBenefit.deleteMany({
+    where: { pageId: 'travel-tours' },
+  })
+
+  // Create new benefits
+  await prisma.travelToursBenefit.createMany({
+    data: benefits.map((b, index) => ({
+      pageId: 'travel-tours',
+      title: b.title,
+      description: b.description,
+      order: index,
+    })),
+  })
+}
+
 // ============================================================================
 // SERVICE PAGES
 // ============================================================================
