@@ -119,19 +119,6 @@ export default function About() {
         </div>
       </section>
       <FounderSection />
-      
-      {/* Success Stories */}
-      {about.successStories && about.successStories.length > 0 && (
-        <TestimonialsCustom
-          testimonials={about.successStories.map((ss) => ({
-            name: ss.name,
-            role: ss.program,
-            content: ss.quote,
-          }))}
-          title="Success Stories"
-          subtitle="Hear from our satisfied clients about their transformative journeys"
-        />
-      )}
 
       {/* Team */}
       <section className="py-20 bg-white">

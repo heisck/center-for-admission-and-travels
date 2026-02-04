@@ -108,26 +108,47 @@ export default function Footer() {
               © 2025 Center for Admission and Travels (CFAAT). All rights reserved.
             </p>
             <div className="flex space-x-4">
-              {footer?.socialLinks?.map((link, index) => {
-                const Icon = link.platform === 'Facebook' ? Facebook : link.platform === 'LinkedIn' ? Linkedin : Twitter
-                return (
-                  <a key={link.id || `${link.platform}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-primary transition">
-                    <Icon size={20} />
-                  </a>
-                )
-              }) || (
-                <>
-                  <a href="#" className="text-slate-400 hover:text-primary transition">
-                    <Facebook size={20} />
-                  </a>
-                  <a href="#" className="text-slate-400 hover:text-primary transition">
-                    <Linkedin size={20} />
-                  </a>
-                  <a href="#" className="text-slate-400 hover:text-primary transition">
-                    <Twitter size={20} />
-                  </a>
-                </>
-              )}
+              {(() => {
+                const links = footer?.socialLinks || []
+                // Ensure we only show one icon per platform even if the database has duplicates
+                const seen = new Set<string>()
+                const uniqueLinks = links.filter((link) => {
+                  if (seen.has(link.platform)) return false
+                  seen.add(link.platform)
+                  return true
+                })
+
+                if (uniqueLinks.length === 0) {
+                  return (
+                    <>
+                      <a href="#" className="text-slate-400 hover:text-primary transition">
+                        <Facebook size={20} />
+                      </a>
+                      <a href="#" className="text-slate-400 hover:text-primary transition">
+                        <Linkedin size={20} />
+                      </a>
+                      <a href="#" className="text-slate-400 hover:text-primary transition">
+                        <Twitter size={20} />
+                      </a>
+                    </>
+                  )
+                }
+
+                return uniqueLinks.map((link, index) => {
+                  const Icon = link.platform === 'Facebook' ? Facebook : link.platform === 'LinkedIn' ? Linkedin : Twitter
+                  return (
+                    <a
+                      key={link.id || `${link.platform}-${index}`}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-slate-400 hover:text-primary transition"
+                    >
+                      <Icon size={20} />
+                    </a>
+                  )
+                })
+              })()}
             </div>
           </div>
         </div>

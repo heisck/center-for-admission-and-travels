@@ -103,13 +103,13 @@ async function main() {
     },
   })
 
+  await prisma.aboutMissionPoint.deleteMany({ where: { missionId: mission.id } })
   await prisma.aboutMissionPoint.createMany({
     data: [
       { missionId: mission.id, text: 'Honest and transparent guidance', order: 0 },
       { missionId: mission.id, text: 'Professional expertise and care', order: 1 },
       { missionId: mission.id, text: 'Personalized attention for every client', order: 2 },
     ],
-    skipDuplicates: true,
   })
 
   // Vision
@@ -123,16 +123,17 @@ async function main() {
     },
   })
 
+  await prisma.aboutVisionPoint.deleteMany({ where: { visionId: vision.id } })
   await prisma.aboutVisionPoint.createMany({
     data: [
       { visionId: vision.id, text: 'Global network of partners', order: 0 },
       { visionId: vision.id, text: 'Technology-driven solutions', order: 1 },
       { visionId: vision.id, text: 'Inspiring international success', order: 2 },
     ],
-    skipDuplicates: true,
   })
 
   // Core Values
+  await prisma.aboutCoreValue.deleteMany({ where: { aboutPageId: aboutPage.id } })
   await prisma.aboutCoreValue.createMany({
     data: [
       {
@@ -172,7 +173,6 @@ async function main() {
         order: 5,
       },
     ],
-    skipDuplicates: true,
   })
 
   // Founder
@@ -285,6 +285,9 @@ async function main() {
       companyDescription: 'Unlocking global opportunities for education, work, and travel.',
     },
   })
+
+  // Reset social links so we don't accumulate duplicates when seeding multiple times
+  await prisma.footerSocialLink.deleteMany({ where: { footerInfoId: footerInfo.id } })
 
   await prisma.footerSocialLink.createMany({
     data: [
@@ -513,35 +516,35 @@ async function main() {
         servicePageId: workAbroadPage.id,
         name: 'United Kingdom',
         description: 'Skilled worker opportunities across healthcare, IT, education, and professional services',
-        imageUrl: '/images/work-uk.jpg',
+        imageUrl: '/united-kingdom-big-ben-london-university.jpg',
         order: 0,
       },
       {
         servicePageId: workAbroadPage.id,
         name: 'Canada',
         description: 'Pathways for permanent residency with high-quality working conditions and benefits',
-        imageUrl: '/images/work-canada.jpg',
+        imageUrl: '/canada-niagara-falls-toronto-city.jpg',
         order: 1,
       },
       {
         servicePageId: workAbroadPage.id,
         name: 'United States',
         description: 'Specialized roles in technology, healthcare, and research for qualified professionals',
-        imageUrl: '/images/work-usa.jpg',
+        imageUrl: '/statue-of-liberty-nyc.png',
         order: 2,
       },
       {
         servicePageId: workAbroadPage.id,
         name: 'Germany',
         description: 'Engineering, manufacturing, and technical roles in a strong and stable economy',
-        imageUrl: '/images/work-germany.jpg',
+        imageUrl: '/germany.jpg',
         order: 3,
       },
       {
         servicePageId: workAbroadPage.id,
         name: 'Middle East',
         description: 'Competitive salary packages in aviation, hospitality, construction, and corporate roles',
-        imageUrl: '/images/work-middle-east.jpg',
+        imageUrl: '/dubai-burj-khalifa-city-skyline.jpg',
         order: 4,
       },
     ],
@@ -593,6 +596,7 @@ async function main() {
   const globalNetworkPage = await prisma.servicePage.upsert({
     where: { serviceId: 'global-network' },
     update: {
+      heroImageUrl: '/images/thisshouldbeintegrated5.jpg',
       overview:
         "Our global network connects you to accredited universities, colleges, and trusted partners across the world. Whether you are seeking study, work, or travel opportunities, we leverage long-standing relationships to open the right doors for you.",
       visaGuidance:
@@ -604,7 +608,7 @@ async function main() {
       description: 'Partnerships with accredited universities, institutions, and verified employers worldwide',
       icon: 'Globe',
       route: '/global-network',
-      heroImageUrl: '/images/global-network.jpg',
+      heroImageUrl: '/images/thisshouldbeintegrated5.jpg',
       bannerTitle: 'Global Network',
       bannerSubtitle: 'Your gateway to trusted international partners and opportunities',
       overview:
@@ -673,28 +677,28 @@ async function main() {
         servicePageId: globalNetworkPage.id,
         name: 'United Kingdom & Europe',
         description: 'Partner universities and colleges offering pathways from foundation to postgraduate studies',
-        imageUrl: '/images/network-europe.jpg',
+        imageUrl: '/europe-paris-eiffel-tower-landmarks.jpg',
         order: 0,
       },
       {
         servicePageId: globalNetworkPage.id,
         name: 'North America',
         description: 'Collaborations with institutions in Canada and the United States for study and work options',
-        imageUrl: '/images/network-north-america.jpg',
+        imageUrl: '/statue-of-liberty-nyc.png',
         order: 1,
       },
       {
         servicePageId: globalNetworkPage.id,
         name: 'Asia & Middle East',
         description: 'Strategic partners in rapidly growing education and employment markets',
-        imageUrl: '/images/network-asia.jpg',
+        imageUrl: '/asia-tropical-beaches-thailand-temples.jpg',
         order: 2,
       },
       {
         servicePageId: globalNetworkPage.id,
         name: 'Africa',
         description: 'Regional alliances that support intra-African mobility for education and work',
-        imageUrl: '/images/network-africa.jpg',
+        imageUrl: '/images/integrate2.jpg',
         order: 3,
       },
     ],
