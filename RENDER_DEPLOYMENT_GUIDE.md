@@ -52,8 +52,10 @@ After creation, Render will show:
 
 **Build Command**:
 ```bash
-npm install && npx prisma generate && npm run build
+npm ci && npx prisma generate && npm run build
 ```
+
+**Note**: Use `npm ci` instead of `npm install` for production builds. It ensures exact dependency versions and installs both dependencies and devDependencies needed for the build.
 
 **Start Command**:
 ```bash
@@ -121,8 +123,10 @@ Update your `package.json` to include migration in build:
 
 Then update Render **Build Command** to:
 ```bash
-npm install && npx prisma generate && npm run build
+npm ci && npx prisma generate && npm run build
 ```
+
+**Note**: `npm ci` installs both dependencies and devDependencies, which are needed for the build process (including Tailwind CSS PostCSS plugin).
 
 ### Option B: Using Render Shell (Manual Migration)
 
@@ -142,7 +146,7 @@ services:
   - type: web
     name: center-for-admission-travels
     env: node
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: npm ci && npx prisma generate && npm run build
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
@@ -355,6 +359,28 @@ When you update Prisma schema:
 - Review upload API logs
 - Test Cloudinary connection
 
+### Issue: Cannot find module '@tailwindcss/postcss'
+
+**Error**: `Error: Cannot find module '@tailwindcss/postcss'`
+
+**Solution**:
+1. **Move build dependencies to `dependencies`**: 
+   - Move `@tailwindcss/postcss`, `postcss`, and `tailwindcss` from `devDependencies` to `dependencies` in `package.json`
+   - These packages are needed during the build process
+
+2. **Use `npm ci` instead of `npm install`**:
+   - Update Render Build Command to: `npm ci && npx prisma generate && npm run build`
+   - `npm ci` installs both dependencies and devDependencies needed for build
+
+3. **Commit and push changes**:
+   ```bash
+   git add package.json
+   git commit -m "Move Tailwind build dependencies to dependencies"
+   git push
+   ```
+
+4. **Redeploy on Render** - The build should now succeed
+
 ---
 
 ## 📊 Render-Specific Considerations
@@ -414,8 +440,13 @@ After deployment:
 
 ### Render Build Command
 ```bash
-npm install && npx prisma generate && npm run build
+npm ci && npx prisma generate && npm run build
 ```
+
+**Note**: `npm ci` is recommended for production builds as it:
+- Installs exact versions from `package-lock.json`
+- Installs both dependencies and devDependencies (needed for build)
+- Is faster and more reliable than `npm install`
 
 ### Render Start Command
 ```bash
