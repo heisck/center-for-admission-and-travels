@@ -381,6 +381,24 @@ When you update Prisma schema:
 
 4. **Redeploy on Render** - The build should now succeed
 
+### Issue: Can't resolve 'tw-animate-css'
+
+**Error**: `Error: Can't resolve 'tw-animate-css'`
+
+**Solution**:
+1. **Move `tw-animate-css` to `dependencies`**:
+   - This package is imported in `app/globals.css` and is needed during the build
+   - Move it from `devDependencies` to `dependencies` in `package.json`
+
+2. **Commit and push**:
+   ```bash
+   git add package.json
+   git commit -m "Move tw-animate-css to dependencies for build"
+   git push
+   ```
+
+3. **Redeploy** - The build should now succeed
+
 ---
 
 ## 📊 Render-Specific Considerations
