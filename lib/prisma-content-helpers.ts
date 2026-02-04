@@ -419,13 +419,13 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
   }
 
   // Delete existing featured packages (cascade will delete highlights)
-  await prisma.travelToursFeaturedPackage.deleteMany({ where: { travelToursPageId: 'travel-tours' } })
+  await prisma.travelToursFeaturedPackage.deleteMany({ where: { pageId: 'travel-tours' } })
 
   // Create new featured packages with highlights
   for (const [index, fp] of featured.entries()) {
     const featuredPkg = await prisma.travelToursFeaturedPackage.create({
       data: {
-        travelToursPageId: 'travel-tours',
+        pageId: 'travel-tours',
         name: fp.name,
         description: fp.description,
         duration: fp.duration,
@@ -437,9 +437,9 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
 
     // Create highlights
     if (fp.highlights && fp.highlights.length > 0) {
-      await prisma.travelToursFeaturedPackageHighlight.createMany({
+      await prisma.travelToursHighlight.createMany({
         data: fp.highlights.map((text, hIndex) => ({
-          featuredPackageId: featuredPkg.id,
+          packageId: featuredPkg.id,
           text,
           order: hIndex,
         })),

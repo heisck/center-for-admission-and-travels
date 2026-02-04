@@ -409,34 +409,337 @@ async function main() {
     ],
   })
 
-  await prisma.servicePage.upsert({
+  // WORK ABROAD SERVICE PAGE
+  const workAbroadPage = await prisma.servicePage.upsert({
     where: { serviceId: 'work-abroad' },
-    update: {},
+    update: {
+      overview:
+        "Take your career beyond borders with verified opportunities in reputable companies abroad. From job matching and CV optimization to interview coaching and work visa processing, our team supports you at every step of your international employment journey.",
+      visaGuidance:
+        "We guide you through employer-sponsored and skilled worker visa applications, ensuring all documentation, timelines, and compliance requirements are carefully managed for a smooth transition to your new workplace abroad.",
+    },
     create: {
       serviceId: 'work-abroad',
       title: 'Work Abroad',
-      description: 'Job placement assistance and relocation support',
+      description: 'Job placement assistance and relocation support in reputable international companies',
       icon: 'Briefcase',
       route: '/work-abroad',
       heroImageUrl: '/images/work-abroad.jpg',
       bannerTitle: 'Work Abroad',
-      bannerSubtitle: 'Career opportunities on the global stage',
+      bannerSubtitle: 'Secure life-changing career opportunities overseas',
+      overview:
+        "Take your career beyond borders with verified opportunities in reputable companies abroad. From job matching and CV optimization to interview coaching and work visa processing, our team supports you at every step of your international employment journey.",
+      visaGuidance:
+        "We guide you through employer-sponsored and skilled worker visa applications, ensuring all documentation, timelines, and compliance requirements are carefully managed for a smooth transition to your new workplace abroad.",
     },
   })
 
-  await prisma.servicePage.upsert({
+  await prisma.serviceBenefit.deleteMany({ where: { servicePageId: workAbroadPage.id } })
+  await prisma.serviceBenefit.createMany({
+    data: [
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Personalized job matching based on your skills, qualifications, and career goals',
+        order: 0,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Professional CV, cover letter, and profile optimization to meet international standards',
+        order: 1,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Interview preparation and coaching to help you confidently secure offers',
+        order: 2,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'End-to-end visa and work permit guidance for your target country',
+        order: 3,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Relocation support including accommodation guidance and settling-in tips',
+        order: 4,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Ongoing post-arrival support during your initial months abroad',
+        order: 5,
+      },
+    ],
+  })
+
+  await prisma.serviceRequirement.deleteMany({ where: { servicePageId: workAbroadPage.id } })
+  await prisma.serviceRequirement.createMany({
+    data: [
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Valid passport with sufficient validity for your intended stay',
+        order: 0,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Relevant educational qualifications or vocational training certificates',
+        order: 1,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Updated CV detailing your work experience and skills',
+        order: 2,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Proof of work experience in your chosen field (where applicable)',
+        order: 3,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Police clearance certificate and medical reports depending on destination country',
+        order: 4,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        text: 'Financial capacity or sponsorship to cover initial relocation and settlement costs',
+        order: 5,
+      },
+    ],
+  })
+
+  await prisma.serviceCountry.deleteMany({ where: { servicePageId: workAbroadPage.id } })
+  await prisma.serviceCountry.createMany({
+    data: [
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'United Kingdom',
+        description: 'Skilled worker opportunities across healthcare, IT, education, and professional services',
+        imageUrl: '/images/work-uk.jpg',
+        order: 0,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'Canada',
+        description: 'Pathways for permanent residency with high-quality working conditions and benefits',
+        imageUrl: '/images/work-canada.jpg',
+        order: 1,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'United States',
+        description: 'Specialized roles in technology, healthcare, and research for qualified professionals',
+        imageUrl: '/images/work-usa.jpg',
+        order: 2,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'Germany',
+        description: 'Engineering, manufacturing, and technical roles in a strong and stable economy',
+        imageUrl: '/images/work-germany.jpg',
+        order: 3,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'Middle East',
+        description: 'Competitive salary packages in aviation, hospitality, construction, and corporate roles',
+        imageUrl: '/images/work-middle-east.jpg',
+        order: 4,
+      },
+    ],
+  })
+
+  await prisma.serviceSuccessStory.deleteMany({ where: { servicePageId: workAbroadPage.id } })
+  await prisma.serviceSuccessStory.createMany({
+    data: [
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'Joseph Mensah',
+        program: 'Nurse in the United Kingdom',
+        quote:
+          'CFAAT guided me from job search to visa approval. Today, I am working in a reputable hospital in the UK with a stable income and clear career growth.',
+        order: 0,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'Abigail Owusu',
+        program: 'Customer Service Executive in Dubai',
+        quote:
+          'The team at CFAAT helped me secure a verified job offer and handled my relocation process with professionalism and care.',
+        order: 1,
+      },
+    ],
+  })
+
+  await prisma.serviceScholarship.deleteMany({ where: { servicePageId: workAbroadPage.id } })
+  await prisma.serviceScholarship.createMany({
+    data: [
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'Relocation Support Package',
+        amount: 'Discounted',
+        description: 'Subsidized service fees for qualified candidates taking up verified job offers abroad',
+        order: 0,
+      },
+      {
+        servicePageId: workAbroadPage.id,
+        name: 'Career Development Support',
+        amount: 'Included',
+        description: 'Free CV, cover letter review, and basic interview coaching for selected applicants',
+        order: 1,
+      },
+    ],
+  })
+
+  // GLOBAL NETWORK SERVICE PAGE
+  const globalNetworkPage = await prisma.servicePage.upsert({
     where: { serviceId: 'global-network' },
-    update: {},
+    update: {
+      overview:
+        "Our global network connects you to accredited universities, colleges, and trusted partners across the world. Whether you are seeking study, work, or travel opportunities, we leverage long-standing relationships to open the right doors for you.",
+      visaGuidance:
+        "Through our partner institutions and agencies, we ensure that your applications meet the exact requirements of each destination, improving your chances of approval and long-term success abroad.",
+    },
     create: {
       serviceId: 'global-network',
       title: 'Global Network',
-      description: 'Partnerships with accredited universities and verified employers',
+      description: 'Partnerships with accredited universities, institutions, and verified employers worldwide',
       icon: 'Globe',
       route: '/global-network',
       heroImageUrl: '/images/global-network.jpg',
       bannerTitle: 'Global Network',
-      bannerSubtitle: 'Your gateway to worldwide opportunities',
+      bannerSubtitle: 'Your gateway to trusted international partners and opportunities',
+      overview:
+        "Our global network connects you to accredited universities, colleges, and trusted partners across the world. Whether you are seeking study, work, or travel opportunities, we leverage long-standing relationships to open the right doors for you.",
+      visaGuidance:
+        "Through our partner institutions and agencies, we ensure that your applications meet the exact requirements of each destination, improving your chances of approval and long-term success abroad.",
     },
+  })
+
+  await prisma.serviceBenefit.deleteMany({ where: { servicePageId: globalNetworkPage.id } })
+  await prisma.serviceBenefit.createMany({
+    data: [
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Access to a wide network of accredited universities, colleges, and language schools',
+        order: 0,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Strong relationships with trusted employers, recruitment agencies, and travel partners',
+        order: 1,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Up-to-date information on scholarships, work placements, and exchange programs',
+        order: 2,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Priority processing and dedicated support through partner institutions',
+        order: 3,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Regional experts who understand destination-specific requirements and opportunities',
+        order: 4,
+      },
+    ],
+  })
+
+  await prisma.serviceRequirement.deleteMany({ where: { servicePageId: globalNetworkPage.id } })
+  await prisma.serviceRequirement.createMany({
+    data: [
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Basic academic or professional profile to match you with suitable partners',
+        order: 0,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Clear goals regarding study, work, or travel to determine the best pathways',
+        order: 1,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        text: 'Willingness to follow partner institution guidelines, timelines, and documentation standards',
+        order: 2,
+      },
+    ],
+  })
+
+  await prisma.serviceCountry.deleteMany({ where: { servicePageId: globalNetworkPage.id } })
+  await prisma.serviceCountry.createMany({
+    data: [
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'United Kingdom & Europe',
+        description: 'Partner universities and colleges offering pathways from foundation to postgraduate studies',
+        imageUrl: '/images/network-europe.jpg',
+        order: 0,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'North America',
+        description: 'Collaborations with institutions in Canada and the United States for study and work options',
+        imageUrl: '/images/network-north-america.jpg',
+        order: 1,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'Asia & Middle East',
+        description: 'Strategic partners in rapidly growing education and employment markets',
+        imageUrl: '/images/network-asia.jpg',
+        order: 2,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'Africa',
+        description: 'Regional alliances that support intra-African mobility for education and work',
+        imageUrl: '/images/network-africa.jpg',
+        order: 3,
+      },
+    ],
+  })
+
+  await prisma.serviceSuccessStory.deleteMany({ where: { servicePageId: globalNetworkPage.id } })
+  await prisma.serviceSuccessStory.createMany({
+    data: [
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'Selorm Adjei',
+        program: 'Pathway from foundation program to degree in the UK',
+        quote:
+          'Through CFAAT’s partner network, I was able to transition smoothly from a foundation course into a full degree at a top UK university.',
+        order: 0,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'Mariam Yakubu',
+        program: 'Scholarship placement in Europe',
+        quote:
+          'The global partnerships CFAAT has built opened doors to scholarships I never knew existed. Their guidance changed my life.',
+        order: 1,
+      },
+    ],
+  })
+
+  await prisma.serviceScholarship.deleteMany({ where: { servicePageId: globalNetworkPage.id } })
+  await prisma.serviceScholarship.createMany({
+    data: [
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'Partner Institution Scholarships',
+        amount: 'Varies',
+        description: 'Scholarships and fee discounts negotiated through our global education partners',
+        order: 0,
+      },
+      {
+        servicePageId: globalNetworkPage.id,
+        name: 'Collaboration Grants',
+        amount: 'Up to 50% tuition support',
+        description: 'Special offers available through seasonal or program-specific collaborations',
+        order: 1,
+      },
+    ],
   })
 
   // ============================================================================
