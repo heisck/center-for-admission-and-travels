@@ -399,6 +399,28 @@ When you update Prisma schema:
 
 3. **Redeploy** - The build should now succeed
 
+### Issue: TypeScript types not found during build
+
+**Error**: `It looks like you're trying to use TypeScript but do not have the required package(s) installed`
+
+**Solution**:
+1. **Move TypeScript and type definitions to `dependencies`**:
+   - Move `typescript`, `@types/node`, `@types/react`, and `@types/react-dom` from `devDependencies` to `dependencies`
+   - These are needed during the build process even if type checking is disabled
+
+2. **Ensure `ignoreBuildErrors` is set**:
+   - Verify `next.config.mjs` has `typescript: { ignoreBuildErrors: true }`
+   - This prevents build failures from type errors but still requires types to be present
+
+3. **Commit and push**:
+   ```bash
+   git add package.json next.config.mjs
+   git commit -m "Move TypeScript types to dependencies for build"
+   git push
+   ```
+
+4. **Redeploy** - The build should now succeed
+
 ---
 
 ## 📊 Render-Specific Considerations
