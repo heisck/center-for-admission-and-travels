@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/next"
 import WhatsAppButton from "@/components/whatsapp-button"
 import { AdminProvider } from "@/context/admin-context"
 import { PublicContentProvider } from "@/context/public-content-context"
+import { UserAuthProviderWrapper } from "@/components/user-auth-provider-wrapper"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -31,9 +33,12 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <PublicContentProvider>
           <AdminProvider>
-            {children}
-            <WhatsAppButton />
-            <Analytics />
+            <UserAuthProviderWrapper>
+              {children}
+              <WhatsAppButton />
+              <Toaster />
+              <Analytics />
+            </UserAuthProviderWrapper>
           </AdminProvider>
         </PublicContentProvider>
       </body>

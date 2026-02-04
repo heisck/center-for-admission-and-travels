@@ -2,12 +2,32 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Menu, X, User as UserIcon, LogOut } from "lucide-react"
+import { useUserAuth } from "@/context/user-auth-context"
 import './navbar.css'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const { user, isLoading, logout } = useUserAuth()
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+
+    if (showUserMenu) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showUserMenu])
 
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-border">
@@ -48,19 +68,53 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <div className="hidden md:flex gap-3 md:gap-2">
-            <Link
-              href="/signin"
-              className="px-4 md:px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className="px-4 md:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold signup-button"
-            >
-              Sign Up
-            </Link>
+          <div className="hidden md:flex gap-3 md:gap-2 items-center">
+            {isLoading ? (
+              <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+            ) : user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
+                >
+                  <UserIcon className="w-4 h-4" />
+                  <span>{user.displayName || user.username}</span>
+                </button>
+                {showUserMenu && (
+                  <div ref={userMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-border py-2 z-50">
+                    <div className="px-4 py-2 border-b border-border">
+                      <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await logout()
+                        setShowUserMenu(false)
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/signin"
+                  className="px-4 md:px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="px-4 md:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold signup-button"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -93,20 +147,35 @@ export default function Navbar() {
             <Link href="/contact" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
               Contact
             </Link>
-            <div className="border-t pt-4 space-y-2 mt-4">
-              <Link
-                href="/signin"
-                className="block px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="block w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold text-sm"
-              >
-                Sign Up
-              </Link>
-            </div>
+            {user ? (
+              <div className="border-t pt-4 space-y-2 mt-4">
+                <div className="px-4 py-2">
+                  <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+                <button
+                  onClick={logout}
+                  className="block w-full px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="border-t pt-4 space-y-2 mt-4">
+                <Link
+                  href="/signin"
+                  className="block px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold text-sm"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>

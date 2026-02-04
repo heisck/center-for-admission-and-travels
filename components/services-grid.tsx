@@ -43,18 +43,36 @@ export default function ServicesGrid() {
     },
   ]
 
+  // Title to route mapping for fallback
+  const titleToRouteMap: Record<string, string> = {
+    'Study Abroad': '/study-abroad',
+    'Work Abroad': '/work-abroad',
+    'Travel & Tours': '/travel-tours',
+    'Travel Tours': '/travel-tours',
+    'Global Network': '/global-network',
+  }
+
   // Map database services to component format
   const services = content?.home?.services?.length 
     ? content.home.services.map((svc) => {
-        // Find matching service page for href
-        const servicePage = content?.servicePages?.find(sp => sp.id === svc.id || sp.title === svc.title)
+        // Find matching service page by title (case-insensitive)
+        const servicePage = content?.servicePages?.find(
+          sp => sp.title?.toLowerCase() === svc.title?.toLowerCase() || 
+                sp.id?.toLowerCase() === svc.title?.toLowerCase().replace(/\s+/g, '-')
+        )
         const Icon = iconMap[svc.icon] || GraduationCap
+        
+        // Determine href: use servicePage route, then title mapping, then fallback
+        let href = servicePage?.route
+        if (!href) {
+          href = titleToRouteMap[svc.title] || `/${svc.title.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')}`
+        }
         
         return {
           icon: Icon,
           title: svc.title,
           description: svc.description,
-          href: servicePage?.route || `/${svc.id.toLowerCase().replace(/\s+/g, '-')}`,
+          href,
         }
       })
     : defaultServices
