@@ -115,11 +115,13 @@ Update your `package.json` to include migration in build:
 {
   "scripts": {
     "build": "next build",
-    "postbuild": "prisma migrate deploy",
+    "postbuild": "prisma db push --accept-data-loss || prisma migrate deploy",
     "start": "next start"
   }
 }
 ```
+
+**Note**: The `postbuild` script uses `prisma db push` first (which syncs schema directly) and falls back to `prisma migrate deploy` if migrations exist. This handles cases where migrations haven't been created yet.
 
 Then update Render **Build Command** to:
 ```bash
