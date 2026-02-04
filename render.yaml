@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: center-for-admission-travels
+    env: node
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: center-for-admission-travels-db
+    databaseName: center_for_admission_travels
+    user: center_for_admission_travels_user
+    plan: free
