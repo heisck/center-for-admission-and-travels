@@ -108,10 +108,10 @@ export default function Footer() {
               © 2025 Center for Admission and Travels (CFAAT). All rights reserved.
             </p>
             <div className="flex space-x-4">
-              {footer?.socialLinks?.map((link) => {
+              {footer?.socialLinks?.map((link, index) => {
                 const Icon = link.platform === 'Facebook' ? Facebook : link.platform === 'LinkedIn' ? Linkedin : Twitter
                 return (
-                  <a key={link.platform} href={link.url} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-primary transition">
+                  <a key={link.id || `${link.platform}-${index}`} href={link.url} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-primary transition">
                     <Icon size={20} />
                   </a>
                 )

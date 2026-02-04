@@ -191,6 +191,45 @@ async function main() {
     },
   })
 
+  // Team Members - Delete existing and create fresh
+  await prisma.aboutTeamMember.deleteMany({ where: { aboutPageId: aboutPage.id } })
+  await prisma.aboutTeamMember.createMany({
+    data: [
+      {
+        aboutPageId: aboutPage.id,
+        name: 'George Owusu Ntim',
+        role: 'Founder, Managing Director & Chief Travel Consultant',
+        imageUrl: '/images/USETHIS IMAGE FOR THE TEAM MEMBER TO REPLACE THE ONE OF THE FOUNDER.jpg',
+        description: '',
+        order: 0,
+      },
+      {
+        aboutPageId: aboutPage.id,
+        name: 'Sadat Abdul Wahab',
+        role: 'Travel Consultant',
+        imageUrl: '/images/team2.jpg',
+        description: "Sadat Abdul Wahab is a dedicated Travel Consultant with in-depth knowledge of visa procedures, ticketing, and travel planning. He works closely with clients to create tailored travel solutions that fit their goals and budgets. Sadat's expertise and customer-focused approach help ensure stress-free journeys from Ghana to destinations around the world.",
+        order: 1,
+      },
+      {
+        aboutPageId: aboutPage.id,
+        name: 'Drake Nana Adjei Afram',
+        role: 'Accountant',
+        imageUrl: '/images/team1.jpg',
+        description: "Drake Nana Adjei Afram oversees all financial operations at Center for Admission and Travels. As the company's Accountant, he is responsible for budgeting, invoicing, reconciliation, and maintaining accurate financial records. With strong analytical skills and a commitment to transparency, Drake supports the financial stability and growth of the organisation.",
+        order: 2,
+      },
+      {
+        aboutPageId: aboutPage.id,
+        name: 'Esther Adjei Konamah',
+        role: 'Administrative & Front Desk Officer',
+        imageUrl: '/images/team3.jpg',
+        description: "Esther Adjei Konamah ensures the smooth daily operation of our office. As the Administrative and Front Desk Officer, she warmly welcomes clients, manages enquiries, organizes appointments, and maintains efficient office systems. Esther's professionalism, communication skills, and friendly service make her an essential part of our client experience.",
+        order: 3,
+      },
+    ],
+  })
+
   // ============================================================================
   // CONTACT & FOOTER
   // ============================================================================

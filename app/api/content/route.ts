@@ -176,6 +176,7 @@ export async function GET() {
       footer: {
         companyDescription: footerInfo?.companyDescription || '',
         socialLinks: footerInfo?.socialLinks.map((sl) => ({
+          id: sl.id,
           platform: sl.platform,
           url: sl.url,
         })) || [],
