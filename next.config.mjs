@@ -5,10 +5,6 @@ const nextConfig = {
     // Types are still checked in development and via CI
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // Skip ESLint during build for faster builds
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
   },
