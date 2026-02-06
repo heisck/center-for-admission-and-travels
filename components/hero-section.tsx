@@ -10,51 +10,40 @@ import './hero-section.css'
 
 
 
-const images = [
-  { id: 1, img: "/images/thisshouldbeintegrated5.jpg" },
-  { id: 2, img: "/images/integrate.jpg" },
-  { id: 3, img: "/images/integrate1.jpg" }
-];
+// Fallback images if database doesn't have any
+const fallbackItems = [
+  {
+    id: "1",
+    img: "/images/thisshouldbeintegrated5.jpg",
+    url: "https://example.com/one",
+    height: 400,
+  },
+  {
+    id: "2",
+    img: "/images/integrate2.jpg",
+    url: "https://example.com/two",
+    height: 350,
+  },
+  {
+    id: "3",
+    img: "/images/integrate.jpg",
+    url: "https://example.com/three",
+    height: 400,
+  },
+  {
+    id: "4",
+    img: "/images/integrate1.jpg",
+    url: "https://example.com/four",
+    height: 600,
+  },
+  {
+    id: "5",
+    img: "/images/integrate3.jpg",
+    url: "https://example.com/five",
+    height: 300,
+  },
+]
 
-const items = [
-    {
-      id: "1",
-      img: "/images/thisshouldbeintegrated5.jpg",
-      url: "https://example.com/one",
-      height: 400,
-    },
-    {
-      id: "2",
-      img: "/images/integrate2.jpg",
-      url: "https://example.com/two",
-      height: 350,
-    },
-    {
-      id: "3",
-      img: "/images/integrate.jpg",
-      url: "https://example.com/three",
-      height: 400,
-    },
-    {
-      id: "4",
-      img: "/images/integrate1.jpg",
-      url: "https://example.com/four",
-      height: 600,
-    },
-    {
-      id: "5",
-      img: "/images/integrate3.jpg",
-      url: "https://example.com/five",
-      height: 300,
-    },
-    // {
-    //   id: "6",
-    //   img: "/images/integrated2.jpg",
-    //   url: "https://example.com/six",
-    //   height: 600,
-    // },
-
-];
 export default function HeroSection() {
   const [masonryLoaded, setMasonryLoaded] = useState(false)
   const { content } = usePublicContent()
@@ -73,6 +62,17 @@ export default function HeroSection() {
     { value: "15+", label: "Destinations" },
     { value: "100%", label: "Satisfaction" }
   ]
+
+  // Transform database images to Masonry format
+  const heroImages = content?.home?.hero?.images || []
+  const items = heroImages.length > 0
+    ? heroImages.map((img, index) => ({
+        id: `db-${index}`,
+        img: img,
+        url: "#",
+        height: [400, 350, 400, 600, 300][index % 5] || 400, // Cycle through heights
+      }))
+    : fallbackItems
 
   return (
     <section className="relative overflow-hidden md:py-22">
