@@ -20,7 +20,20 @@ export default function WorkAbroad() {
   const service = content?.servicePages?.find((s) => s.id === "work-abroad" || s.route === "/work-abroad")
 
   if (!service) {
-    return <div>Service not found</div>
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Service Not Available</h1>
+          <p className="text-muted-foreground mb-4">The work abroad page content is currently being loaded. Please try refreshing the page.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </main>
+    )
   }
 
   // Transform database service to component format

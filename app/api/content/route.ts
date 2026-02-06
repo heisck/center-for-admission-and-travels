@@ -15,7 +15,8 @@ import { verifyAdminSession } from '@/lib/auth-helpers'
 export async function GET() {
   try {
     // Fetch all content from database using Prisma
-    const [homePage, aboutPage, packages, travelToursPage, contactInfo, footerInfo, servicePages] = await Promise.all([
+    // Use Promise.allSettled to handle individual failures gracefully
+    const results = await Promise.allSettled([
       // Home Page
       prisma.homePage.findUnique({
         where: { id: 'home' },
@@ -79,6 +80,22 @@ export async function GET() {
       }),
     ])
 
+    // Extract results, handling failures gracefully
+    const homePage = results[0].status === 'fulfilled' ? results[0].value : null
+    const aboutPage = results[1].status === 'fulfilled' ? results[1].value : null
+    const packages = results[2].status === 'fulfilled' ? results[2].value : []
+    const travelToursPage = results[3].status === 'fulfilled' ? results[3].value : null
+    const contactInfo = results[4].status === 'fulfilled' ? results[4].value : null
+    const footerInfo = results[5].status === 'fulfilled' ? results[5].value : null
+    const servicePages = results[6].status === 'fulfilled' ? results[6].value : []
+
+    // Log any failures for debugging
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to fetch content at index ${index}:`, result.reason)
+      }
+    })
+
     // Transform database data to match frontend format
     const content = {
       home: {
@@ -88,13 +105,13 @@ export async function GET() {
           description: homePage?.heroDescription || '',
           cta1Text: homePage?.heroCta1Text || '',
           cta2Text: homePage?.heroCta2Text || '',
-          images: homePage?.heroImages.map((img) => img.url) || [],
-          stats: homePage?.heroStats.map((stat) => ({
+          images: homePage?.heroImages?.map((img) => img.url) || [],
+          stats: homePage?.heroStats?.map((stat) => ({
             value: stat.value,
             label: stat.label,
           })) || [],
         },
-        services: homePage?.services.map((svc) => ({
+        services: homePage?.services?.map((svc) => ({
           id: svc.id,
           icon: svc.icon,
           title: svc.title,
@@ -108,14 +125,14 @@ export async function GET() {
         mission: {
           title: aboutPage?.mission?.title || '',
           description: aboutPage?.mission?.description || '',
-          points: aboutPage?.mission?.points.map((p) => p.text) || [],
+          points: aboutPage?.mission?.points?.map((p) => p.text) || [],
         },
         vision: {
           title: aboutPage?.vision?.title || '',
           description: aboutPage?.vision?.description || '',
-          points: aboutPage?.vision?.points.map((p) => p.text) || [],
+          points: aboutPage?.vision?.points?.map((p) => p.text) || [],
         },
-        coreValues: aboutPage?.coreValues.map((cv) => ({
+        coreValues: aboutPage?.coreValues?.map((cv) => ({
           id: cv.id,
           title: cv.title,
           description: cv.description,
@@ -129,14 +146,14 @@ export async function GET() {
           mission: aboutPage?.founder?.mission || '',
           values: aboutPage?.founder?.values || '',
         },
-        team: aboutPage?.teamMembers.map((tm) => ({
+        team: aboutPage?.teamMembers?.map((tm) => ({
           id: tm.id,
           name: tm.name,
           role: tm.role,
           image: tm.imageUrl,
           description: tm.description,
         })) || [],
-        successStories: aboutPage?.successStories.map((ss) => ({
+        successStories: aboutPage?.successStories?.map((ss) => ({
           id: ss.id,
           name: ss.name,
           program: ss.program,
@@ -150,9 +167,9 @@ export async function GET() {
         category: pkg.category,
         duration: pkg.duration,
         price: pkg.price,
-        highlights: pkg.highlights.map((h) => h.text),
+        highlights: pkg.highlights?.map((h) => h.text) || [],
         itinerary: pkg.itinerary || '',
-        images: pkg.images.map((img) => img.url),
+        images: pkg.images?.map((img) => img.url) || [],
       })),
       travelTours: {
         hero: {
@@ -161,21 +178,21 @@ export async function GET() {
           paragraph: travelToursPage?.heroParagraph || '',
           image: travelToursPage?.heroImageUrl || '',
         },
-        featured: travelToursPage?.featuredPackages.map((fp) => ({
+        featured: travelToursPage?.featuredPackages?.map((fp) => ({
           id: fp.id,
           name: fp.name,
           description: fp.description,
           duration: fp.duration,
           price: fp.price,
           image: fp.imageUrl,
-          highlights: fp.highlights.map((h) => h.text),
+          highlights: fp.highlights?.map((h) => h.text) || [],
         })) || [],
-        benefits: travelToursPage?.benefits.map((b) => ({
+        benefits: travelToursPage?.benefits?.map((b) => ({
           id: b.id,
           title: b.title,
           description: b.description,
         })) || [],
-        galleryImages: travelToursPage?.galleryImages.map((img) => img.url) || [],
+        galleryImages: travelToursPage?.galleryImages?.map((img) => img.url) || [],
       },
       contact: {
         phone: contactInfo?.phone || '',
@@ -190,7 +207,7 @@ export async function GET() {
       },
       footer: {
         companyDescription: footerInfo?.companyDescription || '',
-        socialLinks: footerInfo?.socialLinks.map((sl) => ({
+        socialLinks: footerInfo?.socialLinks?.map((sl) => ({
           id: sl.id,
           platform: sl.platform,
           url: sl.url,
@@ -209,27 +226,27 @@ export async function GET() {
         whyStudyOutsideThisCountry: sp.whyStudySection
           ? {
               title: sp.whyStudySection.title,
-              highlights: sp.whyStudySection.highlights.map((h) => h.text),
+              highlights: sp.whyStudySection.highlights?.map((h) => h.text) || [],
             }
           : undefined,
-        benefits: sp.benefits.map((b) => b.text),
-        requirements: sp.requirements.map((r) => r.text),
-        countries: sp.countries.map((c) => ({
+        benefits: sp.benefits?.map((b) => b.text) || [],
+        requirements: sp.requirements?.map((r) => r.text) || [],
+        countries: sp.countries?.map((c) => ({
           name: c.name,
           description: c.description,
           image: c.imageUrl,
-        })),
+        })) || [],
         visaGuidance: sp.visaGuidance || '',
-        successStories: sp.successStories.map((ss) => ({
+        successStories: sp.successStories?.map((ss) => ({
           name: ss.name,
           program: ss.program,
           quote: ss.quote,
-        })),
-        scholarships: sp.scholarships.map((sch) => ({
+        })) || [],
+        scholarships: sp.scholarships?.map((sch) => ({
           name: sch.name,
           amount: sch.amount,
           description: sch.description,
-        })),
+        })) || [],
       })),
     }
 
