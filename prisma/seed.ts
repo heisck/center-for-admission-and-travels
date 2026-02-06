@@ -944,11 +944,15 @@ async function main() {
     })
   } catch (error: any) {
     // Table might not exist yet - that's okay, skip seeding benefits
-    if (error.code === 'P2021') {
-      console.log('⚠️  travel_tours_benefits table does not exist yet - skipping benefits seed')
-      console.log('   Run: npx prisma db push (or create migration) to create the table')
+    // P2021 = Table does not exist
+    // P2003 = Foreign key constraint failed (table exists but relationship issue)
+    if (error.code === 'P2021' || error.code === 'P2003') {
+      console.log('⚠️  travel_tours_benefits table not available - skipping benefits seed')
+      console.log('   This is normal if the table hasn\'t been created yet.')
+      console.log('   Benefits can be added manually through the admin panel.')
     } else {
-      throw error
+      console.error('Error seeding travel tours benefits:', error)
+      // Don't throw - continue seeding other data
     }
   }
 
