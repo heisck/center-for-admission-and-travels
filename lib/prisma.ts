@@ -14,14 +14,13 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Prisma Client with connection pooling configuration
-// Connection URL is automatically read from process.env.DATABASE_URL
+// Prisma 7 automatically reads DATABASE_URL from environment
+// No need to pass it explicitly unless using Accelerate
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    // Connection pooling is handled by the DATABASE_URL connection string
-    // For Supabase, use transaction mode pooler (port 6543) for better connection limits
+    // Connection URL is automatically read from process.env.DATABASE_URL
+    // For Prisma Accelerate, use: { accelerateUrl: process.env.PRISMA_ACCELERATE_URL }
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
