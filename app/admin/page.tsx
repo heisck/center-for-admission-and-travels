@@ -12,9 +12,21 @@ import { EditableMasonry } from '@/components/admin/editable-masonry'
 import { useState, useEffect } from 'react'
 
 export default function AdminHomePage() {
-  const { content, updateHomeHero } = useAdmin()
+  const { content, updateHomeHero, isLoading } = useAdmin()
   const { hero } = content.home
   const [masonryLoaded, setMasonryLoaded] = useState(false)
+
+  // Show loading state while content is being fetched
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading content...</p>
+        </div>
+      </main>
+    )
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => setMasonryLoaded(true), 500)

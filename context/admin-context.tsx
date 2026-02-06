@@ -157,6 +157,7 @@ interface HistoryState {
 
 interface AdminContextType {
   content: AdminContent
+  isLoading: boolean
   updateContent: (updates: Partial<AdminContent>) => void
   updateHomeHero: (updates: Partial<AdminContent['home']['hero']>) => void
   updateServices: (services: AdminContent['home']['services']) => void
@@ -642,28 +643,104 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
+  // Deep merge helper function - merges API data with defaults
+  // Preserves defaults when API values are empty/missing
+  const deepMerge = (target: any, source: any): any => {
+    if (!source || typeof source !== 'object') {
+      return target
+    }
+    
+    const output = { ...target }
+    
+    Object.keys(source).forEach((key) => {
+      const sourceValue = source[key]
+      const targetValue = target[key]
+      
+      if (sourceValue === null || sourceValue === undefined) {
+        // Skip null/undefined values, keep target
+        return
+      }
+      
+      if (Array.isArray(sourceValue)) {
+        // For arrays, use source if it has items, otherwise keep target
+        output[key] = sourceValue.length > 0 ? sourceValue : (targetValue || [])
+      } else if (isObject(sourceValue)) {
+        // Recursively merge nested objects
+        if (isObject(targetValue)) {
+          output[key] = deepMerge(targetValue, sourceValue)
+        } else {
+          output[key] = sourceValue
+        }
+      } else {
+        // For primitives (strings, numbers, booleans)
+        // Use source value if it's not empty, otherwise keep target
+        if (typeof sourceValue === 'string' && sourceValue.trim() === '') {
+          // Empty string - keep target if it exists
+          if (targetValue && targetValue.trim() !== '') {
+            output[key] = targetValue
+          } else {
+            output[key] = sourceValue
+          }
+        } else {
+          // Non-empty value - use source
+          output[key] = sourceValue
+        }
+      }
+    })
+    
+    // Also merge keys from target that might not be in source
+    Object.keys(target).forEach((key) => {
+      if (!(key in source)) {
+        output[key] = target[key]
+      }
+    })
+    
+    return output
+  }
+
+  const isObject = (item: any): boolean => {
+    return item && typeof item === 'object' && !Array.isArray(item)
+  }
+
   // Load content from database on mount
   useEffect(() => {
     const loadContentFromAPI = async () => {
       try {
         const response = await fetch('/api/content')
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`)
+        }
+        
         const result = await response.json()
+        console.log('API response:', result)
+        
         if (result.success && result.data) {
-          setContent(result.data)
-          // Database is the source of truth - no localStorage needed
+          // Deep merge API data with defaults to ensure all fields are present
+          const mergedContent = deepMerge(defaultContent, result.data)
+          console.log('Merged content:', mergedContent)
+          setContent(mergedContent)
+          // Save merged content to localStorage as backup
+          saveToStorage(mergedContent)
         } else {
-          // Fallback to localStorage only if API fails (for offline support)
+          console.warn('API returned unsuccessful response, using defaults:', result)
+          // Fallback to localStorage or defaults
           const stored = loadFromStorage()
           if (stored) {
             setContent(stored)
+          } else {
+            // Use defaults if no stored content
+            setContent(defaultContent)
           }
         }
       } catch (error) {
         console.error('Error loading content from API:', error)
-        // Fallback to localStorage only if API fails
+        // Fallback to localStorage or defaults
         const stored = loadFromStorage()
         if (stored) {
           setContent(stored)
+        } else {
+          // Use defaults if no stored content
+          setContent(defaultContent)
         }
       } finally {
         setIsLoading(false)
@@ -1292,6 +1369,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     <AdminContext.Provider
       value={{
         content,
+        isLoading,
         updateContent,
         updateHomeHero,
         updateServices,
