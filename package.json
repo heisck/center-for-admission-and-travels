@@ -13,7 +13,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "postbuild": "prisma migrate deploy && npm run db:seed"
+    "postbuild": "prisma migrate deploy --skip-generate && npm run db:seed"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
