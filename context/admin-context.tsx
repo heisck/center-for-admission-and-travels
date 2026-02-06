@@ -1133,76 +1133,146 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const saveAll = useCallback(async () => {
     setIsSaving(true)
     try {
-      // Save all sections to database
-      const savePromises = [
+      // Save all sections to database with section names for error tracking
+      const savePromises: Array<{ name: string; promise: Promise<Response> }> = [
         // Home
-        fetch('/api/admin/content/home', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            hero: content.home.hero,
-            services: content.home.services,
+        {
+          name: 'Home',
+          promise: fetch('/api/admin/content/home', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              hero: content.home.hero,
+              services: content.home.services,
+            }),
           }),
-        }),
+        },
         // About
-        fetch('/api/admin/content/about', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            heroTitle: content.about.heroTitle,
-            heroSubtitle: content.about.heroSubtitle,
-            heroImage: content.about.heroImage,
-            mission: content.about.mission,
-            vision: content.about.vision,
-            coreValues: content.about.coreValues,
-            founder: content.about.founder,
-            team: content.about.team,
-            successStories: content.about.successStories,
+        {
+          name: 'About',
+          promise: fetch('/api/admin/content/about', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              heroTitle: content.about.heroTitle,
+              heroSubtitle: content.about.heroSubtitle,
+              heroImage: content.about.heroImage,
+              mission: content.about.mission,
+              vision: content.about.vision,
+              coreValues: content.about.coreValues,
+              founder: content.about.founder,
+              team: content.about.team,
+              successStories: content.about.successStories,
+            }),
           }),
-        }),
+        },
         // Travel Tours
-        fetch('/api/admin/content/travel-tours', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            hero: content.travelTours.hero,
-            featured: content.travelTours.featured,
-            benefits: content.travelTours.benefits,
-            galleryImages: content.travelTours.galleryImages,
+        {
+          name: 'Travel Tours',
+          promise: fetch('/api/admin/content/travel-tours', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              hero: content.travelTours.hero,
+              featured: content.travelTours.featured,
+              benefits: content.travelTours.benefits,
+              galleryImages: content.travelTours.galleryImages,
+            }),
           }),
-        }),
+        },
         // Contact
-        fetch('/api/admin/content/contact', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(content.contact),
-        }),
+        {
+          name: 'Contact',
+          promise: fetch('/api/admin/content/contact', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(content.contact),
+          }),
+        },
         // Footer
-        fetch('/api/admin/content/footer', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(content.footer),
-        }),
+        {
+          name: 'Footer',
+          promise: fetch('/api/admin/content/footer', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(content.footer),
+          }),
+        },
       ]
 
       // Save service pages
       content.servicePages.forEach((service) => {
-        savePromises.push(
-          fetch(`/api/admin/content/service-pages/${service.id}`, {
+        // Transform service page data to match API expectations
+        const serviceData = {
+          title: service.title,
+          description: service.description,
+          icon: service.icon,
+          route: service.route,
+          heroImage: service.heroImage,
+          bannerTitle: service.bannerTitle,
+          bannerSubtitle: service.bannerSubtitle,
+          overview: service.overview,
+          visaGuidance: service.visaGuidance,
+          benefits: service.benefits || [],
+          requirements: service.requirements || [],
+          countries: (service.countries || []).map((c: any) => ({
+            name: c.name,
+            description: c.description,
+            image: c.image,
+          })),
+          successStories: service.successStories || [],
+          scholarships: service.scholarships || [],
+          whyStudyOutsideThisCountry: service.whyStudyOutsideThisCountry,
+        }
+        
+        savePromises.push({
+          name: `Service: ${service.title || service.id}`,
+          promise: fetch(`/api/admin/content/service-pages/${service.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(service),
-          })
-        )
+            body: JSON.stringify(serviceData),
+          }),
+        })
       })
 
-      const results = await Promise.allSettled(savePromises.map(p => p.then(r => r.json())))
+      const results = await Promise.allSettled(
+        savePromises.map(async ({ name, promise }) => {
+          try {
+            const response = await promise
+            const data = await response.json()
+            return { 
+              name,
+              response, 
+              data, 
+              success: response.ok && data.success,
+              error: data.error || (response.ok ? null : `HTTP ${response.status}`)
+            }
+          } catch (error: any) {
+            return { name, error: error.message || 'Network error', success: false }
+          }
+        })
+      )
       
-      // Check for any failures
-      const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success))
+      // Check for any failures and log details
+      const failures: Array<{ name: string; error: string }> = []
+      results.forEach((result) => {
+        if (result.status === 'rejected') {
+          failures.push({ name: 'Unknown', error: String(result.reason) })
+        } else if (!result.value.success) {
+          failures.push({ 
+            name: result.value.name,
+            error: result.value.error || 'Unknown error'
+          })
+        }
+      })
+      
       if (failures.length > 0) {
         console.error('Some saves failed:', failures)
-        alert(`Saved with ${failures.length} error(s). Please check the console for details.`)
+        const errorDetails = failures.map((f) => 
+          `• ${f.name}: ${f.error}`
+        ).join('\n')
+        console.error('Failed sections:', errorDetails)
+        alert(`Saved with ${failures.length} error(s). Check console (F12) for details.\n\nFailed sections:\n${errorDetails}`)
       } else {
         // Clear undo/redo history after successful save
         const newHistory = [{ content, timestamp: Date.now() }]
