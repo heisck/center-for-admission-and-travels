@@ -13,16 +13,16 @@ import { authenticateAdmin } from '@/lib/auth-helpers'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { username, password } = body
+    const { email, password } = body
 
-    if (!username || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { success: false, error: 'Username and password are required' },
+        { success: false, error: 'Email and password are required' },
         { status: 400 }
       )
     }
 
-    const result = await authenticateAdmin(username, password)
+    const result = await authenticateAdmin(email, password)
 
     if (!result.success) {
       return NextResponse.json(

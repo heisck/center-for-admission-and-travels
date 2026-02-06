@@ -1,17 +1,11 @@
 /**
  * AUTHENTICATION HELPERS
  * 
- * Mock authentication for now. Will be replaced with real session management
- * when database is connected.
- * 
- * TODO: Replace with proper session management using:
- * - JWT tokens or session cookies
- * - Database-backed sessions
- * - Password hashing (bcrypt)
+ * Secure authentication using environment variables and bcrypt password hashing
  */
 
 import { NextRequest } from 'next/server'
-import { mockDataStore } from './mock-data-store'
+import bcrypt from 'bcryptjs'
 
 export interface AdminSession {
   userId: string
@@ -52,27 +46,40 @@ export async function verifyAdminSession(request: NextRequest): Promise<AdminSes
 }
 
 /**
- * Authenticate admin user
- * TODO: Replace with real authentication
+ * Authenticate admin user using environment variables
  */
-export async function authenticateAdmin(username: string, password: string): Promise<{ success: boolean; token?: string; error?: string }> {
-  const user = mockDataStore.findAdminUser(username)
-  
-  if (!user) {
+export async function authenticateAdmin(email: string, password: string): Promise<{ success: boolean; token?: string; error?: string }> {
+  // Get admin credentials from environment variables
+  const adminEmail = process.env.ADMIN_EMAIL
+  const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH
+
+  // Check if environment variables are set
+  if (!adminEmail || !adminPasswordHash) {
+    console.error('Admin credentials not configured in environment variables')
+    return { success: false, error: 'Server configuration error' }
+  }
+
+  // Verify email matches
+  if (email.toLowerCase() !== adminEmail.toLowerCase()) {
     return { success: false, error: 'Invalid credentials' }
   }
 
-  const isValid = mockDataStore.verifyPassword(user, password)
-  
-  if (!isValid) {
-    return { success: false, error: 'Invalid credentials' }
-  }
+  // Verify password using bcrypt
+  try {
+    const isValid = await bcrypt.compare(password, adminPasswordHash)
+    
+    if (!isValid) {
+      return { success: false, error: 'Invalid credentials' }
+    }
 
-  // Mock: Generate session token
-  // TODO: In production, create session in database and return JWT
-  const token = `mock_token_${Date.now()}_${Math.random().toString(36).substring(7)}`
-  
-  return { success: true, token }
+    // Generate session token
+    const token = `admin_session_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    
+    return { success: true, token }
+  } catch (error) {
+    console.error('Password verification error:', error)
+    return { success: false, error: 'Authentication error' }
+  }
 }
 
 /**

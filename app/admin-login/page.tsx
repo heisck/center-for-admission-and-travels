@@ -36,17 +36,27 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      // Demo authentication - in production, call your backend
-      // For demo purposes, accept any email/password combination
-      if (email && password) {
-        // Set session cookie
-        document.cookie = `admin_session=${btoa(email)};path=/;max-age=86400`
-        
-        // Redirect to admin dashboard
-        router.push('/admin')
-        router.refresh()
+      // Call the authentication API
+      const response = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        setError(result.error || 'Login failed. Please check your credentials.')
+        return
       }
+
+      // Redirect to admin dashboard
+      router.push('/admin')
+      router.refresh()
     } catch (err) {
+      console.error('Login error:', err)
       setError('Login failed. Please try again.')
     } finally {
       setIsLoading(false)
@@ -140,12 +150,6 @@ export default function AdminLoginPage() {
             )}
           </button>
 
-          {/* Demo Credentials */}
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs font-semibold text-blue-900 mb-2">Demo Credentials:</p>
-            <p className="text-xs text-blue-800 mb-1">Email: <code className="bg-blue-100 px-1.5 py-0.5 rounded">admin@example.com</code></p>
-            <p className="text-xs text-blue-800">Password: <code className="bg-blue-100 px-1.5 py-0.5 rounded">password123</code></p>
-          </div>
         </form>
 
         {/* Back Link */}
