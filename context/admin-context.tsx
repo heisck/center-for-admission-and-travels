@@ -179,6 +179,8 @@ interface AdminContextType {
   canUndo: boolean
   canRedo: boolean
   resetToDefault: () => void
+  saveAll: () => Promise<void>
+  isSaving: boolean
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
@@ -638,6 +640,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     return stored || defaultContent
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Load content from database on mount
   useEffect(() => {
@@ -1127,6 +1130,94 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     // Database is the source of truth - no localStorage needed
   }, [])
 
+  const saveAll = useCallback(async () => {
+    setIsSaving(true)
+    try {
+      // Save all sections to database
+      const savePromises = [
+        // Home
+        fetch('/api/admin/content/home', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hero: content.home.hero,
+            services: content.home.services,
+          }),
+        }),
+        // About
+        fetch('/api/admin/content/about', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            heroTitle: content.about.heroTitle,
+            heroSubtitle: content.about.heroSubtitle,
+            heroImage: content.about.heroImage,
+            mission: content.about.mission,
+            vision: content.about.vision,
+            coreValues: content.about.coreValues,
+            founder: content.about.founder,
+            team: content.about.team,
+            successStories: content.about.successStories,
+          }),
+        }),
+        // Travel Tours
+        fetch('/api/admin/content/travel-tours', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hero: content.travelTours.hero,
+            featured: content.travelTours.featured,
+            benefits: content.travelTours.benefits,
+            galleryImages: content.travelTours.galleryImages,
+          }),
+        }),
+        // Contact
+        fetch('/api/admin/content/contact', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(content.contact),
+        }),
+        // Footer
+        fetch('/api/admin/content/footer', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(content.footer),
+        }),
+      ]
+
+      // Save service pages
+      content.servicePages.forEach((service) => {
+        savePromises.push(
+          fetch(`/api/admin/content/service-pages/${service.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(service),
+          })
+        )
+      })
+
+      const results = await Promise.allSettled(savePromises.map(p => p.then(r => r.json())))
+      
+      // Check for any failures
+      const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success))
+      if (failures.length > 0) {
+        console.error('Some saves failed:', failures)
+        alert(`Saved with ${failures.length} error(s). Please check the console for details.`)
+      } else {
+        // Clear undo/redo history after successful save
+        const newHistory = [{ content, timestamp: Date.now() }]
+        setHistory(newHistory)
+        setHistoryIndex(0)
+        alert('All changes saved successfully!')
+      }
+    } catch (error) {
+      console.error('Error saving all changes:', error)
+      alert('Failed to save changes. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [content])
+
   return (
     <AdminContext.Provider
       value={{
@@ -1153,6 +1244,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         canUndo: historyIndex > 0,
         canRedo: historyIndex < history.length - 1,
         resetToDefault,
+        saveAll,
+        isSaving,
       }}
     >
       {children}

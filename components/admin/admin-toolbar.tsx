@@ -6,12 +6,16 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 export function AdminToolbar() {
-  const { undo, redo, canUndo, canRedo, resetToDefault } = useAdmin()
+  const { undo, redo, canUndo, canRedo, resetToDefault, saveAll, isSaving } = useAdmin()
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset all changes to default? This cannot be undone.')) {
       resetToDefault()
     }
+  }
+
+  const handleSave = async () => {
+    await saveAll()
   }
 
   return (
@@ -66,11 +70,13 @@ export function AdminToolbar() {
           </button>
 
           <button
-            className="p-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition flex items-center gap-1 sm:gap-2 flex-shrink-0"
-            title="Save changes"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="p-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition flex items-center gap-1 sm:gap-2 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Save all changes to database"
           >
             <Save size={16} />
-            <span className="hidden sm:inline">Save</span>
+            <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save'}</span>
           </button>
 
           <Link

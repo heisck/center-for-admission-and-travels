@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Undo2, Redo2, RotateCcw, Home, Info, Package, Settings, Eye, EyeOff, Plane } from 'lucide-react'
+import { Undo2, Redo2, RotateCcw, Home, Info, Package, Settings, Eye, EyeOff, Plane, Save } from 'lucide-react'
 import { useAdmin } from '@/context/admin-context'
 import AdminHomeEditor from './editors/admin-home-editor'
 import AdminAboutEditor from './editors/admin-about-editor'
@@ -18,7 +18,11 @@ type AdminPage = 'home' | 'about' | 'packages' | 'services' | 'travel-tours'
 export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState<AdminPage>('home')
   const [showPreview, setShowPreview] = useState(true)
-  const { canUndo, canRedo, undo, redo, resetToDefault } = useAdmin()
+  const { canUndo, canRedo, undo, redo, resetToDefault, saveAll, isSaving } = useAdmin()
+
+  const handleSave = async () => {
+    await saveAll()
+  }
 
   const tabs: { id: AdminPage; label: string; icon: React.ReactNode }[] = [
     { id: 'home', label: 'Home', icon: <Home size={18} /> },
@@ -63,6 +67,16 @@ export default function AdminDashboard() {
               >
                 <RotateCcw size={16} />
                 Reset
+              </button>
+              <div className="w-px h-6 bg-border"></div>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="p-2 px-4 rounded-lg bg-primary text-white hover:bg-primary/90 text-sm font-medium transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Save all changes to database"
+              >
+                <Save size={16} />
+                {isSaving ? 'Saving...' : 'Save'}
               </button>
               <div className="w-px h-6 bg-border"></div>
               <DataManager />
