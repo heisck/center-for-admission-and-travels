@@ -16,7 +16,13 @@ export default function AdminHomePage() {
   const { hero } = content.home
   const [masonryLoaded, setMasonryLoaded] = useState(false)
 
-  // Show loading state while content is being fetched
+  // All hooks must be called before any conditional returns
+  useEffect(() => {
+    const timer = setTimeout(() => setMasonryLoaded(true), 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show loading state while content is being fetched (AFTER all hooks)
   if (isLoading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
@@ -27,11 +33,6 @@ export default function AdminHomePage() {
       </main>
     )
   }
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMasonryLoaded(true), 500)
-    return () => clearTimeout(timer)
-  }, [])
 
   return (
     <main className="min-h-screen bg-background">
