@@ -957,6 +957,376 @@ async function main() {
   }
 
   // ============================================================================
+  // PACKAGES (for /packages page — all categories)
+  // ============================================================================
+
+  // Clear existing packages
+  await prisma.packageHighlight.deleteMany({})
+  await prisma.packageImage.deleteMany({})
+  await prisma.packageIncluded.deleteMany({})
+  await prisma.packageNotIncluded.deleteMany({})
+  await prisma.package.deleteMany({})
+
+  // --- STUDY ABROAD PACKAGES ---
+  await prisma.package.create({
+    data: {
+      name: 'UK University Admission',
+      category: 'study',
+      description: 'Complete admission support for top UK universities including Russell Group institutions. From university selection to visa approval.',
+      duration: '3–6 Months Processing',
+      price: 3500,
+      itinerary: 'Consultation → University Selection → Application → Offer Letter → Visa Processing → Pre-Departure',
+      order: 0,
+      highlights: {
+        create: [
+          { text: 'Guaranteed admission to accredited UK universities', order: 0 },
+          { text: 'Full visa application and interview preparation', order: 1 },
+          { text: 'IELTS preparation guidance included', order: 2 },
+          { text: 'Scholarship identification and application support', order: 3 },
+          { text: 'Pre-departure orientation and accommodation advice', order: 4 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/united-kingdom-big-ben-london-university.jpg', alt: 'UK University', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'University application fees (up to 5 universities)', order: 0 },
+          { text: 'Visa application guidance and document review', order: 1 },
+          { text: 'IELTS study materials', order: 2 },
+          { text: 'Pre-departure briefing', order: 3 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'Tuition fees', order: 0 },
+          { text: 'Flight tickets', order: 1 },
+          { text: 'Accommodation costs', order: 2 },
+        ],
+      },
+    },
+  })
+
+  await prisma.package.create({
+    data: {
+      name: 'Canada Study & Settle',
+      category: 'study',
+      description: 'Study in Canada with a pathway to permanent residency. Includes college/university admission and post-study work permit guidance.',
+      duration: '4–8 Months Processing',
+      price: 4200,
+      itinerary: 'Profile Assessment → School Selection → Application → Study Permit → Travel Prep → Post-Arrival Support',
+      order: 1,
+      highlights: {
+        create: [
+          { text: 'Pathway to Canadian permanent residency', order: 0 },
+          { text: 'Admission to designated learning institutions (DLI)', order: 1 },
+          { text: 'Study permit and travel document processing', order: 2 },
+          { text: 'Post-graduation work permit guidance', order: 3 },
+          { text: 'Settlement and integration support', order: 4 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/canada-niagara-falls-toronto-city.jpg', alt: 'Canada Study', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'Application to 3 Canadian institutions', order: 0 },
+          { text: 'Study permit application support', order: 1 },
+          { text: 'Airport pickup coordination', order: 2 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'Tuition and living expenses', order: 0 },
+          { text: 'Biometrics and medical exam fees', order: 1 },
+        ],
+      },
+    },
+  })
+
+  await prisma.package.create({
+    data: {
+      name: 'USA Student Visa Package',
+      category: 'study',
+      description: 'Full support for F-1 student visa to the United States. University matching, application, and embassy interview preparation.',
+      duration: '3–6 Months Processing',
+      price: 5000,
+      itinerary: 'Consultation → University Matching → I-20 Obtainment → DS-160 Filing → Embassy Interview → Travel',
+      order: 2,
+      highlights: {
+        create: [
+          { text: 'Admission to accredited US colleges and universities', order: 0 },
+          { text: 'I-20 document and SEVIS fee processing', order: 1 },
+          { text: 'US Embassy interview coaching', order: 2 },
+          { text: 'Financial documentation guidance', order: 3 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/statue-of-liberty-nyc.png', alt: 'USA Student Visa', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'University applications (up to 4)', order: 0 },
+          { text: 'DS-160 form filing assistance', order: 1 },
+          { text: 'Mock embassy interview sessions', order: 2 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'SEVIS fee and visa application fee', order: 0 },
+          { text: 'Tuition fees', order: 1 },
+          { text: 'Flight and accommodation', order: 2 },
+        ],
+      },
+    },
+  })
+
+  // --- WORK ABROAD PACKAGES ---
+  await prisma.package.create({
+    data: {
+      name: 'UK Skilled Worker Visa',
+      category: 'work',
+      description: 'Secure employment in the UK with our skilled worker visa package. Job matching, CV optimization, and complete visa processing.',
+      duration: '2–5 Months Processing',
+      price: 4500,
+      itinerary: 'Skills Assessment → CV Optimization → Job Matching → Employer Sponsorship → Visa Application → Relocation',
+      order: 3,
+      highlights: {
+        create: [
+          { text: 'Matched with verified UK employers and sponsors', order: 0 },
+          { text: 'Professional CV and cover letter tailored to UK standards', order: 1 },
+          { text: 'Skilled Worker visa application processing', order: 2 },
+          { text: 'Interview preparation and coaching', order: 3 },
+          { text: 'Relocation and settling-in guidance', order: 4 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/united-kingdom-big-ben-london-university.jpg', alt: 'UK Work', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'Job search and employer matching', order: 0 },
+          { text: 'CV, cover letter, and LinkedIn optimization', order: 1 },
+          { text: 'Visa application and documentation', order: 2 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'Visa fees and IHS surcharge', order: 0 },
+          { text: 'Flight tickets', order: 1 },
+        ],
+      },
+    },
+  })
+
+  await prisma.package.create({
+    data: {
+      name: 'Gulf States Employment',
+      category: 'work',
+      description: 'Work in Dubai, Qatar, or Saudi Arabia with competitive salary packages. Hospitality, construction, corporate, and healthcare roles available.',
+      duration: '1–3 Months Processing',
+      price: 3000,
+      itinerary: 'Profile Review → Job Matching → Offer Letter → Work Visa → Medical Check → Deployment',
+      order: 4,
+      highlights: {
+        create: [
+          { text: 'Tax-free salary packages in the Gulf region', order: 0 },
+          { text: 'Verified employers in hospitality, healthcare, and corporate sectors', order: 1 },
+          { text: 'Work visa and residence permit processing', order: 2 },
+          { text: 'Accommodation assistance provided by employers', order: 3 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/dubai-burj-khalifa-city-skyline.jpg', alt: 'Gulf Employment', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'Job placement with verified Gulf employers', order: 0 },
+          { text: 'Employment contract review', order: 1 },
+          { text: 'Work visa processing', order: 2 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'Medical examination fees', order: 0 },
+          { text: 'Police clearance certificate', order: 1 },
+        ],
+      },
+    },
+  })
+
+  await prisma.package.create({
+    data: {
+      name: 'Germany Job Seeker Visa',
+      category: 'work',
+      description: 'Enter Germany on a job seeker visa to find employment on-ground. Ideal for engineers, IT professionals, and skilled tradespeople.',
+      duration: '2–4 Months Processing',
+      price: 3800,
+      itinerary: 'Qualification Check → Document Preparation → Visa Application → Travel → Job Search → Work Permit Conversion',
+      order: 5,
+      highlights: {
+        create: [
+          { text: '6-month job seeker visa to find work in Germany', order: 0 },
+          { text: 'Qualification recognition (Anabin/ZAB) assistance', order: 1 },
+          { text: 'German CV format preparation', order: 2 },
+          { text: 'Job portal registration and networking guidance', order: 3 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/germany.jpg', alt: 'Germany Job Seeker', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'Document preparation and translation', order: 0 },
+          { text: 'Visa application guidance', order: 1 },
+          { text: 'Job search strategy and support', order: 2 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'Blocked account funds (approx. €11,208)', order: 0 },
+          { text: 'Visa fees and health insurance', order: 1 },
+        ],
+      },
+    },
+  })
+
+  // --- TRAVEL PACKAGES ---
+  await prisma.package.create({
+    data: {
+      name: 'Dubai Holiday Package',
+      category: 'travel',
+      description: 'Experience the magic of Dubai — from the towering Burj Khalifa to thrilling desert safaris and luxury shopping at Dubai Mall.',
+      duration: '6 Days / 5 Nights',
+      price: 1299,
+      itinerary: 'Day 1: Arrival & City Tour | Day 2: Burj Khalifa & Dubai Mall | Day 3: Desert Safari | Day 4: Abu Dhabi Day Trip | Day 5: Beach & Shopping | Day 6: Departure',
+      order: 6,
+      highlights: {
+        create: [
+          { text: 'Burj Khalifa observation deck visit', order: 0 },
+          { text: 'Desert safari with BBQ dinner and entertainment', order: 1 },
+          { text: 'Dhow cruise along Dubai Marina', order: 2 },
+          { text: 'Abu Dhabi Grand Mosque day trip', order: 3 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/dubai-burj-khalifa-city-skyline.jpg', alt: 'Dubai Holiday', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'Hotel accommodation (4-star)', order: 0 },
+          { text: 'Airport transfers', order: 1 },
+          { text: 'Guided city tours', order: 2 },
+          { text: 'Desert safari experience', order: 3 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'International flights', order: 0 },
+          { text: 'Travel insurance', order: 1 },
+          { text: 'Personal shopping expenses', order: 2 },
+        ],
+      },
+    },
+  })
+
+  await prisma.package.create({
+    data: {
+      name: 'Europe Multi-City Tour',
+      category: 'travel',
+      description: 'Visit Paris, Amsterdam, and Rome in one unforgettable trip. Art, history, culture, and cuisine across three iconic European capitals.',
+      duration: '10 Days / 9 Nights',
+      price: 1899,
+      itinerary: 'Days 1-3: Paris | Days 4-6: Amsterdam | Days 7-9: Rome | Day 10: Departure',
+      order: 7,
+      highlights: {
+        create: [
+          { text: 'Eiffel Tower, Louvre Museum, Champs-Élysées', order: 0 },
+          { text: 'Amsterdam canal cruise and Van Gogh Museum', order: 1 },
+          { text: 'Rome Colosseum, Vatican City, Trevi Fountain', order: 2 },
+          { text: 'Inter-city train travel included', order: 3 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/europe-paris-eiffel-tower-landmarks.jpg', alt: 'Europe Tour', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'Hotel accommodation in all cities', order: 0 },
+          { text: 'Inter-city train tickets', order: 1 },
+          { text: 'Guided tours and entrance fees', order: 2 },
+          { text: 'Daily breakfast', order: 3 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'International flights', order: 0 },
+          { text: 'Schengen visa fees', order: 1 },
+          { text: 'Lunches and dinners', order: 2 },
+        ],
+      },
+    },
+  })
+
+  await prisma.package.create({
+    data: {
+      name: 'Asia Cultural Explorer',
+      category: 'travel',
+      description: 'Discover the temples, beaches, and street food of Southeast Asia. Thailand, Cambodia, and Vietnam in one incredible journey.',
+      duration: '12 Days / 11 Nights',
+      price: 1499,
+      itinerary: 'Days 1-4: Bangkok & Phuket | Days 5-7: Siem Reap & Angkor Wat | Days 8-11: Hanoi & Ha Long Bay | Day 12: Departure',
+      order: 8,
+      highlights: {
+        create: [
+          { text: 'Bangkok Grand Palace and floating markets', order: 0 },
+          { text: 'Angkor Wat sunrise tour', order: 1 },
+          { text: 'Ha Long Bay overnight cruise', order: 2 },
+          { text: 'Thai cooking class experience', order: 3 },
+        ],
+      },
+      images: {
+        create: [
+          { url: '/asia-tropical-beaches-thailand-temples.jpg', alt: 'Asia Tour', order: 0 },
+        ],
+      },
+      included: {
+        create: [
+          { text: 'All accommodation', order: 0 },
+          { text: 'Domestic flights between countries', order: 1 },
+          { text: 'Guided tours and entrance fees', order: 2 },
+          { text: 'Ha Long Bay cruise', order: 3 },
+        ],
+      },
+      notIncluded: {
+        create: [
+          { text: 'International flights', order: 0 },
+          { text: 'Travel visa fees', order: 1 },
+          { text: 'Personal expenses', order: 2 },
+        ],
+      },
+    },
+  })
+
+  console.log('📦 Packages seeded for study, work, and travel categories!')
+
+  // ============================================================================
   // ADMIN USER (Default credentials)
   // ============================================================================
 

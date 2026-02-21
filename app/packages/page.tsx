@@ -27,6 +27,11 @@ export default function Packages() {
   const packages = content?.packages || []
   const filtered = filter === "all" ? packages : packages.filter((p) => p.category === filter)
 
+  // Debug: Log packages and filter state
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Packages:', packages.length, 'Filter:', filter, 'Filtered:', filtered.length)
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -95,51 +100,65 @@ export default function Packages() {
       {/* Packages Grid */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            {filtered.map((pkg) => (
-              <div
-                key={pkg.id}
-                className="group bg-white border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+          {filtered.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-xl text-muted-foreground mb-4">
+                No packages found in this category.
+              </p>
+              <button
+                onClick={() => setFilter("all")}
+                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
               >
-                <div className="h-48 relative overflow-hidden bg-gray-200">
-                  <Image
-                    src={pkg.images?.[0] || "/placeholder.svg"}
-                    alt={pkg.name}
-                    fill
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition"></div>
-                </div>
-                <div className="p-8">
-                  <p className="text-primary text-sm font-semibold uppercase mb-2">{pkg.category}</p>
-                  <h3 className="text-2xl font-bold mb-2">{pkg.name}</h3>
-                  <p className="text-muted-foreground text-sm mb-4">{pkg.description}</p>
-                  <p className="font-semibold text-foreground mb-4">{pkg.duration}</p>
-
-                  <div className="space-y-2 mb-6">
-                    {pkg.highlights?.slice(0, 3).map((h, i) => (
-                      <div key={i} className="flex items-center space-x-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                        <span className="text-foreground">{h}</span>
-                      </div>
-                    ))}
+                View All Packages
+              </button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {filtered.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className="group bg-white border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+                >
+                  <div className="h-48 relative overflow-hidden bg-gray-200">
+                    <Image
+                      src={pkg.images?.[0] || "/placeholder.svg"}
+                      alt={pkg.name}
+                      fill
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition"></div>
                   </div>
+                  <div className="p-8">
+                    <p className="text-primary text-sm font-semibold uppercase mb-2">{pkg.category}</p>
+                    <h3 className="text-2xl font-bold mb-2">{pkg.name}</h3>
+                    <p className="text-muted-foreground text-sm mb-4">{pkg.description}</p>
+                    <p className="font-semibold text-foreground mb-4">{pkg.duration}</p>
 
-                  <div className="flex justify-between items-center pt-6 border-t">
-                    <span className="text-2xl font-bold text-primary">
-                      {pkg.price > 0 ? `$${pkg.price}` : "Contact"}
-                    </span>
-                    <Link
-                      href={`/checkout?id=${pkg.id}`}
-                      className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition"
-                    >
-                      Book
-                    </Link>
+                    <div className="space-y-2 mb-6">
+                      {pkg.highlights?.slice(0, 3).map((h, i) => (
+                        <div key={i} className="flex items-center space-x-2 text-sm">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                          <span className="text-foreground">{h}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center pt-6 border-t">
+                      <span className="text-2xl font-bold text-primary">
+                        {pkg.price > 0 ? `GHS ${pkg.price.toLocaleString()}` : "Contact"}
+                      </span>
+                      <Link
+                        href={`/checkout?id=${pkg.id}`}
+                        className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition"
+                      >
+                        Book
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

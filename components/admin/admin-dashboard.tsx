@@ -1,21 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { Undo2, Redo2, RotateCcw, Home, Info, Package, Settings, Eye, EyeOff, Plane, Save } from 'lucide-react'
+import { Undo2, Redo2, RotateCcw, Home, Info, Package, Settings, Eye, EyeOff, Plane, Save, CreditCard, ClipboardList } from 'lucide-react'
 import { useAdmin } from '@/context/admin-context'
 import AdminHomeEditor from './editors/admin-home-editor'
 import AdminAboutEditor from './editors/admin-about-editor'
 import AdminPackagesEditor from './editors/admin-packages-editor'
 import AdminServicesEditor from './editors/admin-services-editor'
 import AdminTravelToursEditor from './editors/admin-travel-tours-editor'
+import AdminBookingsEditor from './editors/admin-bookings-editor'
 import LivePreview from './live-preview'
 import { AdminHelp } from './admin-help'
 import { DataManager } from './data-manager'
 import { AdminStats } from './admin-stats'
+import { useRouter } from 'next/navigation'
 
-type AdminPage = 'home' | 'about' | 'packages' | 'services' | 'travel-tours'
+type AdminPage = 'home' | 'about' | 'packages' | 'services' | 'travel-tours' | 'bookings' | 'payment-settings'
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [currentPage, setCurrentPage] = useState<AdminPage>('home')
   const [showPreview, setShowPreview] = useState(true)
   const { canUndo, canRedo, undo, redo, resetToDefault, saveAll, isSaving } = useAdmin()
@@ -30,7 +33,17 @@ export default function AdminDashboard() {
     { id: 'packages', label: 'Packages', icon: <Package size={18} /> },
     { id: 'travel-tours', label: 'Travel Tours', icon: <Plane size={18} /> },
     { id: 'services', label: 'Services', icon: <Settings size={18} /> },
+    { id: 'bookings', label: 'Bookings', icon: <ClipboardList size={18} /> },
+    { id: 'payment-settings', label: 'Payment', icon: <CreditCard size={18} /> },
   ]
+
+  const handleTabClick = (tabId: AdminPage) => {
+    if (tabId === 'payment-settings') {
+      router.push('/admin/payment-settings')
+    } else {
+      setCurrentPage(tabId)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -88,7 +101,7 @@ export default function AdminDashboard() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setCurrentPage(tab.id)}
+                onClick={() => handleTabClick(tab.id)}
                 className={`px-4 py-3 font-medium transition flex items-center gap-2 whitespace-nowrap border-b-2 -mb-4 pb-4 ${
                   currentPage === tab.id
                     ? 'border-primary text-primary'
@@ -116,6 +129,7 @@ export default function AdminDashboard() {
             {currentPage === 'packages' && <AdminPackagesEditor />}
             {currentPage === 'travel-tours' && <AdminTravelToursEditor />}
             {currentPage === 'services' && <AdminServicesEditor />}
+            {currentPage === 'bookings' && <AdminBookingsEditor />}
           </div>
         </div>
 

@@ -112,7 +112,7 @@ export default function TravelTours() {
                     </div>
                     <div className="flex items-center gap-2 text-foreground">
                       <DollarSign className="w-4 h-4 text-primary" />
-                      <span className="text-sm">From ${pkg.price} per person</span>
+                      <span className="text-sm">From GHS {Number(pkg.price).toLocaleString()} per person</span>
                     </div>
                   </div>
 

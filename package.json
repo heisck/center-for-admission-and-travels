@@ -13,7 +13,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "postbuild": "prisma migrate deploy && npm run db:seed"
+    "postbuild": "prisma migrate deploy && npm run db:seed || echo '⚠️  Seeding failed - seed manually via /api/admin/seed after deployment'"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
