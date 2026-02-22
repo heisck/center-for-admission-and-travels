@@ -99,10 +99,10 @@ export default function PaymentCallbackPage() {
               )}
               <div className="flex gap-4 justify-center">
                 <Link
-                  href="/packages"
+                  href="/my-payments"
                   className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition"
                 >
-                  Browse More Packages
+                  View My Payments
                 </Link>
                 <Link
                   href="/"

@@ -3,15 +3,32 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect, useRef } from "react"
-import { Menu, X, User as UserIcon, LogOut } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Menu, X, User as UserIcon, LogOut, CreditCard } from "lucide-react"
 import { useUserAuth } from "@/context/user-auth-context"
 import './navbar.css'
+
+const NAV_LINKS = [
+  { href: '/', label: 'Home', mobileLabel: 'Home' },
+  { href: '/about', label: 'About', mobileLabel: 'About' },
+  { href: '/study-abroad', label: 'Study', mobileLabel: 'Study Abroad' },
+  { href: '/work-abroad', label: 'Work', mobileLabel: 'Work Abroad' },
+  { href: '/travel-tours', label: 'Travel', mobileLabel: 'Travel & Tours' },
+  { href: '/global-network', label: 'Network', mobileLabel: 'Global Network' },
+  { href: '/contact', label: 'Contact', mobileLabel: 'Contact' },
+]
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const { user, isLoading, logout } = useUserAuth()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname === href || pathname.startsWith(href + '/')
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -45,27 +62,19 @@ export default function Navbar() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-1">
-            <Link href="/" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
-              Home
-            </Link>
-            <Link href="/about" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
-              About
-            </Link>
-            <Link href="/study-abroad" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
-              Study
-            </Link>
-            <Link href="/work-abroad" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
-              Work
-            </Link>
-            <Link href="/travel-tours" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
-              Travel
-            </Link>
-            <Link href="/global-network" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
-              Network
-            </Link>
-            <Link href="/contact" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
-              Contact
-            </Link>
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-2 transition text-sm font-medium ${
+                  isActive(link.href)
+                    ? 'text-orange-600 font-semibold'
+                    : 'text-foreground hover:text-orange-600'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           <div className="hidden md:flex gap-3 md:gap-2 items-center">
@@ -86,6 +95,14 @@ export default function Navbar() {
                       <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
+                    <Link
+                      href="/my-payments"
+                      onClick={() => setShowUserMenu(false)}
+                      className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      My Payments
+                    </Link>
                     <button
                       onClick={async () => {
                         await logout()
@@ -126,33 +143,32 @@ export default function Navbar() {
         {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden pb-4 space-y-2">
-            <Link href="/" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
-              Home
-            </Link>
-            <Link href="/about" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
-              About
-            </Link>
-            <Link href="/study-abroad" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
-              Study Abroad
-            </Link>
-            <Link href="/work-abroad" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
-              Work Abroad
-            </Link>
-            <Link href="/travel-tours" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
-              Travel & Tours
-            </Link>
-            <Link href="/global-network" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
-              Global Network
-            </Link>
-            <Link href="/contact" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
-              Contact
-            </Link>
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`block px-3 py-2 text-sm font-medium ${
+                  isActive(link.href)
+                    ? 'text-orange-600 font-semibold'
+                    : 'text-foreground hover:text-orange-600'
+                }`}
+              >
+                {link.mobileLabel}
+              </Link>
+            ))}
             {user ? (
               <div className="border-t pt-4 space-y-2 mt-4">
                 <div className="px-4 py-2">
                   <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
+                <Link
+                  href="/my-payments"
+                  className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  My Payments
+                </Link>
                 <button
                   onClick={logout}
                   className="block w-full px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"

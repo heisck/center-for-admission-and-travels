@@ -634,6 +634,8 @@ model Payment {
   user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   metadata        Json?
   paystackData    Json?
+  adminNote       String?
+  adminViewedAt   DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

@@ -16,6 +16,9 @@ import {
   Package,
   Loader2,
   RefreshCw,
+  MessageCircle,
+  Eye,
+  Save,
 } from 'lucide-react'
 
 interface PaymentUser {
@@ -40,6 +43,8 @@ interface Payment {
   user: PaymentUser | null
   metadata: any
   paystackData: any
+  adminNote: string | null
+  adminViewedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -67,6 +72,9 @@ export default function AdminPaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
+  const [adminNote, setAdminNote] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [noteSaved, setNoteSaved] = useState(false)
 
   const fetchPayments = useCallback(async (page = 1) => {
     setLoading(true)
@@ -100,6 +108,73 @@ export default function AdminPaymentsPage() {
   const clearSearch = () => {
     setSearchInput('')
     setSearchQuery('')
+  }
+
+  const openPaymentDetail = async (p: Payment) => {
+    setSelectedPayment(p)
+    setAdminNote(p.adminNote || '')
+    setNoteSaved(false)
+
+    if (!p.adminViewedAt) {
+      try {
+        const res = await fetch(`/api/admin/payments/${p.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminViewedAt: new Date().toISOString() }),
+        })
+        const data = await res.json()
+        if (data.success) {
+          setSelectedPayment(data.data)
+          setPayments((prev) =>
+            prev.map((item) => (item.id === p.id ? { ...item, adminViewedAt: data.data.adminViewedAt } : item))
+          )
+        }
+      } catch (err) {
+        console.error('Failed to mark as viewed:', err)
+      }
+    }
+  }
+
+  const saveAdminNote = async () => {
+    if (!selectedPayment) return
+    setSavingNote(true)
+    setNoteSaved(false)
+    try {
+      const res = await fetch(`/api/admin/payments/${selectedPayment.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminNote }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSelectedPayment(data.data)
+        setPayments((prev) =>
+          prev.map((item) => (item.id === selectedPayment.id ? { ...item, adminNote: data.data.adminNote } : item))
+        )
+        setNoteSaved(true)
+        setTimeout(() => setNoteSaved(false), 2000)
+      }
+    } catch (err) {
+      console.error('Failed to save note:', err)
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
+  const buildWhatsAppUrl = (p: Payment) => {
+    const phone = p.customerPhone?.replace(/\D/g, '')
+    if (!phone) return null
+    const packageName = p.metadata?.packageName || 'your booking'
+    const message = [
+      `Hi ${p.customerName || 'there'},`,
+      ``,
+      `This is regarding your payment for *${packageName}*.`,
+      `Reference: ${p.reference}`,
+      `Amount: ${p.currency} ${p.amount.toLocaleString()}`,
+      ``,
+      `How can we assist you?`,
+    ].join('\n')
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
   }
 
   const formatDate = (dateStr: string) => {
@@ -137,7 +212,6 @@ export default function AdminPaymentsPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        {/* Status filter */}
         <div className="flex gap-2 flex-wrap">
           {['all', 'success', 'pending', 'processing', 'failed', 'cancelled'].map((s) => (
             <button
@@ -154,7 +228,6 @@ export default function AdminPaymentsPage() {
           ))}
         </div>
 
-        {/* Search */}
         <form onSubmit={handleSearch} className="flex gap-2 sm:ml-auto">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -199,6 +272,7 @@ export default function AdminPaymentsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-slate-50">
+                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-8"></th>
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Customer</th>
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Reference</th>
                   <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Amount</th>
@@ -210,14 +284,20 @@ export default function AdminPaymentsPage() {
               <tbody>
                 {payments.map((p) => {
                   const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending
+                  const isUnviewed = !p.adminViewedAt
                   return (
                     <tr
                       key={p.id}
-                      onClick={() => setSelectedPayment(p)}
-                      className="border-b border-border last:border-b-0 hover:bg-slate-50 cursor-pointer transition"
+                      onClick={() => openPaymentDetail(p)}
+                      className={`border-b border-border last:border-b-0 hover:bg-slate-50 cursor-pointer transition ${isUnviewed ? 'bg-orange-50/50' : ''}`}
                     >
                       <td className="px-4 py-3">
-                        <div className="font-medium text-foreground">{p.customerName || '—'}</div>
+                        {isUnviewed && (
+                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-500" title="Not viewed yet" />
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className={`font-medium text-foreground ${isUnviewed ? 'font-bold' : ''}`}>{p.customerName || '—'}</div>
                         <div className="text-xs text-muted-foreground">{p.customerEmail}</div>
                         {p.user && (
                           <div className="text-xs text-primary mt-0.5">@{p.user.username}</div>
@@ -294,7 +374,7 @@ export default function AdminPaymentsPage() {
             </div>
 
             <div className="px-6 py-5 space-y-5">
-              {/* Status badge */}
+              {/* Status badge + amount */}
               {(() => {
                 const sc = STATUS_CONFIG[selectedPayment.status] || STATUS_CONFIG.pending
                 return (
@@ -308,6 +388,14 @@ export default function AdminPaymentsPage() {
                   </div>
                 )
               })()}
+
+              {/* Viewed indicator */}
+              {selectedPayment.adminViewedAt && (
+                <div className="flex items-center gap-2 text-xs text-green-600">
+                  <Eye className="w-3.5 h-3.5" />
+                  Viewed on {formatDate(selectedPayment.adminViewedAt)}
+                </div>
+              )}
 
               {/* Details grid */}
               <div className="space-y-3">
@@ -338,6 +426,25 @@ export default function AdminPaymentsPage() {
                 </div>
               </div>
 
+              {/* WhatsApp contact button */}
+              {(() => {
+                const waUrl = buildWhatsAppUrl(selectedPayment)
+                if (!waUrl) return null
+                return (
+                  <div className="border-t border-border pt-4">
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      Contact on WhatsApp
+                    </a>
+                  </div>
+                )
+              })()}
+
               {/* Mobile money details */}
               {selectedPayment.metadata?.momoPhone && (
                 <div className="border-t border-border pt-4">
@@ -366,6 +473,34 @@ export default function AdminPaymentsPage() {
                   </div>
                 </div>
               )}
+
+              {/* Admin Note */}
+              <div className="border-t border-border pt-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Admin Note</h3>
+                <p className="text-xs text-muted-foreground mb-2">
+                  The customer will see this note on their payment history page.
+                </p>
+                <textarea
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  placeholder="Add a note for this payment (e.g. visa documents processed, booking confirmed)..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <div className="flex items-center gap-3 mt-2">
+                  <button
+                    onClick={saveAdminNote}
+                    disabled={savingNote}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition disabled:opacity-50"
+                  >
+                    {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save Note
+                  </button>
+                  {noteSaved && (
+                    <span className="text-sm text-green-600 font-medium">Saved!</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
