@@ -43,12 +43,14 @@ export async function POST(request: NextRequest) {
 
     const targetEmail = adminUser.email || undefined
     if (!targetEmail) {
-      return NextResponse.json({
-        success: false,
-        error: 'This admin account has no email. Contact your system administrator.',
-      },
-      { status: 400 }
-    )
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This admin account has no email. Contact your system administrator.',
+        },
+        { status: 400 }
+      )
+    }
 
     const resetToken = crypto.randomBytes(32).toString('hex')
     const resetTokenExpiry = new Date(Date.now() + 1000 * 60 * 60) // 1 hour
