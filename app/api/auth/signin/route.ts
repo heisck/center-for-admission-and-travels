@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { createSessionToken, getUserSessionCookieName, verifyPassword } from '@/lib/user-auth'
 
 export async function POST(request: NextRequest) {
+  let step = 'parse-body'
   try {
     const body = await request.json()
     const { identifier, password, rememberMe } = body ?? {}
@@ -13,6 +14,7 @@ export async function POST(request: NextRequest) {
 
     const id = String(identifier).trim().toLowerCase()
 
+    step = 'find-user'
     const user = await prisma.user.findFirst({
       where: {
         OR: [{ email: id }, { username: id }],
@@ -20,20 +22,21 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
-      console.error(`Signin failed: User not found for identifier: ${id}`)
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }
 
+    step = 'verify-password'
     const ok = await verifyPassword(String(password), user.passwordHash)
     if (!ok) {
-      console.error(`Signin failed: Password mismatch for user: ${user.email || user.username}`)
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }
 
+    step = 'create-token'
     const token = createSessionToken()
     const days = rememberMe ? 30 : 1
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * days)
 
+    step = 'create-session'
     await prisma.userSession.create({
       data: {
         userId: user.id,
@@ -42,6 +45,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    step = 'build-response'
     const response = NextResponse.json({
       success: true,
       user: { id: user.id, username: user.username, email: user.email, displayName: user.displayName },
@@ -56,9 +60,12 @@ export async function POST(request: NextRequest) {
     })
 
     return response
-  } catch (error) {
-    console.error('Signin error:', error)
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error(`Signin error at step [${step}]:`, error)
+    const message = process.env.NODE_ENV === 'production'
+      ? `Signin failed at: ${step}`
+      : `${step}: ${error?.message || error}`
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
 
