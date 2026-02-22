@@ -10,6 +10,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Paystack from '@paystack/paystack-sdk'
 import { prisma } from '@/lib/prisma'
+import { sendEmail } from '@/lib/email'
+import { paymentConfirmationEmail } from '@/lib/email-templates'
 
 const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY || '')
 
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Update payment record in database
-    await prisma.payment.update({
+    const payment = await prisma.payment.update({
       where: { reference },
       data: {
         status,
@@ -58,6 +60,18 @@ export async function GET(request: NextRequest) {
         updatedAt: new Date(),
       },
     })
+
+    // Send payment confirmation email on success (non-blocking)
+    if (status === 'success' && payment.customerEmail) {
+      const template = paymentConfirmationEmail({
+        name: payment.customerName || 'Customer',
+        reference: payment.reference,
+        amount: payment.amount,
+        currency: payment.currency,
+        packageName: (payment.metadata as any)?.packageName || 'Booking',
+      })
+      sendEmail({ to: payment.customerEmail, ...template }).catch(() => {})
+    }
 
     return NextResponse.json({
       success: true,

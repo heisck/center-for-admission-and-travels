@@ -44,14 +44,16 @@ model AdminSession {
 // ============================================================================
 
 model User {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  email        String   @unique
-  passwordHash String
-  displayName  String?
-  phone        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default(cuid())
+  username         String    @unique
+  email            String    @unique
+  passwordHash     String
+  displayName      String?
+  phone            String?
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   sessions     UserSession[]
   payments     Payment[]
@@ -652,6 +654,25 @@ enum PaymentStatus {
   success
   failed
   cancelled
+}
+
+// ============================================================================
+// CONTACT MESSAGES
+// ============================================================================
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read])
+  @@index([createdAt])
+  @@map("contact_messages")
 }
 
 // ============================================================================

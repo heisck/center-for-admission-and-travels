@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import { useUserAuth } from '@/context/user-auth-context'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Loader2,
   CreditCard,
@@ -145,8 +146,28 @@ export default function MyPaymentsPage() {
           </div>
 
           {(loading || authLoading) && (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-white border border-border rounded-xl p-5">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Skeleton className="h-5 w-[180px]" />
+                      <Skeleton className="h-3 w-[140px]" />
+                    </div>
+                    <div className="text-right space-y-2">
+                      <Skeleton className="h-6 w-[100px] ml-auto" />
+                      <Skeleton className="h-5 w-[80px] rounded-full ml-auto" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mb-3">
+                    <Skeleton className="h-3 w-[70px]" />
+                    <Skeleton className="h-3 w-[120px]" />
+                  </div>
+                  <div className="pt-2 border-t border-border">
+                    <Skeleton className="h-9 w-[200px] rounded-lg" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

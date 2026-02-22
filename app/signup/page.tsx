@@ -142,6 +142,7 @@ function SignUpContent() {
                 <input
                   type="text"
                   placeholder="Your full name"
+                  autoComplete="name"
                   className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.name ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
                   }`}
@@ -159,6 +160,7 @@ function SignUpContent() {
                 <input
                   type="text"
                   placeholder="Choose a username"
+                  autoComplete="username"
                   className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.username ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
                   }`}
@@ -177,6 +179,7 @@ function SignUpContent() {
                 <input
                   type="email"
                   placeholder="your.email@example.com"
+                  autoComplete="email"
                   className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.email ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
                   }`}
@@ -209,6 +212,7 @@ function SignUpContent() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a strong password"
+                  autoComplete="new-password"
                   className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.password ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
                   }`}
@@ -234,6 +238,7 @@ function SignUpContent() {
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
+                  autoComplete="new-password"
                   className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.confirmPassword
                       ? "border-destructive focus:ring-destructive"
@@ -263,8 +268,12 @@ function SignUpContent() {
               />
               <label htmlFor="terms" className="text-sm text-muted-foreground">
                 I agree to the{" "}
-                <a href="#" className="text-primary hover:underline">
+                <a href="/terms" target="_blank" className="text-primary hover:underline">
                   Terms and Conditions
+                </a>{" "}
+                and{" "}
+                <a href="/privacy" target="_blank" className="text-primary hover:underline">
+                  Privacy Policy
                 </a>
                 {errors.agreeTerms && <p className="text-xs text-destructive">{errors.agreeTerms}</p>}
               </label>

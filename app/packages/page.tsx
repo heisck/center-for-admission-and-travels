@@ -7,6 +7,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
 import { usePublicContent } from "@/context/public-content-context"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Packages() {
   useScrollToTop()
@@ -15,11 +16,44 @@ export default function Packages() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
+              <Skeleton className="h-80 w-full rounded-2xl" />
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-[280px]" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-3 gap-8">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white border border-border rounded-2xl overflow-hidden">
+                  <Skeleton className="aspect-video w-full" />
+                  <div className="p-8 space-y-3">
+                    <Skeleton className="h-3 w-[80px]" />
+                    <Skeleton className="h-7 w-[200px]" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-[120px]" />
+                    <div className="flex justify-between items-center pt-6 border-t border-border">
+                      <Skeleton className="h-7 w-[100px]" />
+                      <Skeleton className="h-9 w-[70px] rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <Footer />
       </main>
     )
   }

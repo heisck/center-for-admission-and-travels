@@ -124,6 +124,7 @@ function SignInContent() {
                 <input
                   type="text"
                   placeholder="your.email@example.com or username"
+                  autoComplete="username"
                   className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.email ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
                   }`}
@@ -137,7 +138,7 @@ function SignInContent() {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-semibold text-foreground">Password</label>
-                <Link href="#" className="text-sm text-primary hover:underline">
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -146,6 +147,7 @@ function SignInContent() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                     errors.password ? "border-destructive focus:ring-destructive" : "border-border focus:ring-primary"
                   }`}

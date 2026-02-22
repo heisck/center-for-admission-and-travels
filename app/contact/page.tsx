@@ -5,8 +5,9 @@ import type React from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Image from "next/image"
-import { Phone, Mail, MapPin } from "lucide-react"
+import { Phone, Mail, MapPin, Loader2 } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 import { usePublicContent } from "@/context/public-content-context"
 
 export default function Contact() {
@@ -19,17 +20,30 @@ export default function Contact() {
     subject: "",
     message: "",
   })
-  const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 5000)
-    setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to send message")
+      toast.success("Message sent! We'll get back to you soon.")
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (loading) {
@@ -67,11 +81,6 @@ export default function Contact() {
             {/* Contact Form */}
             <div>
               <h2 className="text-3xl font-bold mb-8 text-foreground">Send us a Message</h2>
-              {submitted && (
-                <div className="mb-6 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg">
-                  Thank you! We'll get back to you soon.
-                </div>
-              )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">Name</label>
@@ -140,9 +149,11 @@ export default function Contact() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
+                  disabled={submitting}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Send Message
+                  {submitting && <Loader2 className="w-5 h-5 animate-spin" />}
+                  {submitting ? "Sending..." : "Send Message"}
                 </button>
               </form>
             </div>

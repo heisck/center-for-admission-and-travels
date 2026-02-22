@@ -13,7 +13,7 @@ export default function Footer() {
   return (
     <footer className="bg-slate-900 text-white pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-8 mb-12">
+        <div className="grid md:grid-cols-5 gap-8 mb-12">
           {/* Brand */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
@@ -70,6 +70,28 @@ export default function Footer() {
               <li>
                 <Link href="/global-network" className="hover:text-primary transition">
                   Global Network
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div>
+            <h4 className="font-bold mb-4">Legal</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li>
+                <Link href="/terms" className="hover:text-primary transition">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-primary transition">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/refund-policy" className="hover:text-primary transition">
+                  Refund Policy
                 </Link>
               </li>
             </ul>

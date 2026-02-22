@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createSessionToken, getUserSessionCookieName, hashPassword } from '@/lib/user-auth'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { sendEmail } from '@/lib/email'
+import { welcomeEmail } from '@/lib/email-templates'
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const { allowed, retryAfterMs } = checkRateLimit(`signup:${ip}`, { maxRequests: 3, windowMs: 60_000 })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   try {
     const body = await request.json()
     const { username, email, password, displayName } = body ?? {}
@@ -59,6 +66,10 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
+
+    // Send welcome email (non-blocking)
+    const template = welcomeEmail(user.displayName || user.username)
+    sendEmail({ to: user.email, ...template }).catch(() => {})
 
     const response = NextResponse.json({ success: true, user })
     response.cookies.set(getUserSessionCookieName(), token, {

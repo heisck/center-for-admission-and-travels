@@ -96,6 +96,14 @@ export default function Navbar() {
                       <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                     <Link
+                      href="/profile"
+                      onClick={() => setShowUserMenu(false)}
+                      className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
+                    >
+                      <UserIcon className="w-4 h-4" />
+                      My Profile
+                    </Link>
+                    <Link
                       href="/my-payments"
                       onClick={() => setShowUserMenu(false)}
                       className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
@@ -162,6 +170,13 @@ export default function Navbar() {
                   <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
+                >
+                  <UserIcon className="w-4 h-4" />
+                  My Profile
+                </Link>
                 <Link
                   href="/my-payments"
                   className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"

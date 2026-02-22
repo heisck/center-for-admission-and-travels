@@ -7,6 +7,7 @@ interface User {
   username: string
   email: string
   displayName: string | null
+  phone: string | null
 }
 
 interface UserAuthContextType {

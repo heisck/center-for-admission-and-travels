@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createSessionToken, getUserSessionCookieName, verifyPassword } from '@/lib/user-auth'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const { allowed, retryAfterMs } = checkRateLimit(`signin:${ip}`, { maxRequests: 5, windowMs: 60_000 })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   let step = 'parse-body'
   try {
     const body = await request.json()

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ user: null })
 
     return NextResponse.json({
-      user: { id: user.id, username: user.username, email: user.email, displayName: user.displayName },
+      user: { id: user.id, username: user.username, email: user.email, displayName: user.displayName, phone: user.phone },
     })
   } catch (error) {
     console.error('Me error:', error)
