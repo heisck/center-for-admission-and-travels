@@ -7,6 +7,8 @@ import { PublicContentProvider } from "@/context/public-content-context"
 import { UserAuthProviderWrapper } from "@/components/user-auth-provider-wrapper"
 import { Toaster } from "@/components/ui/sonner"
 import CookieConsent from "@/components/cookie-consent"
+import { OrganizationStructuredData, WebSiteStructuredData } from "@/components/structured-data"
+import { GoogleAnalytics } from "@/components/google-analytics"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -54,6 +56,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
+        <OrganizationStructuredData />
+        <WebSiteStructuredData />
+        <GoogleAnalytics />
         <PublicContentProvider>
           <AdminProvider>
             <UserAuthProviderWrapper>
@@ -65,7 +70,7 @@ export default function RootLayout({
             </UserAuthProviderWrapper>
           </AdminProvider>
         </PublicContentProvider>
-      </body>
+        </body>
     </html>
   )
 }

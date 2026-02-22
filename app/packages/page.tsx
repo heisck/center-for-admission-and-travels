@@ -5,14 +5,23 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useMemo, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { usePublicContent } from "@/context/public-content-context"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Search } from "lucide-react"
 
-export default function Packages() {
+function PackagesContent() {
   useScrollToTop()
+  const searchParams = useSearchParams()
   const { content, loading } = usePublicContent()
   const [filter, setFilter] = useState("all")
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "")
+
+  useEffect(() => {
+    const q = searchParams.get("q")
+    if (q) setSearchQuery(q)
+  }, [searchParams])
 
   if (loading) {
     return (
@@ -59,12 +68,21 @@ export default function Packages() {
   }
 
   const packages = content?.packages || []
-  const filtered = filter === "all" ? packages : packages.filter((p) => p.category === filter)
-
-  // Debug: Log packages and filter state
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Packages:', packages.length, 'Filter:', filter, 'Filtered:', filtered.length)
-  }
+  const filtered = useMemo(() => {
+    let result = filter === "all" ? packages : packages.filter((p) => p.category === filter)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      result = result.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          p.category?.toLowerCase().includes(q) ||
+          p.duration?.toLowerCase().includes(q) ||
+          p.highlights?.some((h) => h?.toLowerCase().includes(q))
+      )
+    }
+    return result
+  }, [packages, filter, searchQuery])
 
   return (
     <main className="min-h-screen bg-background">
@@ -105,9 +123,19 @@ export default function Packages() {
         </div>
       </section>
 
-      {/* ... existing filters section ... */}
+      {/* Search & Filters */}
       <section className="py-12 bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="relative max-w-xl mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="search"
+              placeholder="Search packages (e.g. Dubai, study, 6 days...)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
           <div className="flex gap-4 justify-center flex-wrap">
             {[
               { value: "all", label: "All Packages" },
@@ -137,10 +165,10 @@ export default function Packages() {
           {filtered.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-xl text-muted-foreground mb-4">
-                No packages found in this category.
+                {searchQuery ? "No packages match your search. Try different keywords." : "No packages found in this category."}
               </p>
               <button
-                onClick={() => setFilter("all")}
+                onClick={() => { setFilter("all"); setSearchQuery("") }}
                 className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
               >
                 View All Packages
@@ -198,5 +226,31 @@ export default function Packages() {
 
       <Footer />
     </main>
+  )
+}
+
+export default function Packages() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
+              <Skeleton className="h-80 w-full rounded-2xl" />
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-[280px]" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+          </div>
+        </section>
+        <Footer />
+      </main>
+    }>
+      <PackagesContent />
+    </Suspense>
   )
 }

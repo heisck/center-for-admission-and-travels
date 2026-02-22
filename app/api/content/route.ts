@@ -11,6 +11,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 
+// Revalidate cached content every 60 seconds (reduces DB load for public content)
+export const revalidate = 60
+
 // GET /api/content - Fetch all content for frontend
 export async function GET() {
   try {

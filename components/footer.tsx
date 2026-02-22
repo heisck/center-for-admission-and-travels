@@ -2,20 +2,49 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter, Instagram, Youtube } from "lucide-react"
+import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter, Instagram, Youtube, Loader2 } from "lucide-react"
 import { usePublicContent } from "@/context/public-content-context"
+import { useState } from "react"
+import { toast } from "sonner"
 
 export default function Footer() {
   const { content } = usePublicContent()
-  
+  const [newsletterEmail, setNewsletterEmail] = useState("")
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
+
   const contact = content?.contact
   const footer = content?.footer
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newsletterEmail.trim()) return
+    setNewsletterLoading(true)
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newsletterEmail }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(data.message)
+        setNewsletterEmail("")
+      } else {
+        toast.error(data.error || "Subscription failed")
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.")
+    } finally {
+      setNewsletterLoading(false)
+    }
+  }
+
   return (
     <footer className="bg-slate-900 text-white pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-5 gap-8 mb-12">
-          {/* Brand */}
-          <div>
+          {/* Brand + Newsletter */}
+          <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <Image
                 src="/images/ca-20logo.png"
@@ -26,9 +55,29 @@ export default function Footer() {
               />
               <span className="text-sm font-bold">Center for Admission & Travels</span>
             </div>
-            <p className="text-slate-400 text-sm">
+            <p className="text-slate-400 text-sm mb-6">
               {footer?.companyDescription || "Unlocking global opportunities for education, work, and travel."}
             </p>
+            <form onSubmit={handleNewsletterSubmit} className="space-y-2">
+              <label className="text-sm font-semibold block">Stay updated</label>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Your email"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  disabled={newsletterLoading}
+                  className="flex-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={newsletterLoading}
+                  className="px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {newsletterLoading ? <Loader2 size={16} className="animate-spin" /> : "Subscribe"}
+                </button>
+              </div>
+            </form>
           </div>
 
           {/* Quick Links */}
