@@ -6,8 +6,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword } from '@/lib/user-auth'
+import { hashPassword, verifyPassword } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -53,16 +55,31 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password)
 
-    await prisma.adminUser.update({
-      where: { id: adminUser.id },
-      data: {
-        password: passwordHash,
-        resetToken: null,
-        resetTokenExpiry: null,
-      },
-    })
+    // Use raw SQL to ensure the update persists (avoids Prisma/connection pooling issues)
+    await prisma.$executeRaw`
+      UPDATE admin_users
+      SET password = ${passwordHash}, "resetToken" = NULL, "resetTokenExpiry" = NULL, "updatedAt" = NOW()
+      WHERE id = ${adminUser.id}
+    `
 
     await prisma.adminSession.deleteMany({ where: { userId: adminUser.id } })
+
+    // Verify the update persisted
+    const updated = await prisma.adminUser.findUnique({
+      where: { id: adminUser.id },
+      select: { password: true },
+    })
+    if (!updated) {
+      return NextResponse.json({ success: false, error: 'Update failed. Please try again.' }, { status: 500 })
+    }
+    const verified = await verifyPassword(password, updated.password)
+    if (!verified) {
+      console.error('Admin reset password: verification failed after update - possible DB replication/pooling issue')
+      return NextResponse.json({
+        success: false,
+        error: 'Password update did not persist. Please try again in a few seconds.',
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
