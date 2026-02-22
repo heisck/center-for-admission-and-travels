@@ -17,19 +17,8 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setError('')
 
-    // Validation
     if (!email || !password) {
       setError('Please fill in all fields')
-      return
-    }
-
-    if (!email.includes('@')) {
-      setError('Please enter a valid email')
-      return
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
       return
     }
 
@@ -87,19 +76,19 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          {/* Email Field */}
+          {/* Email / Username Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">
-              Email Address
+              Email or Username
             </label>
             <div className="relative">
               <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
               <input
                 id="email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
+                placeholder="admin@example.com or admin"
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
               />
             </div>

@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       data: { resetToken, resetTokenExpiry },
     })
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const { getBaseUrl } = await import('@/lib/url')
+    const baseUrl = getBaseUrl(request)
     const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`
     const template = passwordResetEmail(user.displayName || user.username, resetUrl)
 

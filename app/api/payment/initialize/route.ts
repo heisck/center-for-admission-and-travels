@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Paystack from '@paystack/paystack-sdk'
 import { prisma } from '@/lib/prisma'
 import { getUserFromSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
+import { getBaseUrl } from '@/lib/url'
 
 const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY || '')
 
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
       currency: 'GHS',
       reference,
       metadata: paystackMetadata,
-      callback_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payment/callback?reference=${reference}`,
+      callback_url: `${getBaseUrl(request)}/payment/callback?reference=${reference}`,
     })
 
     if (!response.status || !response.data) {

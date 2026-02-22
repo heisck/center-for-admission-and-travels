@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       isConfigured:
         !!process.env.PAYSTACK_SECRET_KEY && !!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
       currency: process.env.PAYMENT_CURRENCY || 'GHS',
-      baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
+      baseUrl: process.env.NEXT_PUBLIC_BASE_URL || '(auto-detected from request)',
     }
 
     return NextResponse.json({ success: true, data: settings })
