@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { Suspense } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { useState, useEffect } from "react"
@@ -28,6 +29,22 @@ interface FormErrors {
 }
 
 export default function Checkout() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </main>
+    }>
+      <CheckoutContent />
+    </Suspense>
+  )
+}
+
+function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const packageId = searchParams.get("id")
