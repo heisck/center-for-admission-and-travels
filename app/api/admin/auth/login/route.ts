@@ -1,15 +1,8 @@
-/**
- * API Route: /api/admin/auth/login
- * 
- * Admin login endpoint
- * 
- * TODO: Replace with real authentication when database is connected
- */
-
 import { NextRequest, NextResponse } from 'next/server'
-import { authenticateAdmin } from '@/lib/auth-helpers'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
-// POST /api/admin/auth/login
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -22,29 +15,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await authenticateAdmin(email, password)
+    const adminUser = await prisma.adminUser.findFirst({
+      where: {
+        OR: [
+          { email: email.toLowerCase() },
+          { username: email.toLowerCase() },
+        ],
+      },
+    })
 
-    if (!result.success) {
+    if (!adminUser) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: 'Invalid credentials' },
         { status: 401 }
       )
     }
 
-    // Set session cookie
+    const isValid = await bcrypt.compare(password, adminUser.password)
+    if (!isValid) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
+
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24) // 24 hours
+
+    await prisma.adminSession.create({
+      data: {
+        userId: adminUser.id,
+        token,
+        expiresAt,
+      },
+    })
+
     const response = NextResponse.json({
       success: true,
       message: 'Login successful',
-      token: result.token,
     })
 
-    // TODO: In production, use httpOnly, secure, sameSite cookies
-    response.cookies.set('admin_session', result.token!, {
-      maxAge: 60 * 60 * 24, // 24 hours
+    response.cookies.set('admin_session', token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       path: '/',
-      // httpOnly: true, // Enable in production
-      // secure: process.env.NODE_ENV === 'production', // Enable in production
-      // sameSite: 'strict',
+      maxAge: 60 * 60 * 24,
     })
 
     return response

@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import { toast } from "sonner"
 import { useUserAuth } from "@/context/user-auth-context"
 
 export default function SignUp() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") || "/"
   const { refreshUser } = useUserAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -83,7 +85,7 @@ export default function SignUp() {
           description: `Welcome, ${data.user?.displayName || data.user?.username}!`,
         })
         await refreshUser()
-        router.push("/")
+        router.push(redirectTo)
         router.refresh()
       } catch {
         setServerError("Sign up failed. Please try again.")

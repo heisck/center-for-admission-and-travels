@@ -49,10 +49,12 @@ model User {
   email        String   @unique
   passwordHash String
   displayName  String?
+  phone        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   sessions     UserSession[]
+  payments     Payment[]
 
   @@index([email])
   @@index([username])
@@ -619,23 +621,26 @@ model FooterSocialLink {
 
 model Payment {
   id              String        @id @default(cuid())
-  reference       String        @unique // Paystack reference
+  reference       String        @unique
   amount          Float
   currency        String        @default("GHS")
   status          PaymentStatus
-  paymentMethod   String?       // e.g., "card", "mobile_money"
+  paymentMethod   String?
   customerEmail   String
   customerName    String?
   customerPhone   String?
-  packageId       String?       // If payment is for a package
-  metadata        Json?         // Additional payment metadata
-  paystackData    Json?         // Full Paystack response
+  packageId       String?
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  metadata        Json?
+  paystackData    Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   @@index([reference])
   @@index([status])
   @@index([customerEmail])
+  @@index([userId])
   @@map("payments")
 }
 

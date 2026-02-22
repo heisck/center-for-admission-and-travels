@@ -48,6 +48,9 @@ export function AdminNavbar() {
               <Link href="/admin/contact" className="px-3 py-2 text-foreground hover:text-orange-600 transition text-sm font-medium">
                 Contact
               </Link>
+              <Link href="/admin/payments" className="px-3 py-2 text-orange-600 font-semibold hover:text-orange-700 transition text-sm">
+                Payments
+              </Link>
             </div>
 
             <div className="hidden md:flex gap-3 md:gap-2">
@@ -89,6 +92,9 @@ export function AdminNavbar() {
               </Link>
               <Link href="/admin/contact" className="block px-3 py-2 text-foreground hover:text-orange-600 text-sm font-medium">
                 Contact
+              </Link>
+              <Link href="/admin/payments" className="block px-3 py-2 text-orange-600 font-semibold hover:text-orange-700 text-sm">
+                Payments
               </Link>
               <div className="border-t pt-4 space-y-2 mt-4">
                 <Link

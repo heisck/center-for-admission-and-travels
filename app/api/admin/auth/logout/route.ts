@@ -1,19 +1,13 @@
-/**
- * API Route: /api/admin/auth/logout
- * 
- * Admin logout endpoint
- */
-
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAdminSession, destroyAdminSession } from '@/lib/auth-helpers'
+import { verifyAdminSession } from '@/lib/auth-helpers'
+import { prisma } from '@/lib/prisma'
 
-// POST /api/admin/auth/logout
 export async function POST(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request)
-    
+
     if (session) {
-      await destroyAdminSession(session.token)
+      await prisma.adminSession.deleteMany({ where: { token: session.token } }).catch(() => {})
     }
 
     const response = NextResponse.json({
@@ -21,7 +15,6 @@ export async function POST(request: NextRequest) {
       message: 'Logged out successfully',
     })
 
-    // Clear session cookie
     response.cookies.delete('admin_session')
 
     return response

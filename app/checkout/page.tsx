@@ -5,7 +5,9 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { CreditCard, Smartphone, MessageCircle, Loader2, AlertCircle, Shield, Clock, MapPin } from "lucide-react"
+import Link from "next/link"
+import { CreditCard, Smartphone, MessageCircle, Loader2, AlertCircle, Shield, Clock, MapPin, LogIn } from "lucide-react"
+import { useUserAuth } from "@/context/user-auth-context"
 
 interface PackageData {
   id: string
@@ -29,6 +31,7 @@ export default function Checkout() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const packageId = searchParams.get("id")
+  const { user, isLoading: authLoading } = useUserAuth()
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,6 +47,16 @@ export default function Checkout() {
     momoPhone: "",
     notes: "",
   })
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.displayName || user.username || prev.fullName,
+        email: user.email || prev.email,
+      }))
+    }
+  }, [user])
 
   useEffect(() => {
     if (!packageId) {
@@ -192,8 +205,45 @@ export default function Checkout() {
 
   const packagePrice = packageData?.price || 0
 
+  // -- Auth gate: require sign-in --
+  if (!authLoading && !user) {
+    return (
+      <main className="min-h-screen bg-background">
+        <Navbar />
+        <section className="py-32">
+          <div className="max-w-md mx-auto text-center">
+            <div className="bg-white border border-border rounded-2xl p-10">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <LogIn className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground mb-3">Sign In Required</h2>
+              <p className="text-muted-foreground mb-8">
+                Please sign in or create an account to complete your booking. This helps us keep track of your payments and booking history.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Link
+                  href={`/signin?redirect=/checkout?id=${packageId}`}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href={`/signup?redirect=/checkout?id=${packageId}`}
+                  className="px-6 py-3 border border-border rounded-lg font-semibold hover:bg-slate-50 transition"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+        <Footer />
+      </main>
+    )
+  }
+
   // -- Loading state --
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <main className="min-h-screen bg-background">
         <Navbar />
@@ -330,8 +380,9 @@ export default function Checkout() {
                           value={formData.email}
                           onChange={handleInputChange}
                           required
+                          readOnly={!!user?.email}
                           autoComplete="email"
-                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${formErrors.email ? "border-red-400" : "border-border"}`}
+                          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${user?.email ? "bg-slate-50 text-muted-foreground cursor-not-allowed" : ""} ${formErrors.email ? "border-red-400" : "border-border"}`}
                         />
                         {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
                       </div>

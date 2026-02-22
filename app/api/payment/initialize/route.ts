@@ -17,11 +17,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Paystack from '@paystack/paystack-sdk'
 import { prisma } from '@/lib/prisma'
+import { getUserFromSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
 
 const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY || '')
 
 export async function POST(request: NextRequest) {
   try {
+    // Resolve authenticated user from session cookie
+    const sessionToken = request.cookies.get(getUserSessionCookieName())?.value
+    const user = sessionToken ? await getUserFromSessionToken(sessionToken) : null
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'You must be signed in to make a payment' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { packageId, amount, email, name, phone, paymentMethod, metadata } = body
 
@@ -135,7 +147,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create payment record in database
+    // Create payment record in database linked to the authenticated user
     await prisma.payment.create({
       data: {
         reference,
@@ -147,6 +159,7 @@ export async function POST(request: NextRequest) {
         customerName: name,
         customerPhone: phone || null,
         packageId: packageId || null,
+        userId: user.id,
         metadata: {
           packageName: packageData?.name || null,
           billingAddress: metadata?.address || null,
