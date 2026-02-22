@@ -3,13 +3,16 @@
  * GET /api/admin/newsletter - List all subscribers (admin only)
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    await verifyAdminSession()
+    const session = await verifyAdminSession(request)
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
 
     const subscribers = await prisma.newsletterSubscriber.findMany({
       orderBy: { createdAt: 'desc' },
