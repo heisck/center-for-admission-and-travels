@@ -1327,6 +1327,20 @@ async function main() {
     },
   })
 
+  // Legal pages (privacy, terms, refund-policy) - admin can edit full content
+  const legalPages = [
+    { slug: 'privacy', title: 'Privacy Policy', content: '<p>Edit this content in Admin → Legal Pages.</p>' },
+    { slug: 'terms', title: 'Terms and Conditions', content: '<p>Edit this content in Admin → Legal Pages.</p>' },
+    { slug: 'refund-policy', title: 'Refund Policy', content: '<p>Edit this content in Admin → Legal Pages.</p>' },
+  ]
+  for (const page of legalPages) {
+    await prisma.legalPage.upsert({
+      where: { slug: page.slug },
+      update: {},
+      create: page,
+    })
+  }
+
   console.log('✅ Database seeded successfully!')
 }
 

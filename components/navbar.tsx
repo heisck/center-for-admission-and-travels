@@ -155,6 +155,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => setIsOpen(false)}
                 className={`block px-3 py-2 text-sm font-medium ${
                   isActive(link.href)
                     ? 'text-orange-600 font-semibold'
@@ -172,6 +173,7 @@ export default function Navbar() {
                 </div>
                 <Link
                   href="/profile"
+                  onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
                 >
                   <UserIcon className="w-4 h-4" />
@@ -179,13 +181,14 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/my-payments"
+                  onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
                 >
                   <CreditCard className="w-4 h-4" />
                   My Payments
                 </Link>
                 <button
-                  onClick={logout}
+                  onClick={() => { setIsOpen(false); logout() }}
                   className="block w-full px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
                 >
                   Sign Out
@@ -195,12 +198,14 @@ export default function Navbar() {
               <div className="border-t pt-4 space-y-2 mt-4">
                 <Link
                   href="/signin"
+                  onClick={() => setIsOpen(false)}
                   className="block px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/signup"
+                  onClick={() => setIsOpen(false)}
                   className="block w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold text-sm"
                 >
                   Sign Up

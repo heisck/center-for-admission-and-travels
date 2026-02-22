@@ -676,6 +676,20 @@ model ContactMessage {
 }
 
 // ============================================================================
+// LEGAL PAGES (Privacy, Terms, Refund Policy - editable by admin)
+// ============================================================================
+
+model LegalPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("legal_pages")
+}
+
+// ============================================================================
 // NOTES
 // ============================================================================
 

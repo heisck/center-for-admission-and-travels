@@ -1159,7 +1159,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(updates),
       })
       const result = await response.json()
-      if (!result.success) {
+      if (result.success && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('content-updated'))
+      } else if (!result.success) {
         console.error('Failed to save contact info:', result.error)
       }
     } catch (error) {
@@ -1183,7 +1185,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(updates),
       })
       const result = await response.json()
-      if (!result.success) {
+      if (result.success && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('content-updated'))
+      } else if (!result.success) {
         console.error('Failed to save footer info:', result.error)
       }
     } catch (error) {
@@ -1374,6 +1378,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const newHistory = [{ content, timestamp: Date.now() }]
         setHistory(newHistory)
         setHistoryIndex(0)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('content-updated'))
+        }
         alert('All changes saved successfully!')
       }
     } catch (error) {

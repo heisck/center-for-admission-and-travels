@@ -10,7 +10,8 @@
 
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 
 export interface PublicContent {
   home: {
@@ -166,13 +167,14 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
   const [content, setContent] = useState<PublicContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const pathname = usePathname()
 
-  const fetchContent = async () => {
+  const fetchContent = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/content')
+      const response = await fetch('/api/content', { cache: 'no-store' })
       const result = await response.json()
 
       if (!result.success) {
@@ -187,11 +189,37 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  const isInitialMount = useRef(true)
 
   useEffect(() => {
     fetchContent()
-  }, [])
+  }, [fetchContent])
+
+  // Refetch when user navigates (so admin changes show after switching pages)
+  useEffect(() => {
+    if (!pathname) return
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    fetchContent()
+  }, [pathname, fetchContent])
+
+  // Refetch when user returns to tab (catches changes made in another tab)
+  useEffect(() => {
+    const onFocus = () => fetchContent()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [fetchContent])
+
+  // Refetch when admin saves (so footer/contact updates show immediately)
+  useEffect(() => {
+    const onContentUpdated = () => fetchContent()
+    window.addEventListener('content-updated', onContentUpdated)
+    return () => window.removeEventListener('content-updated', onContentUpdated)
+  }, [fetchContent])
 
   return (
     <PublicContentContext.Provider

@@ -15,6 +15,7 @@ const ADMIN_NAV_LINKS = [
   { href: '/admin/travel-tours', label: 'Travel', mobileLabel: 'Travel & Tours' },
   { href: '/admin/global-network', label: 'Network', mobileLabel: 'Global Network' },
   { href: '/admin/contact', label: 'Contact', mobileLabel: 'Contact' },
+  { href: '/admin/legal', label: 'Legal', mobileLabel: 'Legal Pages' },
   { href: '/admin/payments', label: 'Payments', mobileLabel: 'Payments' },
 ]
 
@@ -83,6 +84,7 @@ export function AdminNavbar() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => setIsOpen(false)}
                   className={`block px-3 py-2 text-sm font-medium ${
                     isActive(link.href, link.exact)
                       ? 'text-orange-600 font-semibold'
@@ -96,6 +98,7 @@ export function AdminNavbar() {
                 <Link
                   href="/"
                   target="_blank"
+                  onClick={() => setIsOpen(false)}
                   className="block px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
                 >
                   View Site
