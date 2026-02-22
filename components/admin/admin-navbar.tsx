@@ -14,8 +14,10 @@ const ADMIN_NAV_LINKS = [
   { href: '/admin/work-abroad', label: 'Work', mobileLabel: 'Work Abroad' },
   { href: '/admin/travel-tours', label: 'Travel', mobileLabel: 'Travel & Tours' },
   { href: '/admin/global-network', label: 'Network', mobileLabel: 'Global Network' },
-  { href: '/admin/contact', label: 'Contact', mobileLabel: 'Contact' },
+  { href: '/admin/contact', label: 'Contact & Links', mobileLabel: 'Contact & Social Links' },
   { href: '/admin/legal', label: 'Legal', mobileLabel: 'Legal Pages' },
+  { href: '/admin/newsletter', label: 'Newsletter', mobileLabel: 'Newsletter' },
+  { href: '/admin/blog', label: 'Blog', mobileLabel: 'Blog' },
   { href: '/admin/payments', label: 'Payments', mobileLabel: 'Payments' },
 ]
 

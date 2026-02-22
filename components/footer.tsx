@@ -90,6 +90,16 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/blog" className="hover:text-primary transition">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/newsletter" className="hover:text-primary transition">
+                  Newsletter
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="hover:text-primary transition">
                   Contact
                 </Link>
