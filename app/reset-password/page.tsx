@@ -3,8 +3,9 @@
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Lock, Loader2, CheckCircle2, Eye, EyeOff, XCircle } from 'lucide-react'
+import { useUserAuth } from '@/context/user-auth-context'
 
 export default function ResetPasswordPage() {
   return (
@@ -20,6 +21,8 @@ export default function ResetPasswordPage() {
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const { refreshUser } = useUserAuth()
   const rawToken = searchParams.get('token')
   const token = rawToken ? rawToken.trim() : null
   const [password, setPassword] = useState('')
@@ -71,6 +74,8 @@ function ResetPasswordContent() {
       const data = await res.json()
       if (data.success) {
         setSuccess(true)
+        await refreshUser()
+        setTimeout(() => router.push('/'), 1500)
       } else {
         setError(data.error || 'Failed to reset password')
       }
@@ -97,12 +102,12 @@ function ResetPasswordContent() {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
               <h1 className="text-2xl font-bold text-foreground mb-3">Password Reset!</h1>
-              <p className="text-muted-foreground mb-6">Your password has been changed. You can now sign in with your new password.</p>
+              <p className="text-muted-foreground mb-6">You&apos;re now signed in. Redirecting to home...</p>
               <Link
-                href="/signin"
+                href="/"
                 className="inline-block px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
               >
-                Sign In
+                Go to Home
               </Link>
             </div>
           ) : (

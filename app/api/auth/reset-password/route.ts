@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, verifyPassword } from '@/lib/user-auth'
+import { hashPassword, createSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,34 +26,44 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password)
 
-    // Use raw SQL to ensure the update persists (avoids Prisma/connection pooling issues)
-    await prisma.$executeRaw`
-      UPDATE users
-      SET "passwordHash" = ${passwordHash}, "resetToken" = NULL, "resetTokenExpiry" = NULL, "updatedAt" = NOW()
-      WHERE id = ${user.id}
-    `
-
-    // Invalidate all existing sessions for security
-    await prisma.userSession.deleteMany({ where: { userId: user.id } })
-
-    // Verify the update persisted by re-fetching and checking the new password
-    const updated = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { passwordHash: true },
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          resetToken: null,
+          resetTokenExpiry: null,
+        },
+      })
+      await tx.userSession.deleteMany({ where: { userId: user.id } })
     })
-    if (!updated) {
-      return NextResponse.json({ success: false, error: 'Update failed. Please try again.' }, { status: 500 })
-    }
-    const verified = await verifyPassword(password, updated.passwordHash)
-    if (!verified) {
-      console.error('Reset password: verification failed after update - possible DB replication/pooling issue')
-      return NextResponse.json({
-        success: false,
-        error: 'Password update did not persist. Please try again in a few seconds, or use the direct database connection.',
-      }, { status: 500 })
-    }
 
-    return NextResponse.json({ success: true, message: 'Password reset successfully. Please sign in with your new password.' })
+    // Auto sign-in: create session so user doesn't have to re-enter password
+    const sessionToken = createSessionToken()
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) // 30 days
+    await prisma.userSession.create({
+      data: {
+        userId: user.id,
+        token: sessionToken,
+        expiresAt,
+      },
+    })
+
+    const response = NextResponse.json({
+      success: true,
+      message: 'Password reset successfully. You are now signed in.',
+      user: { id: user.id, username: user.username, email: user.email, displayName: user.displayName },
+    })
+
+    response.cookies.set(getUserSessionCookieName(), sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      expires: expiresAt,
+    })
+
+    return response
   } catch (error) {
     console.error('Reset password error:', error)
     return NextResponse.json({ success: false, error: 'Something went wrong' }, { status: 500 })
