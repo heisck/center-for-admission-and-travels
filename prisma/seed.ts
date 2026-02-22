@@ -9,6 +9,7 @@
  */
 
 import { PrismaClient } from '@prisma/client'
+import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -896,65 +897,50 @@ async function main() {
     },
   })
 
-  // Benefits - wrapped in try-catch in case table doesn't exist yet
-  try {
-    await prisma.travelToursBenefit.deleteMany({
-      where: { pageId: travelToursPage.id },
-    })
-    
-    await prisma.travelToursBenefit.createMany({
-      data: [
-        {
-          pageId: travelToursPage.id,
-          title: 'Expert Planning',
-          description: 'Our travel specialists design itineraries tailored to your preferences and budget',
-          order: 0,
-        },
-        {
-          pageId: travelToursPage.id,
-          title: '24/7 Support',
-          description: 'Round-the-clock customer service ensures help is always available during your journey',
-          order: 1,
-        },
-        {
-          pageId: travelToursPage.id,
-          title: 'Best Price Guarantee',
-          description: 'Competitive pricing with exclusive partnerships for exclusive travel deals',
-          order: 2,
-        },
-        {
-          pageId: travelToursPage.id,
-          title: 'Visa Assistance',
-          description: 'Complete visa documentation support and guidance for all destinations',
-          order: 3,
-        },
-        {
-          pageId: travelToursPage.id,
-          title: 'Travel Insurance',
-          description: 'Comprehensive travel insurance included to protect your investment',
-          order: 4,
-        },
-        {
-          pageId: travelToursPage.id,
-          title: 'Flexible Booking',
-          description: 'Easy modification and cancellation policies for your peace of mind',
-          order: 5,
-        },
-      ],
-    })
-  } catch (error: any) {
-    // Table might not exist yet - that's okay, skip seeding benefits
-    // P2021 = Table does not exist
-    // P2003 = Foreign key constraint failed (table exists but relationship issue)
-    if (error.code === 'P2021' || error.code === 'P2003') {
-      console.log('⚠️  travel_tours_benefits table not available - skipping benefits seed')
-      console.log('   This is normal if the table hasn\'t been created yet.')
-      console.log('   Benefits can be added manually through the admin panel.')
-    } else {
-      console.error('Error seeding travel tours benefits:', error)
-      // Don't throw - continue seeding other data
-    }
-  }
+  await prisma.travelToursBenefit.deleteMany({
+    where: { pageId: travelToursPage.id },
+  })
+
+  await prisma.travelToursBenefit.createMany({
+    data: [
+      {
+        pageId: travelToursPage.id,
+        title: 'Expert Planning',
+        description: 'Our travel specialists design itineraries tailored to your preferences and budget',
+        order: 0,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: '24/7 Support',
+        description: 'Round-the-clock customer service ensures help is always available during your journey',
+        order: 1,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Best Price Guarantee',
+        description: 'Competitive pricing with exclusive partnerships for exclusive travel deals',
+        order: 2,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Visa Assistance',
+        description: 'Complete visa documentation support and guidance for all destinations',
+        order: 3,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Travel Insurance',
+        description: 'Comprehensive travel insurance included to protect your investment',
+        order: 4,
+      },
+      {
+        pageId: travelToursPage.id,
+        title: 'Flexible Booking',
+        description: 'Easy modification and cancellation policies for your peace of mind',
+        order: 5,
+      },
+    ],
+  })
 
   // ============================================================================
   // PACKAGES (for /packages page — all categories)
@@ -1330,14 +1316,13 @@ async function main() {
   // ADMIN USER (Default credentials)
   // ============================================================================
 
-  // NOTE: In production, password should be hashed with bcrypt
-  // For now, this is a placeholder
+  const adminPasswordHash = await hash('password123', 10)
   await prisma.adminUser.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: { password: adminPasswordHash },
     create: {
       username: 'admin',
-      password: 'password123', // TODO: Hash this with bcrypt in production
+      password: adminPasswordHash,
       email: 'admin@example.com',
     },
   })

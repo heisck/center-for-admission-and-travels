@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
@@ -13,7 +13,8 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:push": "prisma db push",
-    "postbuild": "prisma migrate deploy && npm run db:seed || echo '⚠️  Seeding failed - seed manually via /api/admin/seed after deployment'"
+    "db:setup": "prisma generate && prisma migrate deploy && npm run db:seed",
+    "postbuild": "npm run db:seed || echo 'Seeding skipped — run npm run db:seed manually if needed'"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
