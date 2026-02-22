@@ -2,12 +2,20 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { AdminToolbar } from './admin-toolbar'
 
-const ADMIN_NAV_LINKS = [
+interface NavLink {
+  href: string
+  label: string
+  mobileLabel: string
+  exact?: boolean
+  badgeKey?: 'messages' | 'payments' | 'pendingPayments'
+}
+
+const ADMIN_NAV_LINKS: NavLink[] = [
   { href: '/admin', label: 'Home', mobileLabel: 'Home', exact: true },
   { href: '/admin/about', label: 'About', mobileLabel: 'About' },
   { href: '/admin/study-abroad', label: 'Study', mobileLabel: 'Study Abroad' },
@@ -15,15 +23,52 @@ const ADMIN_NAV_LINKS = [
   { href: '/admin/travel-tours', label: 'Travel', mobileLabel: 'Travel & Tours' },
   { href: '/admin/global-network', label: 'Network', mobileLabel: 'Global Network' },
   { href: '/admin/contact', label: 'Contact & Links', mobileLabel: 'Contact & Social Links' },
+  { href: '/admin/contact-messages', label: 'Messages', mobileLabel: 'Contact Messages', badgeKey: 'messages' },
   { href: '/admin/legal', label: 'Legal', mobileLabel: 'Legal Pages' },
   { href: '/admin/newsletter', label: 'Newsletter', mobileLabel: 'Newsletter' },
   { href: '/admin/blog', label: 'Blog', mobileLabel: 'Blog' },
-  { href: '/admin/payments', label: 'Payments', mobileLabel: 'Payments' },
+  { href: '/admin/payments', label: 'Payments', mobileLabel: 'Payments', badgeKey: 'payments' },
 ]
 
 export function AdminNavbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [badges, setBadges] = useState<{ unreadMessages: number; unviewedPayments: number; pendingPayments: number }>({
+    unreadMessages: 0,
+    unviewedPayments: 0,
+    pendingPayments: 0,
+  })
   const pathname = usePathname()
+
+  const fetchBadges = () => {
+    fetch('/api/admin/notifications', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setBadges({
+            unreadMessages: data.data.unreadMessages ?? 0,
+            unviewedPayments: data.data.unviewedPayments ?? 0,
+            pendingPayments: data.data.pendingPayments ?? 0,
+          })
+        }
+      })
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchBadges()
+  }, [pathname])
+
+  useEffect(() => {
+    const onUpdate = () => fetchBadges()
+    window.addEventListener('admin-notifications-update', onUpdate)
+    return () => window.removeEventListener('admin-notifications-update', onUpdate)
+  }, [])
+
+  const getBadgeCount = (link: NavLink) => {
+    if (link.badgeKey === 'messages') return badges.unreadMessages
+    if (link.badgeKey === 'payments') return badges.unviewedPayments + badges.pendingPayments
+    return 0
+  }
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href
@@ -48,19 +93,27 @@ export function AdminNavbar() {
 
             {/* Desktop Menu */}
             <div className="hidden md:flex space-x-1">
-              {ADMIN_NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-3 py-2 transition text-sm font-medium ${
-                    isActive(link.href, link.exact)
-                      ? 'text-orange-600 font-semibold'
-                      : 'text-foreground hover:text-orange-600'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {ADMIN_NAV_LINKS.map((link) => {
+                const count = getBadgeCount(link)
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 transition text-sm font-medium ${
+                      isActive(link.href, link.exact)
+                        ? 'text-orange-600 font-semibold'
+                        : 'text-foreground hover:text-orange-600'
+                    }`}
+                  >
+                    {link.label}
+                    {count > 0 && (
+                      <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold bg-red-500 text-white rounded-full">
+                        {count > 99 ? '99+' : count}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
             </div>
 
             <div className="hidden md:flex gap-3 md:gap-2">
@@ -82,20 +135,28 @@ export function AdminNavbar() {
           {/* Mobile Menu */}
           {isOpen && (
             <div className="md:hidden pb-4 space-y-2">
-              {ADMIN_NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 text-sm font-medium ${
-                    isActive(link.href, link.exact)
-                      ? 'text-orange-600 font-semibold'
-                      : 'text-foreground hover:text-orange-600'
-                  }`}
-                >
-                  {link.mobileLabel}
-                </Link>
-              ))}
+              {ADMIN_NAV_LINKS.map((link) => {
+                const count = getBadgeCount(link)
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center justify-between px-3 py-2 text-sm font-medium ${
+                      isActive(link.href, link.exact)
+                        ? 'text-orange-600 font-semibold'
+                        : 'text-foreground hover:text-orange-600'
+                    }`}
+                  >
+                    {link.mobileLabel}
+                    {count > 0 && (
+                      <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-bold bg-red-500 text-white rounded-full">
+                        {count > 99 ? '99+' : count}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
               <div className="border-t pt-4 space-y-2 mt-4">
                 <Link
                   href="/"

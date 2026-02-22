@@ -129,6 +129,7 @@ export default function AdminPaymentsPage() {
           setPayments((prev) =>
             prev.map((item) => (item.id === p.id ? { ...item, adminViewedAt: data.data.adminViewedAt } : item))
           )
+          window.dispatchEvent(new Event('admin-notifications-update'))
         }
       } catch (err) {
         console.error('Failed to mark as viewed:', err)
