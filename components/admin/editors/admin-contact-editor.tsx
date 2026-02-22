@@ -2,7 +2,15 @@
 
 import { useAdmin } from '@/context/admin-context'
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Link2 } from 'lucide-react'
+
+const SOCIAL_PLATFORMS = [
+  { value: 'Facebook', label: 'Facebook' },
+  { value: 'LinkedIn', label: 'LinkedIn' },
+  { value: 'Twitter', label: 'Twitter' },
+  { value: 'Instagram', label: 'Instagram' },
+  { value: 'YouTube', label: 'YouTube' },
+] as const
 
 export default function AdminContactEditor() {
   const { content, updateContact, updateFooter } = useAdmin()
@@ -21,17 +29,24 @@ export default function AdminContactEditor() {
   }
 
   const handleAddSocial = () => {
-    if (newSocial.platform.trim() && newSocial.url.trim()) {
-      const updated = [...footer.socialLinks, newSocial]
-      updateFooter({ socialLinks: updated })
-      setNewSocial({ platform: '', url: '' })
-      setShowAddSocial(false)
-    }
+    const platform = newSocial.platform.trim()
+    let url = newSocial.url.trim()
+    if (!platform || !url) return
+    // Ensure URL has protocol
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`
+    const updated = [...footer.socialLinks, { platform, url }]
+    updateFooter({ socialLinks: updated })
+    setNewSocial({ platform: '', url: '' })
+    setShowAddSocial(false)
   }
 
   const handleUpdateSocial = (platform: string, field: string, value: string) => {
+    let finalValue = value
+    if (field === 'url' && value.trim() && !/^https?:\/\//i.test(value.trim())) {
+      finalValue = `https://${value.trim()}`
+    }
     const updated = footer.socialLinks.map((link) =>
-      link.platform === platform ? { ...link, [field]: value } : link
+      link.platform === platform ? { ...link, [field]: finalValue } : link
     )
     updateFooter({ socialLinks: updated })
   }
@@ -166,7 +181,12 @@ export default function AdminContactEditor() {
 
           <div className="border-t border-border pt-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Social Media Links</h3>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Social Media Links</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Choose a platform and paste your profile URL. Links appear in the footer.
+                </p>
+              </div>
               <button
                 onClick={() => setShowAddSocial(true)}
                 className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:shadow-lg transition flex items-center gap-2"
@@ -176,22 +196,33 @@ export default function AdminContactEditor() {
             </div>
 
             <div className="space-y-4">
-              {footer.socialLinks.map((link) => (
-                <div key={link.platform} className="bg-slate-50 border border-border rounded-lg p-4">
+              {footer.socialLinks.map((link) => {
+                const platformOptions = [...SOCIAL_PLATFORMS]
+                if (link.platform && !platformOptions.find((p) => p.value === link.platform)) {
+                  platformOptions.push({ value: link.platform, label: link.platform })
+                }
+                return (
+                <div key={link.id || link.platform} className="bg-slate-50 border border-border rounded-lg p-4">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1 space-y-3">
-                      <input
-                        type="text"
+                      <label className="block text-xs font-medium text-muted-foreground">Platform</label>
+                      <select
                         value={link.platform}
                         onChange={(e) => handleUpdateSocial(link.platform, 'platform', e.target.value)}
-                        placeholder="Platform name (e.g., Facebook, LinkedIn, Twitter)"
-                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
-                      />
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold bg-white"
+                      >
+                        {platformOptions.map((p) => (
+                          <option key={p.value} value={p.value}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="block text-xs font-medium text-muted-foreground">Profile URL</label>
                       <input
                         type="url"
                         value={link.url}
                         onChange={(e) => handleUpdateSocial(link.platform, 'url', e.target.value)}
-                        placeholder="https://..."
+                        placeholder="https://facebook.com/yourpage"
                         className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
@@ -204,26 +235,40 @@ export default function AdminContactEditor() {
                     </button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
 
             {showAddSocial && (
-              <div className="mt-4 bg-slate-50 border border-border rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-foreground">Add New Social Link</h4>
-                <input
-                  type="text"
-                  value={newSocial.platform}
-                  onChange={(e) => setNewSocial({ ...newSocial, platform: e.target.value })}
-                  placeholder="Platform name (e.g., Facebook, LinkedIn, Twitter)"
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <input
-                  type="url"
-                  value={newSocial.url}
-                  onChange={(e) => setNewSocial({ ...newSocial, url: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+              <div className="mt-4 bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-4">
+                <h4 className="font-semibold text-foreground flex items-center gap-2">
+                  <Link2 size={18} /> Add New Social Link
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Select your platform and paste the full URL (e.g. https://facebook.com/yourpage or https://instagram.com/yourprofile)
+                </p>
+                <div className="space-y-3">
+                  <label className="block text-xs font-medium text-muted-foreground">Platform</label>
+                  <select
+                    value={newSocial.platform}
+                    onChange={(e) => setNewSocial({ ...newSocial, platform: e.target.value })}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                  >
+                    <option value="">Select platform...</option>
+                    {SOCIAL_PLATFORMS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="block text-xs font-medium text-muted-foreground">Paste your profile URL</label>
+                  <input
+                    type="url"
+                    value={newSocial.url}
+                    onChange={(e) => setNewSocial({ ...newSocial, url: e.target.value })}
+                    placeholder="https://facebook.com/yourpage"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddSocial}

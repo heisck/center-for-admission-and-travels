@@ -15,6 +15,27 @@ const iconMap: Record<string, any> = {
   Globe,
 }
 
+// Map service title to admin route (avoids 404 when service.id is a cuid)
+const titleToAdminRoute: Record<string, string> = {
+  'Study Abroad': '/admin/study-abroad',
+  'Work Abroad': '/admin/work-abroad',
+  'Travel & Tours': '/admin/travel-tours',
+  'Travel Tours': '/admin/travel-tours',
+  'Global Network': '/admin/global-network',
+}
+
+function getAdminRouteForService(service: { id: string; title: string }): string {
+  const normalizedTitle = service.title?.trim() || ''
+  const route = titleToAdminRoute[normalizedTitle]
+  if (route) return route
+  // Fallback: try matching by slugified title
+  const slug = normalizedTitle.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')
+  if (['study-abroad', 'work-abroad', 'travel-tours', 'global-network'].includes(slug)) {
+    return `/admin/${slug}`
+  }
+  return '/admin/services'
+}
+
 export function EditableServicesGrid() {
   const { content, updateServices } = useAdmin()
   const { services } = content.home
@@ -27,7 +48,7 @@ export function EditableServicesGrid() {
 
   const handleAddService = () => {
     const newService = {
-      id: Date.now().toString(),
+      id: `new-${Date.now()}`,
       icon: 'Globe',
       title: 'New Service',
       description: 'Service description',
@@ -96,7 +117,7 @@ export function EditableServicesGrid() {
                   className="text-muted-foreground leading-relaxed mb-4"
                 />
                 <Link
-                  href={`/admin/${service.id}`}
+                  href={getAdminRouteForService(service)}
                   className="inline-block text-primary font-semibold text-sm group-hover:translate-x-1 transition-transform"
                 >
                   Click to know more →

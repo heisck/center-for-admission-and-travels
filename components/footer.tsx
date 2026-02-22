@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter } from "lucide-react"
+import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter, Instagram, Youtube } from "lucide-react"
 import { usePublicContent } from "@/context/public-content-context"
 
 export default function Footer() {
@@ -132,32 +132,28 @@ export default function Footer() {
             <div className="flex space-x-4">
               {(() => {
                 const links = footer?.socialLinks || []
-                // Ensure we only show one icon per platform even if the database has duplicates
                 const seen = new Set<string>()
                 const uniqueLinks = links.filter((link) => {
-                  if (seen.has(link.platform)) return false
-                  seen.add(link.platform)
+                  if (!link.url?.trim()) return false
+                  const key = link.platform?.toLowerCase() || ''
+                  if (seen.has(key)) return false
+                  seen.add(key)
                   return true
                 })
 
-                if (uniqueLinks.length === 0) {
-                  return (
-                    <>
-                      <a href="#" className="text-slate-400 hover:text-primary transition">
-                        <Facebook size={20} />
-                      </a>
-                      <a href="#" className="text-slate-400 hover:text-primary transition">
-                        <Linkedin size={20} />
-                      </a>
-                      <a href="#" className="text-slate-400 hover:text-primary transition">
-                        <Twitter size={20} />
-                      </a>
-                    </>
-                  )
+                if (uniqueLinks.length === 0) return null
+
+                const iconMap: Record<string, typeof Facebook> = {
+                  facebook: Facebook,
+                  linkedin: Linkedin,
+                  twitter: Twitter,
+                  instagram: Instagram,
+                  youtube: Youtube,
                 }
 
                 return uniqueLinks.map((link, index) => {
-                  const Icon = link.platform === 'Facebook' ? Facebook : link.platform === 'LinkedIn' ? Linkedin : Twitter
+                  const key = link.platform?.toLowerCase() || 'link'
+                  const Icon = iconMap[key] || Facebook
                   return (
                     <a
                       key={link.id || `${link.platform}-${index}`}
@@ -165,6 +161,7 @@ export default function Footer() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-slate-400 hover:text-primary transition"
+                      title={link.platform || 'Social link'}
                     >
                       <Icon size={20} />
                     </a>
