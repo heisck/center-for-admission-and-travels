@@ -15,11 +15,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const id = String(email).trim().toLowerCase()
+    const passwordTrimmed = String(password).trim()
+
     const adminUser = await prisma.adminUser.findFirst({
       where: {
         OR: [
-          { email: email.toLowerCase() },
-          { username: email.toLowerCase() },
+          { email: { equals: id, mode: 'insensitive' } },
+          { username: { equals: id, mode: 'insensitive' } },
         ],
       },
     })
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const isValid = await compare(password, adminUser.password)
+    const isValid = await compare(passwordTrimmed, adminUser.password)
     if (!isValid) {
       return NextResponse.json(
         { success: false, error: 'Invalid credentials' },

@@ -18,11 +18,15 @@ export async function POST(request: NextRequest) {
     }
 
     const id = String(identifier).trim().toLowerCase()
+    const passwordTrimmed = String(password).trim()
 
     step = 'find-user'
     const user = await prisma.user.findFirst({
       where: {
-        OR: [{ email: id }, { username: id }],
+        OR: [
+          { email: { equals: id, mode: 'insensitive' } },
+          { username: { equals: id, mode: 'insensitive' } },
+        ],
       },
     })
 
@@ -31,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     step = 'verify-password'
-    const ok = await verifyPassword(String(password), user.passwordHash)
+    const ok = await verifyPassword(passwordTrimmed, user.passwordHash)
     if (!ok) {
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }

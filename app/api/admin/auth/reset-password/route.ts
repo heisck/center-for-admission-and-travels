@@ -18,7 +18,9 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
-    const { token, password } = await request.json()
+    const body = await request.json()
+    const token = typeof body?.token === 'string' ? body.token.trim() : ''
+    const password = typeof body?.password === 'string' ? body.password.trim() : ''
 
     if (!token || !password) {
       return NextResponse.json(
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (String(password).length < 8) {
+    if (password.length < 8) {
       return NextResponse.json(
         { success: false, error: 'Password must be at least 8 characters' },
         { status: 400 }
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     const adminUser = await prisma.adminUser.findUnique({
-      where: { resetToken: String(token) },
+      where: { resetToken: token },
     })
 
     if (
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const passwordHash = await hashPassword(String(password))
+    const passwordHash = await hashPassword(password)
 
     await prisma.adminUser.update({
       where: { id: adminUser.id },
