@@ -1,4 +1,5 @@
 import { getLegalPage } from '@/lib/legal'
+import { plainTextToHtml, looksLikeHtml } from '@/lib/plain-text-to-html'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 
@@ -14,6 +15,12 @@ export default async function LegalPageContent({
   defaultDescription,
 }: LegalPageContentProps) {
   const page = await getLegalPage(slug)
+  const htmlContent =
+    page?.content && looksLikeHtml(page.content)
+      ? page.content
+      : page?.content
+        ? plainTextToHtml(page.content)
+        : null
 
   return (
     <>
@@ -28,10 +35,10 @@ export default async function LegalPageContent({
               Last updated: {page?.updatedAt ? new Date(page.updatedAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'February 2026'}
             </p>
 
-            {page?.content ? (
+            {htmlContent ? (
               <div
                 className="space-y-8 text-muted-foreground leading-relaxed prose prose-slate max-w-none prose-headings:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline"
-                dangerouslySetInnerHTML={{ __html: page.content }}
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
             ) : (
               <p className="text-muted-foreground">

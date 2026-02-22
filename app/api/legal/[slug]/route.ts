@@ -8,10 +8,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 
 const VALID_SLUGS = ['privacy', 'terms', 'refund-policy'] as const
+const SLUG_TO_PATH: Record<string, string> = {
+  privacy: '/privacy',
+  terms: '/terms',
+  'refund-policy': '/refund-policy',
+}
 
 export async function GET(
   _request: NextRequest,
@@ -66,6 +72,9 @@ export async function PUT(
         content: content || '',
       },
     })
+
+    const path = SLUG_TO_PATH[slug]
+    if (path) revalidatePath(path)
 
     return NextResponse.json({ success: true, data: page })
   } catch (error: any) {
