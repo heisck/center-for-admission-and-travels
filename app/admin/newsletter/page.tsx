@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Mail, Loader2, Download } from 'lucide-react'
 
 export default function AdminNewsletterPage() {
-  const [subscribers, setSubscribers] = useState<{ id: string; email: string; createdAt: string }[]>([])
+  const [subscribers, setSubscribers] = useState<{ id: string; email: string; createdAt: string; isRegisteredUser?: boolean; userUsername?: string }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -25,8 +25,8 @@ export default function AdminNewsletterPage() {
   }, [])
 
   const exportCsv = () => {
-    const headers = ['Email', 'Subscribed At']
-    const rows = subscribers.map((s) => [s.email, new Date(s.createdAt).toLocaleString()])
+    const headers = ['Email', 'Subscribed At', 'Registered User']
+    const rows = subscribers.map((s) => [s.email, new Date(s.createdAt).toLocaleString(), s.isRegisteredUser ? 'Yes' : 'No'])
     const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
@@ -73,6 +73,7 @@ export default function AdminNewsletterPage() {
                     <tr>
                       <th className="text-left px-6 py-4 font-semibold text-foreground">Email</th>
                       <th className="text-left px-6 py-4 font-semibold text-foreground">Subscribed</th>
+                      <th className="text-left px-6 py-4 font-semibold text-foreground">User</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -81,6 +82,15 @@ export default function AdminNewsletterPage() {
                         <td className="px-6 py-4">{s.email}</td>
                         <td className="px-6 py-4 text-muted-foreground text-sm">
                           {new Date(s.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          {s.isRegisteredUser ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                              Yes{s.userUsername ? ` (@${s.userUsername})` : ''}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Lock, Save, Loader2 } from "lucide-react"
+import { User, Mail, Phone, Lock, Save, Loader2, Send } from "lucide-react"
 import { toast } from "sonner"
 import { useUserAuth } from "@/context/user-auth-context"
 import Navbar from "@/components/navbar"
@@ -15,6 +15,7 @@ interface ProfileData {
   displayName: string | null
   phone: string | null
   createdAt: string
+  newsletterSubscribed?: boolean
 }
 
 export default function ProfilePage() {
@@ -32,6 +33,7 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [savingPassword, setSavingPassword] = useState(false)
+  const [subscribingNewsletter, setSubscribingNewsletter] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -234,6 +236,60 @@ export default function ProfilePage() {
               Save Changes
             </button>
           </form>
+
+          {/* Newsletter */}
+          <div className="bg-white rounded-xl border border-border p-6 space-y-4 shadow-sm">
+            <div className="flex items-center gap-3 pb-4 border-b border-border">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <Send className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Newsletter</h2>
+                <p className="text-sm text-muted-foreground">Stay updated with tips and offers</p>
+              </div>
+            </div>
+            {profile?.newsletterSubscribed ? (
+              <p className="text-sm text-foreground">
+                You are subscribed to our newsletter. We&apos;ll send updates to {profile?.email}.
+              </p>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <p className="text-sm text-muted-foreground flex-1">
+                  You are not subscribed. Get travel tips, updates, and exclusive offers.
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!profile?.email) return
+                    setSubscribingNewsletter(true)
+                    try {
+                      const res = await fetch("/api/newsletter", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: profile.email }),
+                      })
+                      const data = await res.json()
+                      if (data.success) {
+                        setProfile((p) => p ? { ...p, newsletterSubscribed: true } : null)
+                        toast.success("Subscribed to newsletter!")
+                      } else {
+                        toast.error(data.error || "Failed to subscribe")
+                      }
+                    } catch {
+                      toast.error("Failed to subscribe")
+                    } finally {
+                      setSubscribingNewsletter(false)
+                    }
+                  }}
+                  disabled={subscribingNewsletter || loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary/90 transition disabled:opacity-50"
+                >
+                  {subscribingNewsletter ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Subscribe
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Change Password */}
           <form onSubmit={handleChangePassword} className="bg-white rounded-xl border border-border p-6 space-y-6 shadow-sm">

@@ -89,6 +89,25 @@ export async function updateHomeServices(services: Array<{ id?: string; icon: st
   })
 }
 
+export async function updateHomeFeaturedPackages(packageIds: string[]) {
+  const homePage = await prisma.homePage.findUnique({ where: { id: 'home' } })
+  if (!homePage) {
+    await prisma.homePage.create({ data: { id: 'home', heroTitle: '', heroCta1Text: '', heroCta2Text: '' } })
+  }
+
+  await prisma.homeFeaturedPackage.deleteMany({ where: { homePageId: 'home' } })
+
+  if (packageIds.length > 0) {
+    await prisma.homeFeaturedPackage.createMany({
+      data: packageIds.map((packageId, index) => ({
+        homePageId: 'home',
+        packageId,
+        order: index,
+      })),
+    })
+  }
+}
+
 // ============================================================================
 // ABOUT PAGE
 // ============================================================================

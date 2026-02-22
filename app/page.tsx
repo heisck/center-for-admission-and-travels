@@ -3,6 +3,8 @@
 import Navbar from "@/components/navbar"
 import HeroSection from "@/components/hero-section"
 import ServicesGrid from "@/components/services-grid"
+import HomeFeaturedPackages from "@/components/home-featured-packages"
+import HomeLatestBlog from "@/components/home-latest-blog"
 import CTASection from "@/components/cta-section"
 import Footer from "@/components/footer"
 import { usePublicContent } from "@/context/public-content-context"
@@ -62,6 +64,8 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <ServicesGrid />
+      <HomeFeaturedPackages />
+      <HomeLatestBlog />
       <CTASection />
       <Footer />
     </main>

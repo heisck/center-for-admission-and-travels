@@ -41,6 +41,7 @@ interface Payment {
   packageId: string | null
   userId: string | null
   user: PaymentUser | null
+  newsletterSubscribed?: boolean | null
   metadata: any
   paystackData: any
   adminNote: string | null
@@ -422,6 +423,13 @@ export default function AdminPaymentsPage() {
                   )}
                   {selectedPayment.user && (
                     <DetailRow icon={<User className="w-4 h-4" />} label="Account" value={`@${selectedPayment.user.username} (${selectedPayment.user.email})`} />
+                  )}
+                  {selectedPayment.newsletterSubscribed != null && (
+                    <DetailRow
+                      icon={<Mail className="w-4 h-4" />}
+                      label="Newsletter"
+                      value={selectedPayment.newsletterSubscribed ? 'Subscribed' : 'Not subscribed'}
+                    />
                   )}
                 </div>
               </div>

@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const newsletterSubscriber = await prisma.newsletterSubscriber.findUnique({
+      where: { email: user.email },
+    })
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -22,6 +26,7 @@ export async function GET(request: NextRequest) {
         displayName: user.displayName,
         phone: user.phone,
         createdAt: user.createdAt,
+        newsletterSubscribed: !!newsletterSubscriber,
       },
     })
   } catch (error) {
@@ -62,6 +67,10 @@ export async function PATCH(request: NextRequest) {
       data: updateData,
     })
 
+    const newsletterSubscriber = await prisma.newsletterSubscriber.findUnique({
+      where: { email: updatedUser.email },
+    })
+
     return NextResponse.json({
       user: {
         id: updatedUser.id,
@@ -70,6 +79,7 @@ export async function PATCH(request: NextRequest) {
         displayName: updatedUser.displayName,
         phone: updatedUser.phone,
         createdAt: updatedUser.createdAt,
+        newsletterSubscribed: !!newsletterSubscriber,
       },
     })
   } catch (error) {

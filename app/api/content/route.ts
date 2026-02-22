@@ -27,6 +27,17 @@ export async function GET() {
           heroImages: { orderBy: { order: 'asc' } },
           heroStats: { orderBy: { order: 'asc' } },
           services: { orderBy: { order: 'asc' } },
+          featuredPackages: {
+            orderBy: { order: 'asc' },
+            include: {
+              package: {
+                include: {
+                  highlights: { orderBy: { order: 'asc' } },
+                  images: { orderBy: { order: 'asc' } },
+                },
+              },
+            },
+          },
         },
       }),
       // About Page
@@ -70,6 +81,14 @@ export async function GET() {
         where: { id: 'footer' },
         include: { socialLinks: { orderBy: { order: 'asc' } } },
       }),
+      // Blog Posts (published only) - safe if migration not yet run
+      (prisma as any).blogPost
+        ? (prisma as any).blogPost.findMany({
+            where: { published: true },
+            orderBy: [{ publishedAt: 'desc' }, { order: 'asc' }],
+            take: 10,
+          })
+        : Promise.resolve([]),
       // Service Pages
       prisma.servicePage.findMany({
         include: {
@@ -90,7 +109,8 @@ export async function GET() {
     const travelToursPage = results[3].status === 'fulfilled' ? results[3].value : null
     const contactInfo = results[4].status === 'fulfilled' ? results[4].value : null
     const footerInfo = results[5].status === 'fulfilled' ? results[5].value : null
-    const servicePages = results[6].status === 'fulfilled' ? results[6].value : []
+    const blogPosts = results[6].status === 'fulfilled' ? results[6].value : []
+    const servicePages = results[7].status === 'fulfilled' ? results[7].value : []
 
     // Log any failures for debugging
     results.forEach((result, index) => {
@@ -120,6 +140,19 @@ export async function GET() {
           title: svc.title,
           description: svc.description,
         })) || [],
+        featuredPackages: (homePage?.featuredPackages ?? [])
+          .map((fp: any) => fp.package)
+          .filter(Boolean)
+          .map((pkg: any) => ({
+            id: pkg.id,
+            name: pkg.name,
+            description: pkg.description,
+            category: pkg.category,
+            duration: pkg.duration,
+            price: pkg.price,
+            highlights: pkg.highlights?.map((h: any) => h.text) || [],
+            images: pkg.images?.map((img: any) => img.url) || [],
+          })) || [],
       },
       about: {
         heroTitle: aboutPage?.heroTitle || '',
@@ -216,6 +249,15 @@ export async function GET() {
           url: sl.url,
         })) || [],
       },
+      blogPosts: blogPosts.map((bp: any) => ({
+        id: bp.id,
+        slug: bp.slug,
+        title: bp.title,
+        excerpt: bp.excerpt || '',
+        imageUrl: bp.imageUrl || null,
+        packageId: bp.packageId || null,
+        publishedAt: bp.publishedAt?.toISOString?.() || null,
+      })),
       servicePages: servicePages.map((sp) => ({
         id: sp.serviceId,
         title: sp.title,

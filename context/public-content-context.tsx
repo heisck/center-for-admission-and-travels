@@ -30,7 +30,26 @@ export interface PublicContent {
       title: string
       description: string
     }>
+    featuredPackages?: Array<{
+      id: string
+      name: string
+      description: string
+      category: string
+      duration: string
+      price: number
+      highlights: string[]
+      images: string[]
+    }>
   }
+  blogPosts?: Array<{
+    id: string
+    slug: string
+    title: string
+    excerpt: string
+    imageUrl: string | null
+    packageId: string | null
+    publishedAt: string | null
+  }>
   about: {
     heroTitle: string
     heroSubtitle: string

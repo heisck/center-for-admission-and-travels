@@ -35,6 +35,7 @@ function SignUpContent() {
     password: "",
     confirmPassword: "",
     agreeTerms: false,
+    subscribeNewsletter: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState("")
@@ -96,6 +97,15 @@ function SignUpContent() {
         toast.success("Account created successfully!", {
           description: `Welcome, ${data.user?.displayName || data.user?.username}!`,
         })
+        if (formData.subscribeNewsletter) {
+          try {
+            await fetch("/api/newsletter", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: formData.email }),
+            })
+          } catch {}
+        }
         await refreshUser()
         router.push(redirectTo)
         router.refresh()
@@ -258,6 +268,18 @@ function SignUpContent() {
               {errors.confirmPassword && <p className="text-xs text-destructive mt-1">{errors.confirmPassword}</p>}
             </div>
 
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="newsletter"
+                checked={formData.subscribeNewsletter}
+                onChange={(e) => setFormData({ ...formData, subscribeNewsletter: e.target.checked })}
+                className="w-4 h-4 rounded border-border focus:ring-2 focus:ring-primary mt-1"
+              />
+              <label htmlFor="newsletter" className="text-sm text-muted-foreground">
+                Subscribe to our newsletter for tips, updates, and offers
+              </label>
+            </div>
             <div className="flex items-start gap-3">
               <input
                 type="checkbox"

@@ -44,10 +44,27 @@ export async function GET(request: NextRequest) {
       prisma.payment.count({ where }),
     ])
 
+    const emailsToCheck = [...new Set(payments.map((p) => p.user?.email || p.customerEmail).filter(Boolean))] as string[]
+    const newsletterEmails = emailsToCheck.length
+      ? await prisma.newsletterSubscriber.findMany({
+          where: { email: { in: emailsToCheck } },
+          select: { email: true },
+        })
+      : []
+    const newsletterSet = new Set(newsletterEmails.map((n) => n.email.toLowerCase()))
+
+    const paymentsWithNewsletter = payments.map((p) => {
+      const email = p.user?.email || p.customerEmail
+      return {
+        ...p,
+        newsletterSubscribed: email ? newsletterSet.has(email.toLowerCase()) : null,
+      }
+    })
+
     return NextResponse.json({
       success: true,
       data: {
-        payments,
+        payments: paymentsWithNewsletter,
         pagination: {
           page,
           limit,

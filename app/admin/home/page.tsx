@@ -12,8 +12,9 @@ import Masonry from '@/components/Masonry'
 import { ImageEditor } from '@/components/admin/image-editor'
 
 export default function AdminHomePage() {
-  const { content, updateHomeHero, updateServices, updateHomeHeroImages } = useAdmin()
-  const { hero, services } = content.home
+  const { content, updateHomeHero, updateServices, updateHomeHeroImages, updateHomeFeaturedPackages } = useAdmin()
+  const { hero, services, featuredPackages = [] } = content.home
+  const packages = content.packages || []
   
   // Convert images to Masonry items format
   const heroImages = hero.images || []
@@ -180,6 +181,60 @@ export default function AdminHomePage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Featured Packages - pick which packages show on homepage */}
+        <section className="py-12 md:py-24 bg-slate-50 border-t">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-foreground">Featured Packages on Homepage</h2>
+              <p className="text-muted-foreground mt-1">
+                Select packages to highlight on the homepage. Visitors see these first without navigating through the site.
+              </p>
+            </div>
+            {packages.length === 0 ? (
+              <div className="bg-white rounded-xl border border-border p-8 text-center">
+                <p className="text-muted-foreground">No packages yet. Add packages in the Packages editor first.</p>
+                <Link href="/admin/packages" className="mt-4 inline-block px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90">
+                  Go to Packages
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {packages.map((pkg) => {
+                  const isFeatured = featuredPackages?.some((fp) => fp.id === pkg.id)
+                  return (
+                    <label
+                      key={pkg.id}
+                      className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition ${
+                        isFeatured ? 'border-primary bg-primary/5' : 'border-border bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!isFeatured}
+                        onChange={() => {
+                          const currentIds = featuredPackages?.map((fp) => fp.id) || []
+                          const newIds = isFeatured
+                            ? currentIds.filter((id) => id !== pkg.id)
+                            : [...currentIds, pkg.id]
+                          updateHomeFeaturedPackages(newIds)
+                        }}
+                        className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <div className="flex-1">
+                        <span className="font-semibold text-foreground">{pkg.name}</span>
+                        <span className="text-muted-foreground text-sm ml-2">({pkg.category})</span>
+                      </div>
+                      <span className="text-primary font-medium">
+                        {pkg.price > 0 ? `$${pkg.price.toLocaleString()}` : 'Contact'}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </section>
 

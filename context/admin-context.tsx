@@ -20,6 +20,16 @@ export interface AdminContent {
       title: string
       description: string
     }>
+    featuredPackages?: Array<{
+      id: string
+      name: string
+      description: string
+      category: string
+      duration: string
+      price: number
+      highlights: string[]
+      images: string[]
+    }>
   }
   about: {
     heroTitle: string
@@ -161,6 +171,7 @@ interface AdminContextType {
   updateContent: (updates: Partial<AdminContent>) => void
   updateHomeHero: (updates: Partial<AdminContent['home']['hero']>) => void
   updateServices: (services: AdminContent['home']['services']) => void
+  updateHomeFeaturedPackages: (packageIds: string[]) => void
   updateAbout: (updates: Partial<AdminContent['about']>) => void
   updatePackages: (packages: AdminContent['packages']) => void
   updatePackage: (id: number, updates: Partial<AdminContent['packages'][0]>) => void
@@ -231,6 +242,7 @@ const defaultContent: AdminContent = {
         description: 'Partnerships with accredited universities and verified employers worldwide',
       },
     ],
+    featuredPackages: [],
   },
   about: {
     heroTitle: 'About Center for Admission and Travels',
@@ -878,6 +890,36 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [content, updateHistory])
 
+  const updateHomeFeaturedPackages = useCallback(async (packageIds: string[]) => {
+    const featured = packageIds
+      .map((id) => content.packages.find((p) => p.id === id))
+      .filter(Boolean) as AdminContent['home']['featuredPackages']
+    const newContent = {
+      ...content,
+      home: {
+        ...content.home,
+        featuredPackages: featured,
+      },
+    }
+    updateHistory(newContent)
+
+    try {
+      const response = await fetch('/api/admin/content/home', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          featuredPackages: featured,
+        }),
+      })
+      const result = await response.json()
+      if (!result.success) {
+        console.error('Failed to save featured packages:', result.error)
+      }
+    } catch (error) {
+      console.error('Error syncing featured packages:', error)
+    }
+  }, [content, updateHistory])
+
   const updateAbout = useCallback(async (updates: Partial<AdminContent['about']>) => {
     // Optimistic update
     const newContent = {
@@ -1399,6 +1441,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         updateContent,
         updateHomeHero,
         updateServices,
+        updateHomeFeaturedPackages,
         updateAbout,
         updatePackages,
         updatePackage,

@@ -110,9 +110,10 @@ model HomePage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  heroImages HomeHeroImage[]
-  heroStats  HomeStat[]
-  services   HomeService[]
+  heroImages        HomeHeroImage[]
+  heroStats         HomeStat[]
+  services          HomeService[]
+  featuredPackages  HomeFeaturedPackage[]
 
   @@map("home_page")
 }
@@ -156,6 +157,20 @@ model HomeService {
 
   @@index([homePageId])
   @@map("home_services")
+}
+
+model HomeFeaturedPackage {
+  id          String   @id @default(cuid())
+  homePageId  String
+  packageId   String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  homePage    HomePage @relation(fields: [homePageId], references: [id], onDelete: Cascade)
+  package     Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([homePageId, packageId])
+  @@index([homePageId])
+  @@map("home_featured_packages")
 }
 
 // ============================================================================
@@ -310,10 +325,12 @@ model Package {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  highlights  PackageHighlight[]
-  images      PackageImage[]
-  included    PackageIncluded[]
-  notIncluded PackageNotIncluded[]
+  highlights        PackageHighlight[]
+  images           PackageImage[]
+  included         PackageIncluded[]
+  notIncluded      PackageNotIncluded[]
+  homeFeaturedIn   HomeFeaturedPackage[]
+  blogPosts        BlogPost[]
 
   @@index([category])
   @@map("packages")
@@ -689,6 +706,30 @@ model LegalPage {
   updatedAt DateTime @updatedAt
 
   @@map("legal_pages")
+}
+
+// ============================================================================
+// BLOG POSTS
+// ============================================================================
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String    @default("")
+  content     String    @db.Text
+  imageUrl    String?   // Cloudinary URL
+  packageId   String?   // Optional link to a package this post explains
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  package     Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@index([published, publishedAt])
+  @@index([packageId])
+  @@map("blog_posts")
 }
 
 // ============================================================================

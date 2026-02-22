@@ -42,6 +42,7 @@ export async function GET(
             heroImages: { orderBy: { order: 'asc' } },
             heroStats: { orderBy: { order: 'asc' } },
             services: { orderBy: { order: 'asc' } },
+            featuredPackages: { orderBy: { order: 'asc' }, include: { package: true } },
           },
         })
         data = {
@@ -51,10 +52,11 @@ export async function GET(
             description: homePage?.heroDescription || '',
             cta1Text: homePage?.heroCta1Text || '',
             cta2Text: homePage?.heroCta2Text || '',
-            images: homePage?.heroImages.map((img) => img.url) || [],
+            images: homePage?.heroImages?.map((img) => img.url) || [],
             stats: homePage?.heroStats || [],
           },
           services: homePage?.services || [],
+          featuredPackages: homePage?.featuredPackages?.map((fp) => fp.package) || [],
         }
         break
       }
@@ -188,6 +190,10 @@ export async function PUT(
         }
         if (body.services) {
           await contentHelpers.updateHomeServices(body.services)
+        }
+        if (body.featuredPackages && Array.isArray(body.featuredPackages)) {
+          const packageIds = body.featuredPackages.map((p: { id: string }) => p.id).filter(Boolean)
+          await contentHelpers.updateHomeFeaturedPackages(packageIds)
         }
         break
       case 'about':
