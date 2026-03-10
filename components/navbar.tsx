@@ -53,13 +53,13 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center flex-shrink-0">
             <Image
               src="/images/ca-20logo.png"
               alt="Center for Admission and Travels"
-              width={45}
-              height={45}
-              className="h-17 w-auto"
+              width={40}
+              height={40}
+              className="h-10 w-auto object-contain"
             />
           </Link>
 
@@ -87,7 +87,7 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
+                  className="flex items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold whitespace-nowrap"
                 >
                   <UserIcon className="w-4 h-4" />
                   <span>{user.displayName || user.username}</span>
@@ -131,13 +131,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/signin"
-                  className="px-4 md:px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold"
+                  className="px-4 md:px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold whitespace-nowrap"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/signup"
-                  className="px-4 md:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold signup-button"
+                  className="px-4 md:px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition text-sm font-semibold signup-button whitespace-nowrap"
                 >
                   Sign Up
                 </Link>
