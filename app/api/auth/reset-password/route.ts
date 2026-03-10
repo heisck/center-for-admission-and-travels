@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, createSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
+import { hashPassword, createSessionToken, getUserSessionCookieName, pruneUserSessions } from '@/lib/user-auth'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { hashResetToken } from '@/lib/reset-token'
+import { getClientIp } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`reset-password:${ip}`, { maxRequests: 5, windowMs: 60_000 })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   try {
     const body = await request.json()
     const token = typeof body?.token === 'string' ? body.token.trim() : ''
@@ -13,12 +20,16 @@ export async function POST(request: NextRequest) {
     if (!token || !password) {
       return NextResponse.json({ success: false, error: 'Token and new password are required' }, { status: 400 })
     }
+    if (!/^[a-f0-9]{64}$/i.test(token)) {
+      return NextResponse.json({ success: false, error: 'Invalid or expired reset link. Please request a new one.' }, { status: 400 })
+    }
 
     if (password.length < 8) {
       return NextResponse.json({ success: false, error: 'Password must be at least 8 characters' }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({ where: { resetToken: token } })
+    const tokenHash = hashResetToken(token)
+    const user = await prisma.user.findUnique({ where: { resetToken: tokenHash } })
 
     if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
       return NextResponse.json({ success: false, error: 'Invalid or expired reset link. Please request a new one.' }, { status: 400 })
@@ -48,6 +59,7 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
+    await pruneUserSessions(user.id).catch(() => {})
 
     const response = NextResponse.json({
       success: true,
@@ -58,7 +70,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(getUserSessionCookieName(), sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       expires: expiresAt,
     })
@@ -69,3 +81,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Something went wrong' }, { status: 500 })
   }
 }
+

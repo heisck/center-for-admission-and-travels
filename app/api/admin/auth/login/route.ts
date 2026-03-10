@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { compare } from 'bcryptjs'
 import crypto from 'crypto'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+import { pruneAdminSessions } from '@/lib/auth-helpers'
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`admin-login:${ip}`, {
+    maxRequests: 8,
+    windowMs: 60_000,
+  })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   try {
     const body = await request.json()
     const { email, password } = body
@@ -49,6 +59,7 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
+    await pruneAdminSessions(adminUser.id).catch(() => {})
 
     const response = NextResponse.json({
       success: true,
@@ -58,7 +69,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('admin_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       maxAge: 60 * 60 * 24,
     })
@@ -72,3 +83,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+

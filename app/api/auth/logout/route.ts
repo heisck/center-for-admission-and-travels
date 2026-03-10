@@ -11,7 +11,13 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json({ success: true })
-    response.cookies.delete(getUserSessionCookieName())
+    response.cookies.set(getUserSessionCookieName(), '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 0,
+    })
     return response
   } catch (error) {
     console.error('Logout error:', error)

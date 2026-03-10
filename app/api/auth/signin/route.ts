@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSessionToken, getUserSessionCookieName, verifyPassword } from '@/lib/user-auth'
+import { createSessionToken, getUserSessionCookieName, pruneUserSessions, verifyPassword } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  const { allowed, retryAfterMs } = checkRateLimit(`signin:${ip}`, { maxRequests: 5, windowMs: 60_000 })
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`signin:${ip}`, { maxRequests: 5, windowMs: 60_000 })
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   let step = 'parse-body'
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
+    await pruneUserSessions(user.id).catch(() => {})
 
     step = 'build-response'
     const response = NextResponse.json({
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(getUserSessionCookieName(), token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       expires: expiresAt,
     })
@@ -71,9 +73,10 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error(`Signin error at step [${step}]:`, error)
     const message = process.env.NODE_ENV === 'production'
-      ? `Signin failed at: ${step}`
+      ? 'Sign in failed. Please try again.'
       : `${step}: ${error?.message || error}`
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
+
 

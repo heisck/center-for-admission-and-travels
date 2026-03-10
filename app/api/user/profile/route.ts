@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,6 +49,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const ip = getClientIp(request)
+    const { allowed, retryAfterMs } = await checkRateLimit(`profile-update:${user.id}:${ip}`, {
+      maxRequests: 15,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
+
     const body = await request.json()
     const { displayName, phone } = body
 
@@ -58,9 +67,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'phone must be a string' }, { status: 400 })
     }
 
-    const updateData: { displayName?: string; phone?: string } = {}
-    if (displayName !== undefined) updateData.displayName = displayName
-    if (phone !== undefined) updateData.phone = phone
+    const normalizedDisplayName = displayName !== undefined ? displayName.trim().slice(0, 120) : undefined
+    const normalizedPhone = phone !== undefined ? phone.trim().slice(0, 40) : undefined
+
+    const updateData: { displayName?: string | null; phone?: string | null } = {}
+    if (normalizedDisplayName !== undefined) updateData.displayName = normalizedDisplayName || null
+    if (normalizedPhone !== undefined) updateData.phone = normalizedPhone || null
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
@@ -87,3 +99,4 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+

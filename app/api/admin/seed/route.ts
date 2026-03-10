@@ -1,52 +1,97 @@
 /**
  * API Route: /api/admin/seed
- * 
+ *
  * Seed the database with initial content.
  * This should be called manually after deployment or via a cron job.
- * 
+ *
  * Usage: POST /api/admin/seed
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth-helpers'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+import { spawn } from 'child_process'
 
 // POST /api/admin/seed
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`admin-seed:${ip}`, {
+    maxRequests: 2,
+    windowMs: 10 * 60_000,
+  })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   try {
+    const seedEnabled =
+      process.env.NODE_ENV !== 'production' || process.env.ENABLE_ADMIN_SEED_ENDPOINT === 'true'
+    if (!seedEnabled) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Seed endpoint is disabled in production. Set ENABLE_ADMIN_SEED_ENDPOINT=true to enable.',
+        },
+        { status: 403 }
+      )
+    }
+
     // Verify admin session
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Dynamically import and execute seed function
-    // This avoids loading Prisma Client twice
-    const seedModule = await import('@/prisma/seed')
-    
-    // The seed.ts file exports a main function, but we need to call it
-    // Since seed.ts doesn't export main, we'll use a different approach
-    const { exec } = require('child_process')
-    const { promisify } = require('util')
-    const execAsync = promisify(exec)
+    const command = process.platform === 'win32' ? 'npx.cmd' : 'npx'
+    const args = ['tsx', 'prisma/seed.ts']
 
-    // Run seed script with timeout
-    const { stdout, stderr } = await Promise.race([
-      execAsync('npx tsx prisma/seed.ts'),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Seed timeout after 60 seconds')), 60000)
+    const result = await new Promise<{ code: number | null; stderr: string }>((resolve, reject) => {
+      const child = spawn(command, args, {
+        cwd: process.cwd(),
+        env: process.env,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+
+      let stderr = ''
+      const stderrLimit = 2000
+      child.stderr.on('data', (chunk: Buffer | string) => {
+        if (stderr.length >= stderrLimit) return
+        stderr += String(chunk).slice(0, stderrLimit - stderr.length)
+      })
+
+      const timeout = setTimeout(() => {
+        child.kill()
+        reject(new Error('Seed timeout after 120 seconds'))
+      }, 120_000)
+
+      child.on('error', (error) => {
+        clearTimeout(timeout)
+        reject(error)
+      })
+
+      child.on('close', (code) => {
+        clearTimeout(timeout)
+        resolve({ code, stderr })
+      })
+    })
+
+    if (result.code !== 0) {
+      console.error('Error seeding database:', result.stderr || `Process exited with code ${result.code}`)
+      return NextResponse.json(
+        { success: false, error: 'Failed to seed database. Check server logs for details.' },
+        { status: 500 }
       )
-    ]) as any
-    
-    return NextResponse.json({ 
-      success: true, 
+    }
+
+    return NextResponse.json({
+      success: true,
       message: 'Database seeded successfully',
-      output: stdout 
     })
   } catch (error: any) {
     console.error('Error seeding database:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message || 'Failed to seed database' 
+    return NextResponse.json({
+      success: false,
+      error: error.message || 'Failed to seed database',
     }, { status: 500 })
   }
 }
+

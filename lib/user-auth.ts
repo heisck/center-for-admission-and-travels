@@ -32,3 +32,25 @@ export async function getUserFromSessionToken(token: string) {
   return session.user
 }
 
+export async function pruneUserSessions(userId: string, keepLatest = 5): Promise<void> {
+  await prisma.userSession.deleteMany({
+    where: {
+      userId,
+      expiresAt: { lte: new Date() },
+    },
+  })
+
+  const staleSessions = await prisma.userSession.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    skip: keepLatest,
+    select: { id: true },
+  })
+
+  if (staleSessions.length === 0) return
+
+  await prisma.userSession.deleteMany({
+    where: { id: { in: staleSessions.map((session) => session.id) } },
+  })
+}
+

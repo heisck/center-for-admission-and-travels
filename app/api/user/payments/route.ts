@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserFromSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +15,13 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 })
     }
+
+    const ip = getClientIp(request)
+    const { allowed, retryAfterMs } = await checkRateLimit(`user-payments:${user.id}:${ip}`, {
+      maxRequests: 30,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const payments = await prisma.payment.findMany({
       where: { userId: user.id },
@@ -45,3 +54,4 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+

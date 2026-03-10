@@ -1,10 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const ALLOWED_METHODS = new Set(['whatsapp', 'email', 'phone', 'call'])
+
+function normalizeText(value: unknown, maxLength: number) {
+  return String(value || '').trim().slice(0, maxLength)
+}
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`bookings:${ip}`, {
+    maxRequests: 12,
+    windowMs: 60_000,
+  })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   try {
-    const body = await request.json()
-    const { packageId, fullName, email, phone, notes, method } = body
+    const body = await request.json().catch(() => ({}))
+    const website = normalizeText(body?.website, 200)
+    if (website) {
+      // Honeypot for basic bot traffic.
+      return NextResponse.json({
+        success: true,
+        message: 'Booking request received. You will be contacted shortly.',
+      })
+    }
+
+    const packageId = normalizeText(body?.packageId, 64)
+    const fullName = normalizeText(body?.fullName, 120)
+    const email = normalizeText(body?.email, 254).toLowerCase()
+    const phone = normalizeText(body?.phone, 40)
+    const notes = normalizeText(body?.notes, 3000)
+    const rawMethod = normalizeText(body?.method, 32).toLowerCase()
+    const method = ALLOWED_METHODS.has(rawMethod) ? rawMethod : 'whatsapp'
 
     if (!fullName || !email || !phone || !packageId) {
       return NextResponse.json(
@@ -13,8 +45,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    if (!EMAIL_REGEX.test(email)) {
       return NextResponse.json(
         { success: false, error: 'Invalid email address' },
         { status: 400 }
@@ -43,13 +74,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (!packagePrice || packagePrice <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'Package not found' },
+        { status: 404 }
+      )
+    }
+
     await prisma.payment.create({
       data: {
-        reference: `BOOK_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        reference: `BOOK_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`,
         amount: packagePrice,
         currency: 'GHS',
         status: 'pending',
-        paymentMethod: method || 'whatsapp',
+        paymentMethod: method,
         customerEmail: email,
         customerName: fullName,
         customerPhone: phone,
@@ -58,7 +96,7 @@ export async function POST(request: NextRequest) {
           type: 'booking_request',
           packageName,
           notes: notes || null,
-          contactMethod: method || 'whatsapp',
+          contactMethod: method,
         },
       },
     })
@@ -75,3 +113,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+

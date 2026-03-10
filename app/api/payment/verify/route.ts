@@ -13,18 +13,75 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { paymentConfirmationEmail } from '@/lib/email-templates'
 import { getSupportContact } from '@/lib/support-contact'
-
-const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY || '')
+import { getUserFromSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request)
   try {
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY
+    if (!paystackSecret) {
+      return NextResponse.json(
+        { success: false, error: 'Payment service is not configured' },
+        { status: 503 }
+      )
+    }
+
+    const sessionToken = request.cookies.get(getUserSessionCookieName())?.value
+    const user = sessionToken ? await getUserFromSessionToken(sessionToken) : null
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'You must be signed in to verify payments' },
+        { status: 401 }
+      )
+    }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`pay-verify:${user.id}:${ip}`, {
+      maxRequests: 20,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
+
+    const paystack = new Paystack(paystackSecret)
+
     const { searchParams } = new URL(request.url)
-    const reference = searchParams.get('reference')
+    const reference = (searchParams.get('reference') || '').trim().slice(0, 128)
 
     if (!reference) {
       return NextResponse.json(
         { success: false, error: 'Payment reference is required' },
         { status: 400 }
+      )
+    }
+    if (!/^[A-Za-z0-9_\-]+$/.test(reference)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payment reference format' },
+        { status: 400 }
+      )
+    }
+
+    const payment = await prisma.payment.findFirst({
+      where: {
+        reference,
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        reference: true,
+        amount: true,
+        currency: true,
+        status: true,
+        customerEmail: true,
+        customerName: true,
+        metadata: true,
+      },
+    })
+
+    if (!payment) {
+      return NextResponse.json(
+        { success: false, error: 'Payment not found for this account' },
+        { status: 404 }
       )
     }
 
@@ -52,39 +109,64 @@ export async function GET(request: NextRequest) {
       status = 'processing'
     }
 
-    // Update payment record in database
-    const payment = await prisma.payment.update({
-      where: { reference },
+    const paidAmountKobo = Number(paymentData.amount || 0)
+    const expectedAmountKobo = Math.round(payment.amount * 100)
+    const verifiedCurrency = String(paymentData.currency || '').toUpperCase()
+    const expectedCurrency = payment.currency.toUpperCase()
+    const amountAndCurrencyMatch = paidAmountKobo === expectedAmountKobo && verifiedCurrency === expectedCurrency
+
+    if (!amountAndCurrencyMatch) {
+      status = 'failed'
+    }
+
+    const previousStatus = payment.status
+    if (previousStatus === 'success' && status !== 'success') {
+      status = 'success'
+    }
+
+    const updatedPayment = await prisma.payment.update({
+      where: { id: payment.id },
       data: {
         status,
         paystackData: paymentData as any,
         updatedAt: new Date(),
       },
+      select: {
+        reference: true,
+        amount: true,
+        currency: true,
+        customerEmail: true,
+        customerName: true,
+        metadata: true,
+      },
     })
 
     // Send payment confirmation email on success (non-blocking)
-    if (status === 'success' && payment.customerEmail) {
+    if (status === 'success' && previousStatus !== 'success' && updatedPayment.customerEmail) {
       const supportContact = await getSupportContact()
       const template = paymentConfirmationEmail({
-        name: payment.customerName || 'Customer',
-        reference: payment.reference,
-        amount: payment.amount,
-        currency: payment.currency,
-        packageName: (payment.metadata as any)?.packageName || 'Booking',
+        name: updatedPayment.customerName || 'Customer',
+        reference: updatedPayment.reference,
+        amount: updatedPayment.amount,
+        currency: updatedPayment.currency,
+        packageName: (updatedPayment.metadata as any)?.packageName || 'Booking',
       }, supportContact)
-      sendEmail({ to: payment.customerEmail, ...template }).catch(() => {})
+      sendEmail({ to: updatedPayment.customerEmail, ...template }).catch(() => {})
     }
+
+    const responseMessage = !amountAndCurrencyMatch && status === 'failed'
+      ? 'Payment verification failed: amount or currency mismatch'
+      : undefined
 
     return NextResponse.json({
       success: true,
       data: {
         status,
-        reference: paymentData.reference,
-        amount: paymentData.amount / 100, // Convert from kobo to GHS
-        currency: paymentData.currency,
-        customer: paymentData.customer,
-        metadata: paymentData.metadata,
+        reference: updatedPayment.reference,
+        amount: updatedPayment.amount,
+        currency: updatedPayment.currency,
         paidAt: paymentData.paid_at,
+        message: responseMessage,
       },
     })
   } catch (error: any) {
@@ -95,3 +177,4 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+

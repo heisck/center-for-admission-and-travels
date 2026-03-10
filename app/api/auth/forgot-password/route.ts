@@ -4,11 +4,12 @@ import { sendEmail } from '@/lib/email'
 import { passwordResetEmail } from '@/lib/email-templates'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getSupportContact } from '@/lib/support-contact'
-import crypto from 'crypto'
+import { createResetTokenPair } from '@/lib/reset-token'
+import { getClientIp } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  const { allowed, retryAfterMs } = checkRateLimit(`forgot:${ip}`, { maxRequests: 3, windowMs: 60_000 })
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`forgot:${ip}`, { maxRequests: 3, windowMs: 60_000 })
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
@@ -19,6 +20,11 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return NextResponse.json(
+        { success: true, message: 'If an account with that email exists, a reset link has been sent.' }
+      )
+    }
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
 
@@ -27,12 +33,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'If an account with that email exists, a reset link has been sent.' })
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex')
+    const { token: resetToken, tokenHash: resetTokenHash } = createResetTokenPair()
     const resetTokenExpiry = new Date(Date.now() + 1000 * 60 * 60) // 1 hour
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { resetToken, resetTokenExpiry },
+      data: { resetToken: resetTokenHash, resetTokenExpiry },
     })
 
     const { getBaseUrl } = await import('@/lib/url')
@@ -49,3 +55,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Something went wrong' }, { status: 500 })
   }
 }
+

@@ -6,11 +6,30 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/email'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+import { verifyAdminSession } from '@/lib/auth-helpers'
 
 export async function POST(request: NextRequest) {
+  if (process.env.ENABLE_TEST_EMAIL_ENDPOINT !== 'true') {
+    return NextResponse.json({ success: false, error: 'Test email endpoint is disabled' }, { status: 403 })
+  }
+
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ success: false, error: 'Test email disabled in production' }, { status: 403 })
   }
+
+  const session = await verifyAdminSession(request)
+  if (!session) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`test-email:${session.userId}:${ip}`, {
+    maxRequests: 3,
+    windowMs: 60_000,
+  })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
     const body = await request.json().catch(() => ({}))
@@ -50,6 +69,7 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Test email error:', error)
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to send test email' }, { status: 500 })
   }
 }
+

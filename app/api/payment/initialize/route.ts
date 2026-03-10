@@ -19,11 +19,23 @@ import Paystack from '@paystack/paystack-sdk'
 import { prisma } from '@/lib/prisma'
 import { getUserFromSessionToken, getUserSessionCookieName } from '@/lib/user-auth'
 import { getBaseUrl } from '@/lib/url'
-
-const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY || '')
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
   try {
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY
+    if (!paystackSecret) {
+      return NextResponse.json(
+        { success: false, error: 'Payment service is not configured' },
+        { status: 503 }
+      )
+    }
+
+    const paystack = new Paystack(paystackSecret)
+
     // Resolve authenticated user from session cookie
     const sessionToken = request.cookies.get(getUserSessionCookieName())?.value
     const user = sessionToken ? await getUserFromSessionToken(sessionToken) : null
@@ -34,6 +46,12 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`pay-init:${user.id}:${ip}`, {
+      maxRequests: 10,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const body = await request.json()
     const { packageId, amount, email, name, phone, paymentMethod, metadata } = body
@@ -54,6 +72,30 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const normalizedEmail = String(email).trim().toLowerCase()
+    const userEmail = String(user.email || '').trim().toLowerCase()
+    if (userEmail && normalizedEmail !== userEmail) {
+      return NextResponse.json(
+        { success: false, error: 'Email does not match your signed-in account' },
+        { status: 400 }
+      )
+    }
+
+    const normalizedPhone = phone ? String(phone).trim().slice(0, 40) : null
+    if (normalizedPhone && !/^[+0-9()\-\s]{6,40}$/.test(normalizedPhone)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid phone number format' },
+        { status: 400 }
+      )
+    }
+
+    const customerEmail = userEmail || normalizedEmail
+    const customerName = String(name).trim().slice(0, 120) || user.displayName || user.username || 'Customer'
+
+    const normalizedPaymentMethod = paymentMethod === 'mobile_money' || paymentMethod === 'card'
+      ? paymentMethod
+      : 'card'
 
     let finalAmount = amount
     let packageData = null
@@ -89,33 +131,53 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Use package price if amount not provided
-      if (!finalAmount) {
-        finalAmount = packageData.price
+      // Never trust client amount for package payments.
+      const packageAmount = packageData.price
+      if (amount !== undefined && amount !== null && Number(amount) > 0) {
+        const sentAmountMinor = Math.round(Number(amount) * 100)
+        const packageAmountMinor = Math.round(packageAmount * 100)
+        if (sentAmountMinor !== packageAmountMinor) {
+          return NextResponse.json(
+            { success: false, error: 'Amount mismatch for selected package' },
+            { status: 400 }
+          )
+        }
       }
+
+      finalAmount = packageAmount
     }
 
-    if (!finalAmount || finalAmount <= 0) {
+    const parsedAmount = Number(finalAmount)
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return NextResponse.json(
         { success: false, error: 'Valid amount is required' },
         { status: 400 }
       )
     }
+    if (parsedAmount > 1_000_000) {
+      return NextResponse.json(
+        { success: false, error: 'Amount exceeds allowed maximum' },
+        { status: 400 }
+      )
+    }
+
+    finalAmount = parsedAmount
 
     // Convert amount to kobo (Paystack uses smallest currency unit)
     // For GHS, 1 GHS = 100 pesewas, so multiply by 100
     const amountInKobo = Math.round(finalAmount * 100)
 
     // Generate unique reference
-    const reference = `CAT_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    const reference = `CAT_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`
 
     // Prepare metadata for Paystack
     const paystackMetadata: any = {
       packageId: packageId || null,
       packageName: packageData?.name || null,
-      customerName: name,
-      customerPhone: phone || null,
-      paymentMethod: paymentMethod || 'card',
+      customerName,
+      customerPhone: normalizedPhone,
+      paymentMethod: normalizedPaymentMethod,
+      expectedAmountKobo: amountInKobo,
     }
 
     // Add billing address if provided (for card payments)
@@ -133,7 +195,7 @@ export async function POST(request: NextRequest) {
 
     // Initialize payment with Paystack
     const response = await paystack.transaction.initialize({
-      email,
+      email: customerEmail,
       amount: amountInKobo,
       currency: 'GHS',
       reference,
@@ -155,10 +217,10 @@ export async function POST(request: NextRequest) {
         amount: finalAmount,
         currency: 'GHS',
         status: 'pending',
-        paymentMethod: paymentMethod || 'card',
-        customerEmail: email,
-        customerName: name,
-        customerPhone: phone || null,
+        paymentMethod: normalizedPaymentMethod,
+        customerEmail,
+        customerName,
+        customerPhone: normalizedPhone,
         packageId: packageId || null,
         userId: user.id,
         metadata: {
@@ -189,3 +251,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+

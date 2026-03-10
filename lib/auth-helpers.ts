@@ -38,3 +38,25 @@ export async function verifyAdminSession(request: NextRequest): Promise<AdminSes
     return null
   }
 }
+
+export async function pruneAdminSessions(userId: string, keepLatest = 3): Promise<void> {
+  await prisma.adminSession.deleteMany({
+    where: {
+      userId,
+      expiresAt: { lte: new Date() },
+    },
+  })
+
+  const staleSessions = await prisma.adminSession.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    skip: keepLatest,
+    select: { id: true },
+  })
+
+  if (staleSessions.length === 0) return
+
+  await prisma.adminSession.deleteMany({
+    where: { id: { in: staleSessions.map((session) => session.id) } },
+  })
+}

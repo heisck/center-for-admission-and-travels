@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSessionToken, getUserSessionCookieName, hashPassword } from '@/lib/user-auth'
+import { createSessionToken, getUserSessionCookieName, hashPassword, pruneUserSessions } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/email'
 import { welcomeEmail } from '@/lib/email-templates'
 import { getSupportContact } from '@/lib/support-contact'
+import { getClientIp } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  const { allowed, retryAfterMs } = checkRateLimit(`signup:${ip}`, { maxRequests: 3, windowMs: 60_000 })
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`signup:${ip}`, { maxRequests: 3, windowMs: 60_000 })
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
         username: normalizedUsername,
         email: normalizedEmail,
         passwordHash,
-        displayName: displayName ? String(displayName).trim() : null,
+        displayName: displayName ? String(displayName).trim().slice(0, 120) : null,
       },
       select: { id: true, username: true, email: true, displayName: true, createdAt: true },
     })
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
+    await pruneUserSessions(user.id).catch(() => {})
 
     // Send welcome email (non-blocking)
     const supportContact = await getSupportContact()
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(getUserSessionCookieName(), token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       expires: expiresAt,
     })
@@ -88,4 +90,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
+
 

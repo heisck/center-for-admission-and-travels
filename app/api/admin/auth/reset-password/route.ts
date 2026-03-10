@@ -8,12 +8,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, verifyPassword } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { hashResetToken } from '@/lib/reset-token'
+import { getClientIp } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  const { allowed, retryAfterMs } = checkRateLimit(`admin-reset:${ip}`, {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`admin-reset:${ip}`, {
     maxRequests: 5,
     windowMs: 60_000,
   })
@@ -30,6 +32,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    if (!/^[a-f0-9]{64}$/i.test(token)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired reset link. Please request a new one.' },
+        { status: 400 }
+      )
+    }
 
     if (password.length < 8) {
       return NextResponse.json(
@@ -38,8 +46,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const tokenHash = hashResetToken(token)
     const adminUser = await prisma.adminUser.findUnique({
-      where: { resetToken: token },
+      where: { resetToken: tokenHash },
     })
 
     if (
@@ -90,3 +99,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Something went wrong' }, { status: 500 })
   }
 }
+

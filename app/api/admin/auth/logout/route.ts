@@ -15,7 +15,13 @@ export async function POST(request: NextRequest) {
       message: 'Logged out successfully',
     })
 
-    response.cookies.delete('admin_session')
+    response.cookies.set('admin_session', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 0,
+    })
 
     return response
   } catch (error: any) {

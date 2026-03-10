@@ -1,17 +1,51 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { contactNotificationEmail } from '@/lib/email-templates'
 import { getSupportContact } from '@/lib/support-contact'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
-export async function POST(request: Request) {
+function normalizeString(value: unknown, maxLength: number) {
+  return String(value || '').trim().slice(0, maxLength)
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`contact:${ip}`, {
+    maxRequests: 6,
+    windowMs: 60_000,
+  })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   try {
     const body = await request.json()
-    const { name, email, phone, subject, message } = body
+    const website = normalizeString(body?.website, 200)
+    if (website) {
+      // Honeypot field hit by bots: pretend success to reduce retries.
+      return NextResponse.json({ success: true })
+    }
+
+    const name = normalizeString(body?.name, 120)
+    const email = normalizeString(body?.email, 254).toLowerCase()
+    const phone = normalizeString(body?.phone, 40)
+    const subject = normalizeString(body?.subject, 160)
+    const message = normalizeString(body?.message, 5000)
 
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
         { error: 'Name, email, subject, and message are required' },
+        { status: 400 }
+      )
+    }
+
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { error: 'Please provide a valid email address' },
         { status: 400 }
       )
     }
@@ -36,3 +70,4 @@ export async function POST(request: Request) {
     )
   }
 }
+
