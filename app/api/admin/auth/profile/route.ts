@@ -4,6 +4,8 @@ import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hashPassword, verifyPassword } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -15,6 +17,9 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
 
     const adminUser = await prisma.adminUser.findUnique({
       where: { id: session.userId },
@@ -22,6 +27,7 @@ export async function GET(request: NextRequest) {
         id: true,
         username: true,
         email: true,
+        role: true,
         createdAt: true,
       },
     })
@@ -46,6 +52,9 @@ export async function PUT(request: NextRequest) {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     const { allowed, retryAfterMs } = await checkRateLimit(`admin-profile:${session.userId}:${ip}`, {
@@ -113,6 +122,18 @@ export async function PUT(request: NextRequest) {
     await prisma.adminUser.update({
       where: { id: adminUser.id },
       data: updateData,
+    })
+
+    await logAdminAudit({
+      request,
+      session,
+      action: 'admin.profile.update',
+      entityType: 'admin_user',
+      entityId: adminUser.id,
+      metadata: {
+        emailUpdated: Boolean(emailInput),
+        passwordUpdated: Boolean(newPassword),
+      },
     })
 
     if (newPassword) {

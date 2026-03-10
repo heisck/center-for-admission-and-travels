@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request)
   try {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'payments.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`admin-payments:${session.userId}:${ip}`, {
+      maxRequests: 60,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const { searchParams } = new URL(request.url)
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
@@ -16,8 +29,12 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined
 
     const where: any = {}
+    const validStatuses = new Set(['pending', 'processing', 'success', 'failed', 'cancelled'])
 
     if (status && status !== 'all') {
+      if (!validStatuses.has(status)) {
+        return NextResponse.json({ success: false, error: 'Invalid payment status filter' }, { status: 400 })
+      }
       where.status = status
     }
 
@@ -73,11 +90,8 @@ export async function GET(request: NextRequest) {
         },
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching payments:', error)
-    return NextResponse.json(
-      { success: false, error: error.message || 'Failed to fetch payments' },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: 'Failed to fetch payments' }, { status: 500 })
   }
 }

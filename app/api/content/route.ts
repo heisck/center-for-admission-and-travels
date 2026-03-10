@@ -10,6 +10,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 // Cache public content for fast reads, then invalidate cache when admins save.
 export const revalidate = 60
@@ -309,30 +313,54 @@ export async function GET() {
         },
       }
     )
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching content:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to fetch content' }, { status: 500 })
   }
 }
 
 // POST /api/content - Update content (admin only)
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
   try {
     // Verify admin session
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`admin-content-update:${session.userId}:${ip}`, {
+      maxRequests: 30,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const body = await request.json()
-    const { section, data } = body
+    const section = typeof body?.section === 'string' ? body.section.trim().slice(0, 100) : ''
+    const data = body?.data
 
-    // TODO: Replace with Prisma updates when database is connected
-    // This is a simplified example - in production, you'd have specific endpoints for each section
+    if (!section || data === undefined) {
+      return NextResponse.json({ success: false, error: 'Section and data are required' }, { status: 400 })
+    }
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'public_content.update_request',
+      entityType: 'content_section',
+      entityId: section,
+      metadata: {
+        dataKeys: data && typeof data === 'object' ? Object.keys(data as Record<string, unknown>).slice(0, 25) : [],
+      },
+    })
+
+    // TODO: Replace with Prisma updates when database is connected.
     return NextResponse.json({ success: true, message: 'Content updated (mock)' })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating content:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to update content' }, { status: 500 })
   }
 }

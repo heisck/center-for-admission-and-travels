@@ -101,10 +101,10 @@ export async function GET(
         },
       }
     )
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching package:', error)
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Failed to fetch package' },
       { status: 500 }
     )
   }

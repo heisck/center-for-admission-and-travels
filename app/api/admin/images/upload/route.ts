@@ -9,14 +9,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { uploadImage, validateImageFile, isCloudinaryConfigured, extractPublicId } from '@/lib/cloudinary'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 // POST /api/admin/images/upload
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
   try {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'media.manage')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`admin-image-upload:${session.userId}:${ip}`, {
+      maxRequests: 15,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -56,6 +70,20 @@ export async function POST(request: NextRequest) {
     // Extract public ID from URL
     const publicId = extractPublicId(url)
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'media.upload',
+      entityType: 'image',
+      entityId: publicId || null,
+      metadata: {
+        folder: folder || null,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+      },
+    })
+
     return NextResponse.json({
       success: true,
       url,
@@ -64,7 +92,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Image upload error:', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Upload failed' },
+      { success: false, error: 'Upload failed' },
       { status: 500 }
     )
   }

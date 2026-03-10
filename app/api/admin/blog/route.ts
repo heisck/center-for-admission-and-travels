@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 function slugify(text: string): string {
   return text
@@ -23,6 +25,9 @@ export async function GET(request: NextRequest) {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     if (!(prisma as any).blogPost) {
@@ -53,7 +58,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: formatted })
   } catch (error: any) {
     console.error('Error fetching blog posts:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to fetch blog posts' }, { status: 500 })
   }
 }
 
@@ -62,6 +67,9 @@ export async function POST(request: NextRequest) {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     if (!(prisma as any).blogPost) {
@@ -99,9 +107,18 @@ export async function POST(request: NextRequest) {
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'blog.create',
+      entityType: 'blog_post',
+      entityId: post.id,
+      metadata: { slug: post.slug, published: post.published },
+    })
+
     return NextResponse.json({ success: true, data: post })
   } catch (error: any) {
     console.error('Error creating blog post:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to create blog post' }, { status: 500 })
   }
 }

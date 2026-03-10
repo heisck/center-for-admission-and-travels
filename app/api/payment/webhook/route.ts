@@ -168,10 +168,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: 'Webhook processed' })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error processing webhook:', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Webhook processing failed' },
+      { success: false, error: 'Webhook processing failed' },
       { status: 500 }
     )
   }

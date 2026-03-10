@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { prisma } from '@/lib/prisma'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -57,6 +62,9 @@ export async function PATCH(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'support.manage')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
 
     const body = await request.json()
     const { id, status } = body
@@ -71,6 +79,15 @@ export async function PATCH(request: NextRequest) {
     const updated = await prisma.payment.update({
       where: { id },
       data: { status, updatedAt: new Date() },
+    })
+
+    await logAdminAudit({
+      request,
+      session,
+      action: 'booking.status.update',
+      entityType: 'payment',
+      entityId: id,
+      metadata: { status },
     })
 
     return NextResponse.json({ success: true, data: updated })

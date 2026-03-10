@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 export async function PUT(
   request: NextRequest,
@@ -17,6 +19,9 @@ export async function PUT(
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     const { id } = await Promise.resolve(params)
@@ -49,10 +54,19 @@ export async function PUT(
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'blog.update',
+      entityType: 'blog_post',
+      entityId: post.id,
+      metadata: { slug: post.slug, published: post.published },
+    })
+
     return NextResponse.json({ success: true, data: post })
   } catch (error: any) {
     console.error('Error updating blog post:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to update blog post' }, { status: 500 })
   }
 }
 
@@ -65,18 +79,37 @@ export async function DELETE(
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
 
     const { id } = await Promise.resolve(params)
+    const existingPost = await prisma.blogPost.findUnique({
+      where: { id },
+      select: { slug: true },
+    })
 
     await prisma.blogPost.delete({ where: { id } })
 
     revalidatePath('/api/content')
     revalidatePath('/', 'layout')
+    if (existingPost?.slug) {
+      revalidatePath(`/api/blog/${existingPost.slug}`)
+    }
     revalidateTag('public-content', 'max')
+
+    await logAdminAudit({
+      request,
+      session,
+      action: 'blog.delete',
+      entityType: 'blog_post',
+      entityId: id,
+      metadata: { slug: existingPost?.slug || null },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Error deleting blog post:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to delete blog post' }, { status: 500 })
   }
 }

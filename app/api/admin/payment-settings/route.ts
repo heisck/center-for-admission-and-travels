@@ -9,17 +9,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 // Payment settings are stored in environment variables
 // This API provides a way to view and update them (in production, use a secure settings store)
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request)
   try {
     // Verify admin session
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'settings.manage')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`admin-payment-settings-read:${session.userId}:${ip}`, {
+      maxRequests: 30,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     // Return payment settings (masked for security)
     const settings = {
@@ -32,29 +44,29 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data: settings })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching payment settings:', error)
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: 'Failed to fetch payment settings' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
-  const { allowed, retryAfterMs } = await checkRateLimit(`admin-payment-settings:${ip}`, {
-    maxRequests: 10,
-    windowMs: 60_000,
-  })
-  if (!allowed) return rateLimitResponse(retryAfterMs)
-
   try {
     // Verify admin session
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'security.manage')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`admin-payment-settings-write:${session.userId}:${ip}`, {
+      maxRequests: 10,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const body = await request.json()
 
@@ -81,6 +93,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const normalizedCurrency = typeof currency === 'string' ? currency.trim().toUpperCase() : 'GHS'
+    const normalizedBaseUrl = typeof baseUrl === 'string' ? baseUrl.trim() : 'http://localhost:3000'
+
+    await logAdminAudit({
+      request,
+      session,
+      action: 'payment_settings.update_request',
+      entityType: 'payment_settings',
+      metadata: {
+        currency: normalizedCurrency,
+        baseUrl: normalizedBaseUrl,
+      },
+    })
+
     // Return instructions to update .env file without echoing secrets.
     return NextResponse.json({
       success: true,
@@ -88,16 +114,13 @@ export async function POST(request: NextRequest) {
         'Payment settings should be updated in the .env file:\n' +
         'NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=<your-public-key>\n' +
         'PAYSTACK_SECRET_KEY=<your-secret-key>\n' +
-        `PAYMENT_CURRENCY=${currency || 'GHS'}\n` +
-        `NEXT_PUBLIC_BASE_URL=${baseUrl || 'http://localhost:3000'}\n` +
+        `PAYMENT_CURRENCY=${normalizedCurrency}\n` +
+        `NEXT_PUBLIC_BASE_URL=${normalizedBaseUrl}\n` +
         '\nAfter updating, restart your server.',
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating payment settings:', error)
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: 'Failed to update payment settings' }, { status: 500 })
   }
 }
 

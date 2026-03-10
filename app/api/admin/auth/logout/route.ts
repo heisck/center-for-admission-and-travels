@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { prisma } from '@/lib/prisma'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,13 @@ export async function POST(request: NextRequest) {
 
     if (session) {
       await prisma.adminSession.deleteMany({ where: { token: session.token } }).catch(() => {})
+      await logAdminAudit({
+        request,
+        session,
+        action: 'admin.auth.logout',
+        entityType: 'admin_session',
+        entityId: session.token,
+      })
     }
 
     const response = NextResponse.json({
@@ -24,7 +32,7 @@ export async function POST(request: NextRequest) {
     })
 
     return response
-  } catch (error: any) {
+  } catch (error) {
     console.error('Logout error:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

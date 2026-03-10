@@ -13,6 +13,8 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import * as contentHelpers from '@/lib/prisma-content-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 // GET /api/admin/content/[section] - Get specific section
 export async function GET(
@@ -23,6 +25,9 @@ export async function GET(
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     // Handle both Promise and direct params (Next.js 15+ vs 14)
@@ -148,7 +153,7 @@ export async function GET(
   } catch (error: any) {
     const resolvedParams = await Promise.resolve(params)
     console.error(`Error fetching ${resolvedParams.section}:`, error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to fetch content section' }, { status: 500 })
   }
 }
 
@@ -161,6 +166,9 @@ export async function PUT(
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     // Handle both Promise and direct params (Next.js 15+ vs 14)
@@ -323,10 +331,19 @@ export async function PUT(
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
+    await logAdminAudit({
+      request,
+      session,
+      action: `content.${section}.update`,
+      entityType: 'content_section',
+      entityId: section,
+      metadata: { keys: Object.keys(body || {}) },
+    })
+
     return NextResponse.json({ success: true, message: `${section} updated` })
   } catch (error: any) {
     const resolvedParams = await Promise.resolve(params)
     console.error(`Error updating ${resolvedParams.section}:`, error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to update content section' }, { status: 500 })
   }
 }

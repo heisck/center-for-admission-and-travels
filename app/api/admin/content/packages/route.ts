@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 // GET /api/admin/content/packages - Get all packages
 export async function GET(request: NextRequest) {
@@ -15,6 +17,9 @@ export async function GET(request: NextRequest) {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     const packages = await prisma.package.findMany({
@@ -44,7 +49,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: formatted })
   } catch (error: any) {
     console.error('Error fetching packages:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to fetch packages' }, { status: 500 })
   }
 }
 
@@ -54,6 +59,9 @@ export async function POST(request: NextRequest) {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -113,6 +121,15 @@ export async function POST(request: NextRequest) {
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'package.create',
+      entityType: 'package',
+      entityId: newPackage.id,
+      metadata: { name: newPackage.name, category: newPackage.category },
+    })
+
     return NextResponse.json({
       success: true,
       data: {
@@ -131,7 +148,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error creating package:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to create package' }, { status: 500 })
   }
 }
 
@@ -141,6 +158,9 @@ export async function PUT(request: NextRequest) {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -214,10 +234,19 @@ export async function PUT(request: NextRequest) {
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'package.update',
+      entityType: 'package',
+      entityId: id,
+      metadata: { name, category },
+    })
+
     return NextResponse.json({ success: true, message: 'Package updated' })
   } catch (error: any) {
     console.error('Error updating package:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to update package' }, { status: 500 })
   }
 }
 
@@ -227,6 +256,9 @@ export async function DELETE(request: NextRequest) {
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -243,9 +275,17 @@ export async function DELETE(request: NextRequest) {
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'package.delete',
+      entityType: 'package',
+      entityId: id,
+    })
+
     return NextResponse.json({ success: true, message: 'Package deleted' })
   } catch (error: any) {
     console.error('Error deleting package:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to delete package' }, { status: 500 })
   }
 }

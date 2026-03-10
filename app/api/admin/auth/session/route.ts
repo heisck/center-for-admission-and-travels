@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
+import { hasAdminPermission } from '@/lib/admin-permissions'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,6 +18,9 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
+    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
 
     const adminUser = await prisma.adminUser.findUnique({
       where: { id: session.userId },
@@ -24,6 +28,7 @@ export async function GET(request: NextRequest) {
         id: true,
         username: true,
         email: true,
+        role: true,
       },
     })
 

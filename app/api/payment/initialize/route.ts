@@ -243,10 +243,10 @@ export async function POST(request: NextRequest) {
         reference,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error initializing payment:', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to initialize payment' },
+      { success: false, error: 'Failed to initialize payment' },
       { status: 500 }
     )
   }

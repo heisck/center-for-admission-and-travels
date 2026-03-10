@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { updateServicePage } from '@/lib/prisma-content-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 // PUT /api/admin/content/service-pages/[serviceId]
 export async function PUT(
@@ -19,6 +21,9 @@ export async function PUT(
     const session = await verifyAdminSession(request)
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
     // Resolve params in case it's a Promise (framework version differences)
@@ -62,10 +67,19 @@ export async function PUT(
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'service_page.update',
+      entityType: 'service_page',
+      entityId: serviceId,
+      metadata: { title: body.title },
+    })
+
     return NextResponse.json({ success: true, message: `Service page ${serviceId} updated` })
   } catch (error: any) {
     const resolvedParams = await Promise.resolve(params as any)
     console.error(`Error updating service page ${resolvedParams.serviceId}:`, error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to update service page' }, { status: 500 })
   }
 }

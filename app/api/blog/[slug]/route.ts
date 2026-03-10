@@ -50,8 +50,8 @@ export async function GET(
         },
       }
     )
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching blog post:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Failed to fetch blog post' }, { status: 500 })
   }
 }

@@ -1,9 +1,12 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { AdminRole } from '@prisma/client'
 
 export interface AdminSession {
   userId: string
   username: string
+  email: string | null
+  role: AdminRole
   token: string
   expiresAt: Date
 }
@@ -31,6 +34,8 @@ export async function verifyAdminSession(request: NextRequest): Promise<AdminSes
     return {
       userId: session.user.id,
       username: session.user.username,
+      email: session.user.email,
+      role: session.user.role,
       token: session.token,
       expiresAt: session.expiresAt,
     }

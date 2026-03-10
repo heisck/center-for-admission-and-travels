@@ -12,17 +12,28 @@ import { verifyAdminSession } from '@/lib/auth-helpers'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { spawn } from 'child_process'
+import { hasAdminPermission } from '@/lib/admin-permissions'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 // POST /api/admin/seed
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
-  const { allowed, retryAfterMs } = await checkRateLimit(`admin-seed:${ip}`, {
-    maxRequests: 2,
-    windowMs: 10 * 60_000,
-  })
-  if (!allowed) return rateLimitResponse(retryAfterMs)
-
   try {
+    // Verify admin session
+    const session = await verifyAdminSession(request)
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'system.seed')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { allowed, retryAfterMs } = await checkRateLimit(`admin-seed:${session.userId}:${ip}`, {
+      maxRequests: 2,
+      windowMs: 10 * 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
+
     const seedEnabled =
       process.env.NODE_ENV !== 'production' || process.env.ENABLE_ADMIN_SEED_ENDPOINT === 'true'
     if (!seedEnabled) {
@@ -53,12 +64,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 403 }
       )
-    }
-
-    // Verify admin session
-    const session = await verifyAdminSession(request)
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
     const command = process.platform === 'win32' ? 'npx.cmd' : 'npx'
@@ -96,21 +101,38 @@ export async function POST(request: NextRequest) {
 
     if (result.code !== 0) {
       console.error('Error seeding database:', result.stderr || `Process exited with code ${result.code}`)
+      await logAdminAudit({
+        request,
+        session,
+        action: 'system.seed.failed',
+        entityType: 'system',
+        metadata: {
+          code: result.code,
+          stderr: result.stderr || null,
+        },
+      })
       return NextResponse.json(
         { success: false, error: 'Failed to seed database. Check server logs for details.' },
         { status: 500 }
       )
     }
 
+    await logAdminAudit({
+      request,
+      session,
+      action: 'system.seed.success',
+      entityType: 'system',
+    })
+
     return NextResponse.json({
       success: true,
       message: 'Database seeded successfully',
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error seeding database:', error)
     return NextResponse.json({
       success: false,
-      error: error.message || 'Failed to seed database',
+      error: 'Failed to seed database',
     }, { status: 500 })
   }
 }

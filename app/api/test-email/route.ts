@@ -9,6 +9,7 @@ import { sendEmail } from '@/lib/email'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { verifyAdminSession } from '@/lib/auth-helpers'
+import { hasAdminPermission } from '@/lib/admin-permissions'
 
 export async function POST(request: NextRequest) {
   if (process.env.ENABLE_TEST_EMAIL_ENDPOINT !== 'true') {
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
   const session = await verifyAdminSession(request)
   if (!session) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!hasAdminPermission(session.role, 'security.manage')) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 
   const ip = getClientIp(request)

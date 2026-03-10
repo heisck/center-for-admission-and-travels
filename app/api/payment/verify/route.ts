@@ -169,10 +169,10 @@ export async function GET(request: NextRequest) {
         message: responseMessage,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error verifying payment:', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to verify payment' },
+      { success: false, error: 'Failed to verify payment' },
       { status: 500 }
     )
   }
