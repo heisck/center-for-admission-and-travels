@@ -52,6 +52,7 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@tailwindcss/postcss": "^4.1.9",
+    "@types/nodemailer": "^7.0.11",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -93,7 +94,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
-    "@types/nodemailer": "^7.0.11",
     "baseline-browser-mapping": "latest",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.1.6"
