@@ -12,7 +12,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 
 // Cache public content for fast reads, then invalidate cache when admins save.
-export const revalidate = 300
+export const revalidate = 60
 
 // GET /api/content - Fetch all content for frontend
 export async function GET() {
@@ -305,7 +305,7 @@ export async function GET() {
       { success: true, data: content },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
         },
       }
     )

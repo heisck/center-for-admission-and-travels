@@ -318,8 +318,8 @@ export async function PUT(
         return NextResponse.json({ success: false, error: 'Invalid section' }, { status: 400 })
     }
 
-    revalidatePath('/api/content', 'page')
-    revalidatePath('/api/contact/whatsapp', 'page')
+    revalidatePath('/api/content')
+    revalidatePath('/api/contact/whatsapp')
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 

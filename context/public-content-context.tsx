@@ -12,6 +12,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 
+const PUBLIC_CONTENT_VERSION_KEY = 'public_content_version'
+
 export interface PublicContent {
   home: {
     hero: {
@@ -209,7 +211,7 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
     setError(null)
 
     try {
-      const response = await fetch('/api/content')
+      const response = await fetch('/api/content', { cache: 'no-store' })
       const result = await response.json()
 
       if (!result.success) {
@@ -245,6 +247,17 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
     const onContentUpdated = () => fetchContent(true)
     window.addEventListener('content-updated', onContentUpdated)
     return () => window.removeEventListener('content-updated', onContentUpdated)
+  }, [fetchContent])
+
+  // Refetch across tabs/windows when admin updates content.
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === PUBLIC_CONTENT_VERSION_KEY) {
+        fetchContent(true)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [fetchContent])
 
   return (

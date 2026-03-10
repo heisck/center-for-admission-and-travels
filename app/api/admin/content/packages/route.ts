@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    revalidatePath('/api/content', 'page')
-    revalidatePath('/api/packages/[id]', 'page')
+    revalidatePath('/api/content')
+    revalidatePath(`/api/packages/${newPackage.id}`)
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
@@ -209,8 +209,8 @@ export async function PUT(request: NextRequest) {
       })
     }
 
-    revalidatePath('/api/content', 'page')
-    revalidatePath('/api/packages/[id]', 'page')
+    revalidatePath('/api/content')
+    revalidatePath(`/api/packages/${id}`)
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
@@ -238,8 +238,8 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.package.delete({ where: { id } })
 
-    revalidatePath('/api/content', 'page')
-    revalidatePath('/api/packages/[id]', 'page')
+    revalidatePath('/api/content')
+    revalidatePath(`/api/packages/${id}`)
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 

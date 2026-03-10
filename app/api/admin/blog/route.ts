@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    revalidatePath('/api/content', 'page')
+    revalidatePath('/api/content')
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 

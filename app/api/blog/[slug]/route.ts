@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const revalidate = 300
+export const revalidate = 60
 
 export async function GET(
   request: NextRequest,
@@ -46,7 +46,7 @@ export async function GET(
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
         },
       }
     )

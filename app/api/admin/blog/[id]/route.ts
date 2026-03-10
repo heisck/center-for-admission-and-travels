@@ -44,8 +44,8 @@ export async function PUT(
       data: updateData,
     })
 
-    revalidatePath('/api/content', 'page')
-    revalidatePath(`/api/blog/${post.slug}`, 'page')
+    revalidatePath('/api/content')
+    revalidatePath(`/api/blog/${post.slug}`)
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 
@@ -70,7 +70,7 @@ export async function DELETE(
 
     await prisma.blogPost.delete({ where: { id } })
 
-    revalidatePath('/api/content', 'page')
+    revalidatePath('/api/content')
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 

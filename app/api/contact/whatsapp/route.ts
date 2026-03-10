@@ -1,13 +1,13 @@
 /**
  * API: GET /api/contact/whatsapp
  * Returns the current WhatsApp number from the database.
- * No caching - always fetches fresh for the floating button.
+ * Short-lived caching with explicit invalidation on admin updates.
  */
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const revalidate = 120
+export const revalidate = 60
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
@@ -21,7 +21,7 @@ export async function GET() {
       { success: true, whatsappNumber: number },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+          'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
         },
       }
     )

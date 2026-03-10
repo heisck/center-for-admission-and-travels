@@ -58,7 +58,7 @@ export async function PUT(
 
     await updateServicePage(serviceId, updateData)
 
-    revalidatePath('/api/content', 'page')
+    revalidatePath('/api/content')
     revalidatePath('/', 'layout')
     revalidateTag('public-content', 'max')
 

@@ -563,6 +563,7 @@ const defaultContent: AdminContent = {
 const STORAGE_KEY = 'admin_content'
 const HISTORY_STORAGE_KEY = 'admin_history'
 const HISTORY_INDEX_STORAGE_KEY = 'admin_history_index'
+const PUBLIC_CONTENT_VERSION_KEY = 'public_content_version'
 
 // Helper function to check if value is an object
 const isObject = (item: any): boolean => {
@@ -736,6 +737,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+
+  const notifyPublicContentUpdated = useCallback(() => {
+    if (typeof window === 'undefined') return
+    const version = String(Date.now())
+    window.localStorage.setItem(PUBLIC_CONTENT_VERSION_KEY, version)
+    window.dispatchEvent(new CustomEvent('content-updated'))
+  }, [])
 
   // Load content from database on mount
   useEffect(() => {
@@ -1223,15 +1231,15 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(updates),
       })
       const result = await response.json()
-      if (result.success && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('content-updated'))
+      if (result.success) {
+        notifyPublicContentUpdated()
       } else if (!result.success) {
         console.error('Failed to save contact info:', result.error)
       }
     } catch (error) {
       console.error('Error syncing contact info:', error)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const updateFooter = useCallback(async (updates: Partial<AdminContent['footer']>) => {
     // Optimistic update
@@ -1249,15 +1257,15 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(updates),
       })
       const result = await response.json()
-      if (result.success && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('content-updated'))
+      if (result.success) {
+        notifyPublicContentUpdated()
       } else if (!result.success) {
         console.error('Failed to save footer info:', result.error)
       }
     } catch (error) {
       console.error('Error syncing footer info:', error)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const updateServicePage = useCallback(async (serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => {
     // Optimistic update
@@ -1442,9 +1450,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const newHistory = [{ content, timestamp: Date.now() }]
         setHistory(newHistory)
         setHistoryIndex(0)
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('content-updated'))
-        }
+        notifyPublicContentUpdated()
         alert('All changes saved successfully!')
       }
     } catch (error) {
@@ -1453,7 +1459,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsSaving(false)
     }
-  }, [content])
+  }, [content, notifyPublicContentUpdated])
 
   return (
     <AdminContext.Provider
