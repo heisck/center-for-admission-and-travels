@@ -43,7 +43,7 @@ export default function AdminStudyAbroadPage() {
 
   const handleHighlightsUpdate = (idx: number, value: string) => {
     if (!service.whyStudyOutsideThisCountry) return
-    const newHighlights = [...service.whyStudyOutsideThisCountry.highlights]
+    const newHighlights = [...(service.whyStudyOutsideThisCountry.highlights || [])]
     newHighlights[idx] = value
     updateServicePage('study-abroad', {
       whyStudyOutsideThisCountry: {
@@ -186,7 +186,7 @@ export default function AdminStudyAbroadPage() {
             </p>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {service.whyStudyOutsideThisCountry.highlights.map((highlight, idx) => (
+              {(service.whyStudyOutsideThisCountry.highlights || []).map((highlight, idx) => (
                 <div key={idx} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition">
                   <div className="flex gap-4">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0 mt-1">
@@ -398,4 +398,3 @@ export default function AdminStudyAbroadPage() {
     </main>
   )
 }
-

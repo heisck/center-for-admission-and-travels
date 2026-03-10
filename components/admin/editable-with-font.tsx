@@ -3,13 +3,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { Edit2, Check, X } from 'lucide-react'
 
+type FontSize = 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl'
+type FontWeight = 'normal' | 'semibold' | 'bold'
+
 interface EditableWithFontProps {
   value: string
   onChange: (value: string) => void
-  fontSize?: 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl'
-  fontWeight?: 'normal' | 'semibold' | 'bold'
-  onFontSizeChange?: (size: string) => void
-  onFontWeightChange?: (weight: string) => void
+  fontSize?: FontSize
+  fontWeight?: FontWeight
+  onFontSizeChange?: (size: FontSize) => void
+  onFontWeightChange?: (weight: FontWeight) => void
   multiline?: boolean
   className?: string
 }
@@ -75,7 +78,7 @@ export function EditableWithFont({
         <div className="flex gap-2">
           <select
             value={localFontSize}
-            onChange={(e) => setLocalFontSize(e.target.value)}
+            onChange={(e) => setLocalFontSize(e.target.value as FontSize)}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           >
             <option value="sm">Small</option>
@@ -91,7 +94,7 @@ export function EditableWithFont({
 
           <select
             value={localFontWeight}
-            onChange={(e) => setLocalFontWeight(e.target.value)}
+            onChange={(e) => setLocalFontWeight(e.target.value as FontWeight)}
             className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
           >
             <option value="normal">Normal</option>

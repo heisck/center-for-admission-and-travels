@@ -4,8 +4,12 @@ import { Suspense } from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import ApplyFormContent from "./apply-form-content"
+import { usePublicContent } from "@/context/public-content-context"
 
 export default function ApplyPage() {
+  const { content } = usePublicContent()
+  const supportEmail = content?.contact?.email?.trim() || ""
+
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -37,9 +41,13 @@ export default function ApplyPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Our advisors are available to answer your questions and guide you through the application process.
                 </p>
-                <a href="mailto:info@centerforadmissionandtravels.com" className="text-primary font-semibold hover:underline text-sm">
-                  Contact Support →
-                </a>
+                {supportEmail ? (
+                  <a href={`mailto:${supportEmail}`} className="text-primary font-semibold hover:underline text-sm">
+                    Contact Support →
+                  </a>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Support email not set</span>
+                )}
               </div>
 
               <div className="bg-white rounded-xl p-6 border border-border shadow-sm">

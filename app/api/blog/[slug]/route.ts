@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const revalidate = 300
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> | { slug: string } }
@@ -21,26 +23,33 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: post.id,
-        slug: post.slug,
-        title: post.title,
-        excerpt: post.excerpt || '',
-        content: post.content,
-        imageUrl: post.imageUrl || null,
-        packageId: post.packageId || null,
-        package: post.package
-          ? {
-              id: post.package.id,
-              name: post.package.name,
-              slug: post.package.id,
-            }
-          : null,
-        publishedAt: post.publishedAt?.toISOString?.() || null,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          id: post.id,
+          slug: post.slug,
+          title: post.title,
+          excerpt: post.excerpt || '',
+          content: post.content,
+          imageUrl: post.imageUrl || null,
+          packageId: post.packageId || null,
+          package: post.package
+            ? {
+                id: post.package.id,
+                name: post.package.name,
+                slug: post.package.id,
+              }
+            : null,
+          publishedAt: post.publishedAt?.toISOString?.() || null,
+        },
       },
-    })
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    )
   } catch (error: any) {
     console.error('Error fetching blog post:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })

@@ -7,8 +7,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const revalidate = 300
+
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -23,7 +25,7 @@ export async function GET(
     }
 
     // Try to fetch from Package table first
-    let pkg = await prisma.package.findUnique({
+    const pkg = await prisma.package.findUnique({
       where: { id: packageId },
       include: {
         highlights: { orderBy: { order: 'asc' } },
@@ -58,7 +60,14 @@ export async function GET(
           notIncluded: [],
         }
 
-        return NextResponse.json({ success: true, data: packageData })
+        return NextResponse.json(
+          { success: true, data: packageData },
+          {
+            headers: {
+              'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+            },
+          }
+        )
       }
     }
 
@@ -84,7 +93,14 @@ export async function GET(
       notIncluded: pkg.notIncluded?.map((i) => i.text) || [],
     }
 
-    return NextResponse.json({ success: true, data: packageData })
+    return NextResponse.json(
+      { success: true, data: packageData },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    )
   } catch (error: any) {
     console.error('Error fetching package:', error)
     return NextResponse.json(

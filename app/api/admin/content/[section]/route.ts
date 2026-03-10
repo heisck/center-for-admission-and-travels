@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import * as contentHelpers from '@/lib/prisma-content-helpers'
@@ -286,6 +287,15 @@ export async function PUT(
         // This would need a nested route like /api/admin/content/service-pages/[serviceId]
         break
       case 'contact':
+        const latitude =
+          body.location?.latitude !== undefined && body.location?.latitude !== null && body.location?.latitude !== ''
+            ? Number(body.location.latitude)
+            : null
+        const longitude =
+          body.location?.longitude !== undefined && body.location?.longitude !== null && body.location?.longitude !== ''
+            ? Number(body.location.longitude)
+            : null
+
         await contentHelpers.updateContactInfo({
           phone: body.phone,
           email: body.email,
@@ -294,6 +304,8 @@ export async function PUT(
           addressCity: body.address?.city,
           addressRegion: body.address?.region,
           addressCountry: body.address?.country,
+          mapLatitude: Number.isFinite(latitude as number) ? latitude : null,
+          mapLongitude: Number.isFinite(longitude as number) ? longitude : null,
         })
         break
       case 'footer':
@@ -305,6 +317,11 @@ export async function PUT(
       default:
         return NextResponse.json({ success: false, error: 'Invalid section' }, { status: 400 })
     }
+
+    revalidatePath('/api/content', 'page')
+    revalidatePath('/api/contact/whatsapp', 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
 
     return NextResponse.json({ success: true, message: `${section} updated` })
   } catch (error: any) {

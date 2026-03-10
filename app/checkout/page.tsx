@@ -9,6 +9,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CreditCard, Smartphone, MessageCircle, Loader2, AlertCircle, Shield, Clock, MapPin, LogIn } from "lucide-react"
 import { useUserAuth } from "@/context/user-auth-context"
+import { usePublicContent } from "@/context/public-content-context"
+import { buildWhatsAppUrl } from "@/lib/contact-utils"
 
 interface PackageData {
   id: string
@@ -49,6 +51,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams()
   const packageId = searchParams.get("id")
   const { user, isLoading: authLoading } = useUserAuth()
+  const { content } = usePublicContent()
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -134,6 +137,23 @@ function CheckoutContent() {
     return Object.keys(errors).length === 0
   }
 
+  const resolveSupportWhatsAppNumber = async (): Promise<string> => {
+    const fromContent = content?.contact?.whatsappNumber?.trim()
+    if (fromContent) return fromContent
+
+    try {
+      const response = await fetch("/api/contact/whatsapp", { cache: "no-store" })
+      const result = await response.json()
+      if (result.success && result.whatsappNumber) {
+        return result.whatsappNumber
+      }
+    } catch {
+      // Ignore and return empty string below
+    }
+
+    return ""
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -163,7 +183,6 @@ function CheckoutContent() {
         })
 
         // Build WhatsApp message with package details
-        const whatsappNumber = "233248422663"
         const message = [
           `Hi, I'd like to book the *${packageData.name}* package.`,
           ``,
@@ -180,8 +199,13 @@ function CheckoutContent() {
           ``,
           `Please help me complete this booking. Thank you!`,
         ].filter(Boolean).join("\n")
-
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`
+        const supportWhatsAppNumber = await resolveSupportWhatsAppNumber()
+        const whatsappUrl = buildWhatsAppUrl(supportWhatsAppNumber, message)
+        if (!whatsappUrl) {
+          setError("WhatsApp contact is not configured right now. Please choose Card/Mobile Money or try again shortly.")
+          setProcessing(false)
+          return
+        }
         window.open(whatsappUrl, "_blank")
 
         setBookingSuccess(true)

@@ -12,6 +12,7 @@ import Paystack from '@paystack/paystack-sdk'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { paymentConfirmationEmail } from '@/lib/email-templates'
+import { getSupportContact } from '@/lib/support-contact'
 
 const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY || '')
 
@@ -63,13 +64,14 @@ export async function GET(request: NextRequest) {
 
     // Send payment confirmation email on success (non-blocking)
     if (status === 'success' && payment.customerEmail) {
+      const supportContact = await getSupportContact()
       const template = paymentConfirmationEmail({
         name: payment.customerName || 'Customer',
         reference: payment.reference,
         amount: payment.amount,
         currency: payment.currency,
         packageName: (payment.metadata as any)?.packageName || 'Booking',
-      })
+      }, supportContact)
       sendEmail({ to: payment.customerEmail, ...template }).catch(() => {})
     }
 

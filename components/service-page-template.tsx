@@ -16,7 +16,7 @@ interface ServicePageTemplateProps {
     bannerTitle: string
     bannerSubtitle: string
     overview?: string
-    whyStudyOutsideThisCountry?: { title: string; highlights: string[] }
+    whyStudyOutsideThisCountry?: { title: string; highlights?: string[] }
     benefits: string[]
     requirements: string[]
     countries: Array<{ name: string; description: string; image?: string }>
@@ -117,7 +117,7 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
             </p>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {service.whyStudyOutsideThisCountry.highlights.map((highlight, idx) => (
+              {(service.whyStudyOutsideThisCountry.highlights ?? []).map((highlight, idx) => (
                 <div key={idx} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition">
                   <div className="flex gap-4">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0 mt-1">

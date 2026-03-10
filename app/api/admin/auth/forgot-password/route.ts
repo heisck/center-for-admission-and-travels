@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { adminPasswordResetEmail } from '@/lib/email-templates'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getSupportContact } from '@/lib/support-contact'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -63,7 +64,8 @@ export async function POST(request: NextRequest) {
     const { getBaseUrl } = await import('@/lib/url')
     const baseUrl = getBaseUrl(request)
     const resetUrl = `${baseUrl}/admin-reset-password?token=${resetToken}`
-    const template = adminPasswordResetEmail(adminUser.username, resetUrl)
+    const supportContact = await getSupportContact()
+    const template = adminPasswordResetEmail(adminUser.username, resetUrl, supportContact)
 
     await sendEmail({ to: targetEmail, ...template })
 

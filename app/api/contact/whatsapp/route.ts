@@ -7,8 +7,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 120
 
 export async function GET() {
   try {
@@ -16,12 +15,19 @@ export async function GET() {
       where: { id: 'contact' },
       select: { whatsappNumber: true },
     })
-    const number = contact?.whatsappNumber?.replace(/\D/g, '') || '233248422663'
-    return NextResponse.json({ success: true, whatsappNumber: number })
+    const number = contact?.whatsappNumber?.replace(/\D/g, '') || ''
+    return NextResponse.json(
+      { success: true, whatsappNumber: number },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300',
+        },
+      }
+    )
   } catch (error) {
     console.error('[WhatsApp API] Error:', error)
     return NextResponse.json(
-      { success: false, whatsappNumber: '233248422663' },
+      { success: false, whatsappNumber: '' },
       { status: 500 }
     )
   }

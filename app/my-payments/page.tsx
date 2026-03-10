@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import { useUserAuth } from '@/context/user-auth-context'
+import { usePublicContent } from '@/context/public-content-context'
 import { Skeleton } from '@/components/ui/skeleton'
+import { buildWhatsAppUrl } from '@/lib/contact-utils'
 import {
   Loader2,
   CreditCard,
@@ -47,14 +48,13 @@ const STATUS_CONFIG: Record<string, { label: string; icon: any; bg: string; text
   cancelled: { label: 'Cancelled', icon: AlertCircle, bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' },
 }
 
-const WHATSAPP_NUMBER = '233248422663'
-
 export default function MyPaymentsPage() {
-  const router = useRouter()
   const { user, isLoading: authLoading } = useUserAuth()
+  const { content } = usePublicContent()
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [supportWhatsAppNumber, setSupportWhatsAppNumber] = useState('')
 
   useEffect(() => {
     if (authLoading) return
@@ -79,7 +79,35 @@ export default function MyPaymentsPage() {
     fetchPayments()
   }, [user, authLoading])
 
-  const buildWhatsAppUrl = (p: Payment) => {
+  useEffect(() => {
+    const fromContent = content?.contact?.whatsappNumber?.trim()
+    if (fromContent) {
+      setSupportWhatsAppNumber(fromContent)
+      return
+    }
+
+    let active = true
+
+    const fetchNumber = async () => {
+      try {
+        const res = await fetch('/api/contact/whatsapp', { cache: 'no-store' })
+        const data = await res.json()
+        if (active && data.success && data.whatsappNumber) {
+          setSupportWhatsAppNumber(data.whatsappNumber)
+        }
+      } catch {
+        // Keep current value on fetch error
+      }
+    }
+
+    fetchNumber()
+
+    return () => {
+      active = false
+    }
+  }, [content?.contact?.whatsappNumber])
+
+  const getFollowUpWhatsAppUrl = (p: Payment) => {
     const packageName = p.metadata?.packageName || 'my package'
     const message = [
       `Hi, I'd like to follow up on my payment.`,
@@ -92,7 +120,7 @@ export default function MyPaymentsPage() {
       ``,
       `Could you please help me with an update? Thank you!`,
     ].join('\n')
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
+    return buildWhatsAppUrl(supportWhatsAppNumber, message)
   }
 
   const formatDate = (dateStr: string) => {
@@ -197,6 +225,7 @@ export default function MyPaymentsPage() {
               {payments.map((p) => {
                 const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG.pending
                 const StatusIcon = sc.icon
+                const followUpUrl = getFollowUpWhatsAppUrl(p)
                 return (
                   <div
                     key={p.id}
@@ -249,15 +278,26 @@ export default function MyPaymentsPage() {
 
                     {/* Actions */}
                     <div className="flex gap-3 pt-2 border-t border-border">
-                      <a
-                        href={buildWhatsAppUrl(p)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        Follow Up on WhatsApp
-                      </a>
+                      {followUpUrl ? (
+                        <a
+                          href={followUpUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Follow Up on WhatsApp
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-500 rounded-lg text-sm font-medium cursor-not-allowed"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          WhatsApp Not Configured
+                        </button>
+                      )}
                     </div>
                   </div>
                 )

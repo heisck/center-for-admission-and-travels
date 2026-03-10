@@ -6,6 +6,7 @@
  */
 
 import { prisma } from './prisma'
+import { detectSocialPlatform, normalizeSocialUrl } from './social-links'
 
 // ============================================================================
 // HOME PAGE
@@ -676,6 +677,8 @@ export async function updateContactInfo(data: {
   addressCity?: string
   addressRegion?: string
   addressCountry?: string
+  mapLatitude?: number | null
+  mapLongitude?: number | null
 }) {
   return await prisma.contactInfo.upsert({
     where: { id: 'contact' },
@@ -689,13 +692,15 @@ export async function updateContactInfo(data: {
       addressCity: data.addressCity || '',
       addressRegion: data.addressRegion || '',
       addressCountry: data.addressCountry || '',
+      mapLatitude: data.mapLatitude ?? null,
+      mapLongitude: data.mapLongitude ?? null,
     },
   })
 }
 
 export async function updateFooterInfo(data: {
   companyDescription?: string
-  socialLinks?: Array<{ platform: string; url: string }>
+  socialLinks?: Array<{ platform?: string; url: string; id?: string }>
 }) {
   const footer = await prisma.footerInfo.upsert({
     where: { id: 'footer' },
@@ -707,9 +712,20 @@ export async function updateFooterInfo(data: {
   })
 
   if (data.socialLinks) {
+    const normalizedLinks = data.socialLinks
+      .map((link) => {
+        const url = normalizeSocialUrl(link.url)
+        if (!url) return null
+        return {
+          platform: detectSocialPlatform(url),
+          url,
+        }
+      })
+      .filter(Boolean) as Array<{ platform: string; url: string }>
+
     await prisma.footerSocialLink.deleteMany({ where: { footerInfoId: footer.id } })
     await prisma.footerSocialLink.createMany({
-      data: data.socialLinks.map((link, index) => ({
+      data: normalizedLinks.map((link, index) => ({
         footerInfoId: footer.id,
         platform: link.platform,
         url: link.url,

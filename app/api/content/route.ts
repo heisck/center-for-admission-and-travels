@@ -11,8 +11,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 
-// Revalidate cached content every 60 seconds (reduces DB load for public content)
-export const revalidate = 60
+// Cache public content for fast reads, then invalidate cache when admins save.
+export const revalidate = 300
 
 // GET /api/content - Fetch all content for frontend
 export async function GET() {
@@ -206,6 +206,8 @@ export async function GET() {
         highlights: pkg.highlights?.map((h) => h.text) || [],
         itinerary: pkg.itinerary || '',
         images: pkg.images?.map((img) => img.url) || [],
+        included: pkg.included?.map((item) => item.text) || [],
+        notIncluded: pkg.notIncluded?.map((item) => item.text) || [],
       })),
       travelTours: {
         hero: {
@@ -240,6 +242,10 @@ export async function GET() {
           country: contactInfo?.addressCountry || '',
         },
         whatsappNumber: contactInfo?.whatsappNumber || '',
+        location: {
+          latitude: contactInfo?.mapLatitude ?? null,
+          longitude: contactInfo?.mapLongitude ?? null,
+        },
       },
       footer: {
         companyDescription: footerInfo?.companyDescription || '',
@@ -295,7 +301,14 @@ export async function GET() {
       })),
     }
 
-    return NextResponse.json({ success: true, data: content })
+    return NextResponse.json(
+      { success: true, data: content },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    )
   } catch (error: any) {
     console.error('Error fetching content:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })

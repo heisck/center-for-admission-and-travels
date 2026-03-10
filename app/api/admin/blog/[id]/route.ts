@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 
@@ -43,6 +44,11 @@ export async function PUT(
       data: updateData,
     })
 
+    revalidatePath('/api/content', 'page')
+    revalidatePath(`/api/blog/${post.slug}`, 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
+
     return NextResponse.json({ success: true, data: post })
   } catch (error: any) {
     console.error('Error updating blog post:', error)
@@ -63,6 +69,10 @@ export async function DELETE(
     const { id } = await Promise.resolve(params)
 
     await prisma.blogPost.delete({ where: { id } })
+
+    revalidatePath('/api/content', 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

@@ -4,11 +4,11 @@ import { useScrollToTop } from "@/hooks/use-scroll-to-top"
 import type React from "react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import Image from "next/image"
 import { Phone, Mail, MapPin, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { usePublicContent } from "@/context/public-content-context"
+import { buildWhatsAppUrl, normalizePhoneForTel } from "@/lib/contact-utils"
 
 export default function Contact() {
   useScrollToTop()
@@ -58,6 +58,22 @@ export default function Contact() {
   }
 
   const contact = content?.contact
+  const phone = contact?.phone?.trim() || ""
+  const phoneHref = normalizePhoneForTel(phone)
+  const email = contact?.email?.trim() || ""
+  const city = contact?.address?.city?.trim() || ""
+  const region = contact?.address?.region?.trim() || ""
+  const street = contact?.address?.street?.trim() || ""
+  const country = contact?.address?.country?.trim() || ""
+  const whatsappHref = buildWhatsAppUrl(contact?.whatsappNumber)
+  const latitude = contact?.location?.latitude
+  const longitude = contact?.location?.longitude
+  const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
+  const mapsHref = hasCoordinates
+    ? `https://www.google.com/maps?q=${latitude},${longitude}`
+    : [street, city, region, country].filter(Boolean).length > 0
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([street, city, region, country].filter(Boolean).join(', '))}`
+      : ""
 
   return (
     <main className="min-h-screen bg-background">
@@ -171,9 +187,13 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Phone</h4>
-                    <a href={`tel:${contact?.phone?.replace(/\s/g, '') || '+233248422663'}`} className="text-muted-foreground hover:text-primary transition">
-                      {contact?.phone || '+233 248 422 663'}
-                    </a>
+                    {phone && phoneHref ? (
+                      <a href={`tel:${phoneHref}`} className="text-muted-foreground hover:text-primary transition">
+                        {phone}
+                      </a>
+                    ) : (
+                      <p className="text-muted-foreground">Phone not set</p>
+                    )}
                   </div>
                 </div>
 
@@ -183,9 +203,13 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Email</h4>
-                    <a href={`mailto:${contact?.email || 'info@centerforadmissionandtravels.com'}`} className="text-muted-foreground break-all hover:text-primary transition">
-                      {contact?.email || 'info@centerforadmissionandtravels.com'}
-                    </a>
+                    {email ? (
+                      <a href={`mailto:${email}`} className="text-muted-foreground break-all hover:text-primary transition">
+                        {email}
+                      </a>
+                    ) : (
+                      <p className="text-muted-foreground">Email not set</p>
+                    )}
                   </div>
                 </div>
 
@@ -195,9 +219,20 @@ export default function Contact() {
                   </div>
                   <div>
                     <h4 className="font-bold text-foreground mb-1">Office Location</h4>
-                    <p className="text-muted-foreground">{contact?.address?.city || 'Tamale'}, {contact?.address?.region || 'Northern Region'}</p>
-                    <p className="text-muted-foreground">{contact?.address?.street || 'BA14 Chinkara Street, Gumani'}</p>
-                    <p className="text-muted-foreground">{contact?.address?.country || 'Ghana'}</p>
+                    {(city || region) && <p className="text-muted-foreground">{[city, region].filter(Boolean).join(', ')}</p>}
+                    {street && <p className="text-muted-foreground">{street}</p>}
+                    {country && <p className="text-muted-foreground">{country}</p>}
+                    {!city && !region && !street && !country && <p className="text-muted-foreground">Address not set</p>}
+                    {mapsHref && (
+                      <a
+                        href={mapsHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-2 text-primary font-semibold hover:underline"
+                      >
+                        Open in Google Maps
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -227,12 +262,22 @@ export default function Contact() {
 
               {/* WhatsApp CTA */}
               <div className="pt-4 border-t">
-                <a
-                  href={`https://wa.me/${contact?.whatsappNumber?.replace(/\s/g, '').replace('+', '') || '233248422663'}`}
-                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition"
-                >
-                  Chat on WhatsApp
-                </a>
+                {whatsappHref ? (
+                  <a
+                    href={whatsappHref}
+                    className="w-full inline-flex items-center justify-center px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition"
+                  >
+                    Chat on WhatsApp
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full inline-flex items-center justify-center px-6 py-3 bg-slate-200 text-slate-500 rounded-lg font-semibold cursor-not-allowed"
+                  >
+                    WhatsApp Not Configured
+                  </button>
+                )}
               </div>
             </div>
           </div>

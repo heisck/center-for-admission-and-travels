@@ -2,10 +2,12 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter, Instagram, Youtube, Loader2 } from "lucide-react"
+import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter, Instagram, Youtube, Loader2, Globe, Send, Music2, MessageCircle } from "lucide-react"
 import { usePublicContent } from "@/context/public-content-context"
 import { useState } from "react"
 import { toast } from "sonner"
+import { normalizePhoneForTel } from "@/lib/contact-utils"
+import { detectSocialPlatform, normalizeSocialUrl } from "@/lib/social-links"
 
 export default function Footer() {
   const { content } = usePublicContent()
@@ -14,6 +16,18 @@ export default function Footer() {
 
   const contact = content?.contact
   const footer = content?.footer
+  const phone = contact?.phone?.trim() || ''
+  const email = contact?.email?.trim() || ''
+  const phoneHref = normalizePhoneForTel(phone)
+  const addressParts = [contact?.address?.city, contact?.address?.region, contact?.address?.street].filter(Boolean)
+  const latitude = contact?.location?.latitude
+  const longitude = contact?.location?.longitude
+  const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
+  const mapsHref = hasCoordinates
+    ? `https://www.google.com/maps?q=${latitude},${longitude}`
+    : addressParts.length > 0
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressParts.join(', '))}`
+      : ''
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,7 +70,7 @@ export default function Footer() {
               <span className="text-sm font-bold">Center for Admission & Travels</span>
             </div>
             <p className="text-slate-400 text-sm mb-6">
-              {footer?.companyDescription || "Unlocking global opportunities for education, work, and travel."}
+              {footer?.companyDescription?.trim() || "Company description not set"}
             </p>
             <form onSubmit={handleNewsletterSubmit} className="space-y-2">
               <label className="text-sm font-semibold block">Stay updated</label>
@@ -162,21 +176,39 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-2 text-slate-400">
                 <Phone size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <a href={`tel:${contact?.phone?.replace(/\s/g, '') || '+233248422663'}`} className="hover:text-primary transition">
-                  {contact?.phone || '+233 248 422 663'}
-                </a>
+                {phone && phoneHref ? (
+                  <a href={`tel:${phoneHref}`} className="hover:text-primary transition">
+                    {phone}
+                  </a>
+                ) : (
+                  <span>Phone not set</span>
+                )}
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <Mail size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <a href={`mailto:${contact?.email || 'info@centerforadmissionandtravels.com'}`} className="break-all hover:text-primary transition">
-                  {contact?.email || 'info@centerforadmissionandtravels.com'}
-                </a>
+                {email ? (
+                  <a href={`mailto:${email}`} className="break-all hover:text-primary transition">
+                    {email}
+                  </a>
+                ) : (
+                  <span>Email not set</span>
+                )}
               </li>
               <li className="flex items-start space-x-2 text-slate-400">
                 <MapPin size={16} className="mt-1 flex-shrink-0 text-primary" />
-                <span>
-                  {contact?.address?.city || 'Tamale'}, {contact?.address?.region || 'Northern Region'}, {contact?.address?.street || 'BA14 Chinkara Street, Gumani'}
-                </span>
+                {mapsHref ? (
+                  <a
+                    href={mapsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition"
+                    title="Open location in Google Maps"
+                  >
+                    {addressParts.length > 0 ? addressParts.join(', ') : 'Open in Google Maps'}
+                  </a>
+                ) : (
+                  <span>Address not set</span>
+                )}
               </li>
             </ul>
           </div>
@@ -206,21 +238,30 @@ export default function Footer() {
                   facebook: Facebook,
                   linkedin: Linkedin,
                   twitter: Twitter,
+                  x: Twitter,
                   instagram: Instagram,
                   youtube: Youtube,
+                  tiktok: Music2,
+                  whatsapp: MessageCircle,
+                  telegram: Send,
+                  website: Globe,
                 }
 
                 return uniqueLinks.map((link, index) => {
-                  const key = link.platform?.toLowerCase() || 'link'
+                  const normalizedUrl = normalizeSocialUrl(link.url)
+                  if (!normalizedUrl) return null
+
+                  const detectedPlatform = detectSocialPlatform(link.url)
+                  const key = detectedPlatform.toLowerCase() || link.platform?.toLowerCase() || 'website'
                   const Icon = iconMap[key] || Facebook
                   return (
                     <a
-                      key={link.id || `${link.platform}-${index}`}
-                      href={link.url}
+                      key={`${link.platform}-${index}`}
+                      href={normalizedUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-slate-400 hover:text-primary transition"
-                      title={link.platform || 'Social link'}
+                      title={detectedPlatform || link.platform || 'Social link'}
                     >
                       <Icon size={20} />
                     </a>

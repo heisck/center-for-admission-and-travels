@@ -1,17 +1,19 @@
 'use client'
 
+import { useState } from 'react'
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { useAdmin } from '@/context/admin-context'
 import { ImageEditor } from '../image-editor'
-import { useState } from 'react'
-import { Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react'
+
+type PackageCategory = 'travel' | 'study' | 'work'
 
 export default function AdminPackagesEditor() {
   const { content, updatePackage, deletePackage, addPackage } = useAdmin()
-  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showAddPackage, setShowAddPackage] = useState(false)
   const [newPackage, setNewPackage] = useState({
     name: '',
-    category: 'travel',
+    category: 'travel' as PackageCategory,
     duration: '',
     price: 0,
     description: '',
@@ -20,84 +22,60 @@ export default function AdminPackagesEditor() {
   const packages = content.packages
 
   const handleAddPackage = () => {
-    if (newPackage.name.trim() && newPackage.duration.trim()) {
-      const pkg = {
-        id: Math.max(...packages.map((p) => p.id), 0) + 1,
-        ...newPackage,
-        highlights: [],
-        images: [],
-        itinerary: '',
-        included: [],
-        notIncluded: [],
-      }
-      addPackage(pkg)
-      setNewPackage({
-        name: '',
-        category: 'travel',
-        duration: '',
-        price: 0,
-        description: '',
-      })
-      setShowAddPackage(false)
+    if (!newPackage.name.trim() || !newPackage.duration.trim()) return
+
+    const pkg = {
+      id: `tmp-${Date.now()}`,
+      ...newPackage,
+      highlights: [] as string[],
+      images: [] as string[],
+      itinerary: '',
+      included: [] as string[],
+      notIncluded: [] as string[],
     }
+
+    addPackage(pkg)
+    setNewPackage({
+      name: '',
+      category: 'travel',
+      duration: '',
+      price: 0,
+      description: '',
+    })
+    setShowAddPackage(false)
   }
 
-  const handleUpdateField = (id: number, field: string, value: any) => {
+  const handleUpdateField = <K extends keyof (typeof packages)[number]>(
+    id: string,
+    field: K,
+    value: (typeof packages)[number][K]
+  ) => {
     updatePackage(id, { [field]: value })
   }
 
-  const handleAddHighlight = (id: number) => {
+  const updateListItem = (
+    id: string,
+    key: 'highlights' | 'included' | 'notIncluded',
+    index: number,
+    value: string
+  ) => {
     const pkg = packages.find((p) => p.id === id)
-    if (pkg) {
-      updatePackage(id, {
-        highlights: [...pkg.highlights, ''],
-      })
-    }
+    if (!pkg) return
+    const updated = [...pkg[key]]
+    updated[index] = value
+    updatePackage(id, { [key]: updated })
   }
 
-  const handleRemoveHighlight = (id: number, idx: number) => {
+  const addListItem = (id: string, key: 'highlights' | 'included' | 'notIncluded') => {
     const pkg = packages.find((p) => p.id === id)
-    if (pkg) {
-      updatePackage(id, {
-        highlights: pkg.highlights.filter((_, i) => i !== idx),
-      })
-    }
+    if (!pkg) return
+    updatePackage(id, { [key]: [...pkg[key], ''] })
   }
 
-  const handleUpdateHighlight = (id: number, idx: number, value: string) => {
+  const removeListItem = (id: string, key: 'highlights' | 'included' | 'notIncluded', index: number) => {
     const pkg = packages.find((p) => p.id === id)
-    if (pkg) {
-      const newHighlights = [...pkg.highlights]
-      newHighlights[idx] = value
-      updatePackage(id, { highlights: newHighlights })
-    }
-  }
-
-  const handleAddIncluded = (id: number) => {
-    const pkg = packages.find((p) => p.id === id)
-    if (pkg) {
-      updatePackage(id, {
-        included: [...pkg.included, ''],
-      })
-    }
-  }
-
-  const handleRemoveIncluded = (id: number, idx: number) => {
-    const pkg = packages.find((p) => p.id === id)
-    if (pkg) {
-      updatePackage(id, {
-        included: pkg.included.filter((_, i) => i !== idx),
-      })
-    }
-  }
-
-  const handleUpdateIncluded = (id: number, idx: number, value: string) => {
-    const pkg = packages.find((p) => p.id === id)
-    if (pkg) {
-      const newIncluded = [...pkg.included]
-      newIncluded[idx] = value
-      updatePackage(id, { included: newIncluded })
-    }
+    if (!pkg) return
+    updatePackage(id, { [key]: pkg[key].filter((_, i) => i !== index) })
   }
 
   return (
@@ -127,7 +105,7 @@ export default function AdminPackagesEditor() {
 
             <select
               value={newPackage.category}
-              onChange={(e) => setNewPackage({ ...newPackage, category: e.target.value })}
+              onChange={(e) => setNewPackage({ ...newPackage, category: e.target.value as PackageCategory })}
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="travel">Travel</option>
@@ -146,7 +124,7 @@ export default function AdminPackagesEditor() {
             <input
               type="number"
               value={newPackage.price}
-              onChange={(e) => setNewPackage({ ...newPackage, price: Number(e.target.value) })}
+              onChange={(e) => setNewPackage({ ...newPackage, price: Number(e.target.value) || 0 })}
               placeholder="Price"
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
@@ -180,7 +158,6 @@ export default function AdminPackagesEditor() {
       <div className="space-y-4">
         {packages.map((pkg) => (
           <div key={pkg.id} className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
-            {/* Header */}
             <div
               onClick={() => setExpandedId(expandedId === pkg.id ? null : pkg.id)}
               className="w-full px-8 py-6 flex justify-between items-center hover:bg-slate-50 transition cursor-pointer"
@@ -188,7 +165,7 @@ export default function AdminPackagesEditor() {
               <div className="text-left flex-1">
                 <h3 className="text-xl font-bold text-foreground">{pkg.name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {pkg.duration} • ${pkg.price} • {pkg.category}
+                  {pkg.duration} • GHS {pkg.price.toLocaleString()} • {pkg.category}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -205,7 +182,6 @@ export default function AdminPackagesEditor() {
               </div>
             </div>
 
-            {/* Details */}
             {expandedId === pkg.id && (
               <div className="border-t border-border px-8 py-6 bg-slate-50 space-y-6">
                 <div>
@@ -223,7 +199,7 @@ export default function AdminPackagesEditor() {
                     <label className="block text-sm font-semibold text-foreground mb-2">Category</label>
                     <select
                       value={pkg.category}
-                      onChange={(e) => handleUpdateField(pkg.id, 'category', e.target.value)}
+                      onChange={(e) => handleUpdateField(pkg.id, 'category', e.target.value as PackageCategory)}
                       className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="travel">Travel</option>
@@ -245,7 +221,7 @@ export default function AdminPackagesEditor() {
                     <input
                       type="number"
                       value={pkg.price}
-                      onChange={(e) => handleUpdateField(pkg.id, 'price', Number(e.target.value))}
+                      onChange={(e) => handleUpdateField(pkg.id, 'price', Number(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
@@ -261,67 +237,39 @@ export default function AdminPackagesEditor() {
                   />
                 </div>
 
-                {/* Highlights */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="block text-sm font-semibold text-foreground">Highlights</label>
-                    <button
-                      onClick={() => handleAddHighlight(pkg.id)}
-                      className="text-sm px-2 py-1 bg-primary text-white rounded hover:shadow transition"
-                    >
-                      Add
-                    </button>
+                {(['highlights', 'included', 'notIncluded'] as const).map((key) => (
+                  <div key={key}>
+                    <div className="flex justify-between items-center mb-3">
+                      <label className="block text-sm font-semibold text-foreground capitalize">
+                        {key === 'notIncluded' ? 'Not Included' : key}
+                      </label>
+                      <button
+                        onClick={() => addListItem(pkg.id, key)}
+                        className="text-sm px-2 py-1 bg-primary text-white rounded hover:shadow transition"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {pkg[key].map((item, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={item}
+                            onChange={(e) => updateListItem(pkg.id, key, idx, e.target.value)}
+                            className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                          <button
+                            onClick={() => removeListItem(pkg.id, key, idx)}
+                            className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {pkg.highlights.map((highlight, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={highlight}
-                          onChange={(e) => handleUpdateHighlight(pkg.id, idx, e.target.value)}
-                          className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                        <button
-                          onClick={() => handleRemoveHighlight(pkg.id, idx)}
-                          className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Included */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="block text-sm font-semibold text-foreground">Included</label>
-                    <button
-                      onClick={() => handleAddIncluded(pkg.id)}
-                      className="text-sm px-2 py-1 bg-primary text-white rounded hover:shadow transition"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {pkg.included.map((item, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={item}
-                          onChange={(e) => handleUpdateIncluded(pkg.id, idx, e.target.value)}
-                          className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                        <button
-                          onClick={() => handleRemoveIncluded(pkg.id, idx)}
-                          className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                ))}
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">Itinerary</label>
@@ -347,3 +295,4 @@ export default function AdminPackagesEditor() {
     </div>
   )
 }
+

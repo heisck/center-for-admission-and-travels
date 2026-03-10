@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { updateServicePage } from '@/lib/prisma-content-helpers'
 
@@ -56,6 +57,10 @@ export async function PUT(
     }
 
     await updateServicePage(serviceId, updateData)
+
+    revalidatePath('/api/content', 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
 
     return NextResponse.json({ success: true, message: `Service page ${serviceId} updated` })
   } catch (error: any) {

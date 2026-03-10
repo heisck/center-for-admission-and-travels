@@ -83,6 +83,19 @@ export interface AdminContent {
     highlights: string[]
     itinerary: string
     images: string[]
+    included: string[]
+    notIncluded: string[]
+  }>
+  services: Array<{
+    id: string
+    title: string
+    description: string
+    icon: string
+    sections: Array<{
+      title: string
+      content: string
+      image: string
+    }>
   }>
   travelTours: {
     hero: {
@@ -117,10 +130,15 @@ export interface AdminContent {
       country: string
     }
     whatsappNumber: string
+    location: {
+      latitude: number | null
+      longitude: number | null
+    }
   }
   footer: {
     companyDescription: string
     socialLinks: Array<{
+      id?: string
       platform: string
       url: string
     }>
@@ -137,7 +155,7 @@ export interface AdminContent {
     overview?: string
     whyStudyOutsideThisCountry?: {
       title: string
-      highlights: string[]
+      highlights?: string[]
     }
     benefits: string[]
     requirements: string[]
@@ -174,9 +192,9 @@ interface AdminContextType {
   updateHomeFeaturedPackages: (packageIds: string[]) => void
   updateAbout: (updates: Partial<AdminContent['about']>) => void
   updatePackages: (packages: AdminContent['packages']) => void
-  updatePackage: (id: number, updates: Partial<AdminContent['packages'][0]>) => void
+  updatePackage: (id: string, updates: Partial<AdminContent['packages'][0]>) => void
   addPackage: (pkg: AdminContent['packages'][0]) => void
-  deletePackage: (id: number) => void
+  deletePackage: (id: string) => void
   updateTravelTours: (updates: Partial<AdminContent['travelTours']>) => void
   updateTravelToursHero: (updates: Partial<AdminContent['travelTours']['hero']>) => void
   updateTravelToursFeatured: (featured: AdminContent['travelTours']['featured']) => void
@@ -509,6 +527,10 @@ const defaultContent: AdminContent = {
       country: 'Ghana',
     },
     whatsappNumber: '+233248422663',
+    location: {
+      latitude: null,
+      longitude: null,
+    },
   },
   footer: {
     companyDescription: 'Unlocking global opportunities for education, work, and travel.',
@@ -953,10 +975,10 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     // This function is mainly for UI state updates
   }, [content, updateHistory])
 
-  const updatePackage = useCallback(async (id: string | number, updates: Partial<AdminContent['packages'][0]>) => {
+  const updatePackage = useCallback(async (id: string, updates: Partial<AdminContent['packages'][0]>) => {
     // Optimistic update
     const newPackages = content.packages.map((pkg) =>
-      String(pkg.id) === String(id) ? { ...pkg, ...updates } : pkg
+      pkg.id === id ? { ...pkg, ...updates } : pkg
     )
     const newContent = { ...content, packages: newPackages }
     updateHistory(newContent)
@@ -966,7 +988,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/admin/content/packages', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: String(id), ...updates }),
+        body: JSON.stringify({ id, ...updates }),
       })
       const result = await response.json()
       if (!result.success) {
@@ -1005,9 +1027,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   }, [content, updateHistory])
 
-  const deletePackage = useCallback(async (id: string | number) => {
+  const deletePackage = useCallback(async (id: string) => {
     // Optimistic update
-    const newPackages = content.packages.filter((pkg) => String(pkg.id) !== String(id))
+    const newPackages = content.packages.filter((pkg) => pkg.id !== id)
     const newContent = { ...content, packages: newPackages }
     updateHistory(newContent)
 

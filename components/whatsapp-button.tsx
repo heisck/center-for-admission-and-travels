@@ -11,10 +11,8 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
-const FALLBACK_NUMBER = "233248422663"
-
 export default function WhatsAppButton() {
-  const [number, setNumber] = useState(FALLBACK_NUMBER)
+  const [number, setNumber] = useState("")
 
   const fetchNumber = useCallback(async () => {
     try {
@@ -47,6 +45,7 @@ export default function WhatsAppButton() {
   }, [fetchNumber])
 
   const href = `https://wa.me/${number}`
+  if (!number) return null
 
   return (
     <a

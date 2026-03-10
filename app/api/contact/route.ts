@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { contactNotificationEmail } from '@/lib/email-templates'
+import { getSupportContact } from '@/lib/support-contact'
 
 export async function POST(request: Request) {
   try {
@@ -20,7 +21,8 @@ export async function POST(request: Request) {
     })
 
     const adminEmail = process.env.SMTP_FROM || 'info@catravels.com'
-    const notification = contactNotificationEmail({ name, email, phone, subject, message })
+    const supportContact = await getSupportContact()
+    const notification = contactNotificationEmail({ name, email, phone, subject, message }, supportContact)
     sendEmail({ to: adminEmail, ...notification }).catch((err) =>
       console.error('[Contact] Failed to send notification email:', err)
     )

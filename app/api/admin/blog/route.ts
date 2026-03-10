@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       include: { package: { select: { id: true, name: true } } },
     })
 
-    const formatted = posts.map((p) => ({
+    const formatted = posts.map((p: any) => ({
       id: p.id,
       slug: p.slug,
       title: p.title,
@@ -93,6 +94,10 @@ export async function POST(request: NextRequest) {
         publishedAt: published ? new Date() : null,
       },
     })
+
+    revalidatePath('/api/content', 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
 
     return NextResponse.json({ success: true, data: post })
   } catch (error: any) {

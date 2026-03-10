@@ -1,59 +1,71 @@
 'use client'
 
-import { useAdmin } from '@/context/admin-context'
 import { useState } from 'react'
-import { Plus, Trash2, Link2 } from 'lucide-react'
-
-const SOCIAL_PLATFORMS = [
-  { value: 'Facebook', label: 'Facebook' },
-  { value: 'LinkedIn', label: 'LinkedIn' },
-  { value: 'Twitter', label: 'Twitter' },
-  { value: 'Instagram', label: 'Instagram' },
-  { value: 'YouTube', label: 'YouTube' },
-] as const
+import { Link2, Plus, Trash2 } from 'lucide-react'
+import { useAdmin } from '@/context/admin-context'
+import { detectSocialPlatform, normalizeSocialLink, normalizeSocialUrl } from '@/lib/social-links'
 
 export default function AdminContactEditor() {
   const { content, updateContact, updateFooter } = useAdmin()
   const [showAddSocial, setShowAddSocial] = useState(false)
-  const [newSocial, setNewSocial] = useState({
-    platform: '',
-    url: '',
-  })
+  const [newSocialUrl, setNewSocialUrl] = useState('')
 
   const contact = content.contact
   const footer = content.footer
+  const socialLinks = footer.socialLinks || []
 
-  const handleDeleteSocial = (platform: string) => {
-    const updated = footer.socialLinks.filter((link) => link.platform !== platform)
-    updateFooter({ socialLinks: updated })
+  const updateMapCoordinate = (field: 'latitude' | 'longitude', rawValue: string) => {
+    const value = rawValue.trim()
+    if (!value) {
+      updateContact({
+        location: {
+          ...contact.location,
+          [field]: null,
+        },
+      })
+      return
+    }
+
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed)) return
+
+    updateContact({
+      location: {
+        ...contact.location,
+        [field]: parsed,
+      },
+    })
   }
 
   const handleAddSocial = () => {
-    const platform = newSocial.platform.trim()
-    let url = newSocial.url.trim()
-    if (!platform || !url) return
-    // Ensure URL has protocol
-    if (!/^https?:\/\//i.test(url)) url = `https://${url}`
-    const updated = [...footer.socialLinks, { platform, url }]
+    const normalized = normalizeSocialUrl(newSocialUrl)
+    if (!normalized) return
+
+    const updated = [...socialLinks, normalizeSocialLink({ url: normalized })]
     updateFooter({ socialLinks: updated })
-    setNewSocial({ platform: '', url: '' })
+    setNewSocialUrl('')
     setShowAddSocial(false)
   }
 
-  const handleUpdateSocial = (platform: string, field: string, value: string) => {
-    let finalValue = value
-    if (field === 'url' && value.trim() && !/^https?:\/\//i.test(value.trim())) {
-      finalValue = `https://${value.trim()}`
-    }
-    const updated = footer.socialLinks.map((link) =>
-      link.platform === platform ? { ...link, [field]: finalValue } : link
-    )
+  const handleDeleteSocial = (index: number) => {
+    const updated = socialLinks.filter((_, idx) => idx !== index)
+    updateFooter({ socialLinks: updated })
+  }
+
+  const handleUpdateSocialUrl = (index: number, url: string) => {
+    const updated = socialLinks.map((link, idx) => {
+      if (idx !== index) return link
+      return {
+        ...link,
+        url,
+        platform: detectSocialPlatform(url),
+      }
+    })
     updateFooter({ socialLinks: updated })
   }
 
   return (
     <div className="space-y-8">
-      {/* Contact Information */}
       <div className="bg-white rounded-xl shadow-sm border border-border p-8">
         <h2 className="text-2xl font-bold mb-6 text-foreground">Contact Information</h2>
 
@@ -157,12 +169,42 @@ export default function AdminContactEditor() {
                   />
                 </div>
               </div>
+
+              <div className="border-t border-border pt-4">
+                <h4 className="text-base font-semibold text-foreground mb-3">Google Maps Coordinates</h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Paste latitude and longitude from Google Maps to make the footer location open exact directions.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={contact.location.latitude ?? ''}
+                      onChange={(e) => updateMapCoordinate('latitude', e.target.value)}
+                      placeholder="9.4075"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={contact.location.longitude ?? ''}
+                      onChange={(e) => updateMapCoordinate('longitude', e.target.value)}
+                      placeholder="-0.8531"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer Information */}
       <div className="bg-white rounded-xl shadow-sm border border-border p-8">
         <h2 className="text-2xl font-bold mb-6 text-foreground">Footer Information</h2>
 
@@ -184,7 +226,7 @@ export default function AdminContactEditor() {
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Social Media Links</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Choose a platform and paste your profile URL. Links appear in the footer.
+                  Click Add Link, paste URL only. Platform type is detected automatically.
                 </p>
               </div>
               <button
@@ -196,38 +238,23 @@ export default function AdminContactEditor() {
             </div>
 
             <div className="space-y-4">
-              {footer.socialLinks.map((link) => {
-                const platformOptions = [...SOCIAL_PLATFORMS]
-                if (link.platform && !platformOptions.find((p) => p.value === link.platform)) {
-                  platformOptions.push({ value: link.platform, label: link.platform })
-                }
-                return (
-                <div key={link.id || link.platform} className="bg-slate-50 border border-border rounded-lg p-4">
+              {socialLinks.map((link, index) => (
+                <div key={link.id || `${link.platform}-${index}`} className="bg-slate-50 border border-border rounded-lg p-4">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1 space-y-3">
-                      <label className="block text-xs font-medium text-muted-foreground">Platform</label>
-                      <select
-                        value={link.platform}
-                        onChange={(e) => handleUpdateSocial(link.platform, 'platform', e.target.value)}
-                        className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-semibold bg-white"
-                      >
-                        {platformOptions.map((p) => (
-                          <option key={p.value} value={p.value}>
-                            {p.label}
-                          </option>
-                        ))}
-                      </select>
-                      <label className="block text-xs font-medium text-muted-foreground">Profile URL</label>
+                      <div className="inline-flex items-center px-2 py-1 rounded bg-slate-200 text-xs font-semibold text-slate-700">
+                        {detectSocialPlatform(link.url)}
+                      </div>
                       <input
                         type="url"
                         value={link.url}
-                        onChange={(e) => handleUpdateSocial(link.platform, 'url', e.target.value)}
+                        onChange={(e) => handleUpdateSocialUrl(index, e.target.value)}
                         placeholder="https://facebook.com/yourpage"
                         className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
                     <button
-                      onClick={() => handleDeleteSocial(link.platform)}
+                      onClick={() => handleDeleteSocial(index)}
                       className="p-2 hover:bg-red-50 rounded-lg transition text-red-600 flex-shrink-0"
                       title="Delete social link"
                     >
@@ -235,7 +262,7 @@ export default function AdminContactEditor() {
                     </button>
                   </div>
                 </div>
-              )})}
+              ))}
             </div>
 
             {showAddSocial && (
@@ -243,44 +270,25 @@ export default function AdminContactEditor() {
                 <h4 className="font-semibold text-foreground flex items-center gap-2">
                   <Link2 size={18} /> Add New Social Link
                 </h4>
-                <p className="text-sm text-muted-foreground">
-                  Select your platform and paste the full URL (e.g. https://facebook.com/yourpage or https://instagram.com/yourprofile)
-                </p>
-                <div className="space-y-3">
-                  <label className="block text-xs font-medium text-muted-foreground">Platform</label>
-                  <select
-                    value={newSocial.platform}
-                    onChange={(e) => setNewSocial({ ...newSocial, platform: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                  >
-                    <option value="">Select platform...</option>
-                    {SOCIAL_PLATFORMS.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
-                  <label className="block text-xs font-medium text-muted-foreground">Paste your profile URL</label>
-                  <input
-                    type="url"
-                    value={newSocial.url}
-                    onChange={(e) => setNewSocial({ ...newSocial, url: e.target.value })}
-                    placeholder="https://facebook.com/yourpage"
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
+                <input
+                  type="url"
+                  value={newSocialUrl}
+                  onChange={(e) => setNewSocialUrl(e.target.value)}
+                  placeholder="Paste profile URL (e.g. https://x.com/yourhandle)"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddSocial}
                     className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!newSocial.platform.trim() || !newSocial.url.trim()}
+                    disabled={!newSocialUrl.trim()}
                   >
                     Add Link
                   </button>
                   <button
                     onClick={() => {
                       setShowAddSocial(false)
-                      setNewSocial({ platform: '', url: '' })
+                      setNewSocialUrl('')
                     }}
                     className="flex-1 px-4 py-2 bg-slate-200 text-foreground rounded-lg font-medium hover:bg-slate-300 transition"
                   >
@@ -295,3 +303,4 @@ export default function AdminContactEditor() {
     </div>
   )
 }
+

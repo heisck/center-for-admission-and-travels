@@ -1,9 +1,14 @@
+import type { SupportContact } from '@/lib/support-contact'
+
 const BRAND = 'Center for Admission & Travels'
 const BRAND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://catravels.com'
-const SUPPORT_EMAIL = 'info@centerforadmissionandtravels.com'
-const PHONE = '+233 248 422 663'
+const DEFAULT_SUPPORT_EMAIL = 'info@centerforadmissionandtravels.com'
+const DEFAULT_PHONE = '+233 248 422 663'
 
-function layout(title: string, body: string) {
+function layout(title: string, body: string, contact?: Partial<SupportContact>) {
+  const supportEmail = contact?.email?.trim() || DEFAULT_SUPPORT_EMAIL
+  const phone = contact?.phone?.trim() || DEFAULT_PHONE
+
   return `
 <!DOCTYPE html>
 <html>
@@ -18,15 +23,15 @@ function layout(title: string, body: string) {
       ${body}
     </div>
     <div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8;">
-      <p>${BRAND} &bull; ${PHONE}</p>
-      <p>${SUPPORT_EMAIL}</p>
+      <p>${BRAND} &bull; ${phone}</p>
+      <p>${supportEmail}</p>
     </div>
   </div>
 </body>
 </html>`
 }
 
-export function welcomeEmail(name: string) {
+export function welcomeEmail(name: string, contact?: Partial<SupportContact>) {
   return {
     subject: `Welcome to ${BRAND}!`,
     html: layout('Welcome!', `
@@ -41,11 +46,11 @@ export function welcomeEmail(name: string) {
         <a href="${BRAND_URL}/packages" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Browse Packages</a>
       </div>
       <p style="color:#475569;line-height:1.6;">If you have any questions, don't hesitate to reach out to us on WhatsApp or email.</p>
-    `),
+    `, contact),
   }
 }
 
-export function adminPasswordResetEmail(username: string, resetUrl: string) {
+export function adminPasswordResetEmail(username: string, resetUrl: string, contact?: Partial<SupportContact>) {
   return {
     subject: `Reset your ${BRAND} Admin password`,
     html: layout('Admin Password Reset', `
@@ -56,11 +61,11 @@ export function adminPasswordResetEmail(username: string, resetUrl: string) {
       </div>
       <p style="color:#475569;line-height:1.6;">This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
       <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${resetUrl}</p>
-    `),
+    `, contact),
   }
 }
 
-export function passwordResetEmail(name: string, resetUrl: string) {
+export function passwordResetEmail(name: string, resetUrl: string, contact?: Partial<SupportContact>) {
   return {
     subject: `Reset your ${BRAND} password`,
     html: layout('Password Reset', `
@@ -71,7 +76,7 @@ export function passwordResetEmail(name: string, resetUrl: string) {
       </div>
       <p style="color:#475569;line-height:1.6;">This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
       <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${resetUrl}</p>
-    `),
+    `, contact),
   }
 }
 
@@ -81,7 +86,7 @@ export function paymentConfirmationEmail(data: {
   amount: number
   currency: string
   packageName: string
-}) {
+}, contact?: Partial<SupportContact>) {
   return {
     subject: `Payment Confirmed - ${data.reference}`,
     html: layout('Payment Confirmed', `
@@ -98,7 +103,7 @@ export function paymentConfirmationEmail(data: {
         <a href="${BRAND_URL}/my-payments" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">View My Payments</a>
       </div>
       <p style="color:#475569;line-height:1.6;">Our team will review your booking and get in touch with next steps. You can also follow up with us on WhatsApp.</p>
-    `),
+    `, contact),
   }
 }
 
@@ -108,7 +113,7 @@ export function contactNotificationEmail(data: {
   phone?: string
   subject: string
   message: string
-}) {
+}, contact?: Partial<SupportContact>) {
   return {
     subject: `New Contact: ${data.subject}`,
     html: layout('New Contact Message', `
@@ -124,6 +129,6 @@ export function contactNotificationEmail(data: {
         <p style="color:#0f172a;line-height:1.6;margin:0;white-space:pre-wrap;">${data.message}</p>
       </div>
       <p style="color:#475569;font-size:13px;">Reply directly to this email or contact the sender at ${data.email}</p>
-    `),
+    `, contact),
   }
 }

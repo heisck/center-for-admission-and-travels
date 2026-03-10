@@ -4,6 +4,7 @@ import { createSessionToken, getUserSessionCookieName, hashPassword } from '@/li
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/email'
 import { welcomeEmail } from '@/lib/email-templates'
+import { getSupportContact } from '@/lib/support-contact'
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -68,7 +69,8 @@ export async function POST(request: NextRequest) {
     })
 
     // Send welcome email (non-blocking)
-    const template = welcomeEmail(user.displayName || user.username)
+    const supportContact = await getSupportContact()
+    const template = welcomeEmail(user.displayName || user.username, supportContact)
     sendEmail({ to: user.email, ...template }).catch(() => {})
 
     const response = NextResponse.json({ success: true, user })

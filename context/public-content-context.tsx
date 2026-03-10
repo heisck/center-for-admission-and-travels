@@ -95,6 +95,8 @@ export interface PublicContent {
     highlights: string[]
     itinerary: string
     images: string[]
+    included?: string[]
+    notIncluded?: string[]
   }>
   travelTours: {
     hero: {
@@ -129,10 +131,15 @@ export interface PublicContent {
       country: string
     }
     whatsappNumber: string
+    location: {
+      latitude: number | null
+      longitude: number | null
+    }
   }
   footer: {
     companyDescription: string
     socialLinks: Array<{
+      id?: string
       platform: string
       url: string
     }>
@@ -149,7 +156,7 @@ export interface PublicContent {
     overview?: string
     whyStudyOutsideThisCountry?: {
       title: string
-      highlights: string[]
+      highlights?: string[]
     }
     benefits: string[]
     requirements: string[]
@@ -186,15 +193,23 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const contentRef = useRef<PublicContent | null>(null)
+  const lastFetchedAtRef = useRef<number>(0)
   contentRef.current = content
 
-  const fetchContent = useCallback(async () => {
+  const fetchContent = useCallback(async (force = false) => {
     const isInitialLoad = !contentRef.current
+    const lastFetchedAt = lastFetchedAtRef.current
+    const recentlyFetched = Date.now() - lastFetchedAt < 30_000
+
+    if (!force && !isInitialLoad && recentlyFetched) {
+      return
+    }
+
     if (isInitialLoad) setLoading(true)
     setError(null)
 
     try {
-      const response = await fetch('/api/content', { cache: 'no-store' })
+      const response = await fetch('/api/content')
       const result = await response.json()
 
       if (!result.success) {
@@ -202,6 +217,7 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
       }
 
       setContent(result.data)
+      lastFetchedAtRef.current = Date.now()
     } catch (err: any) {
       console.error('Error fetching public content:', err)
       setError(err.message || 'Failed to load content')
@@ -212,7 +228,7 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
   }, [])
 
   useEffect(() => {
-    fetchContent()
+    fetchContent(true)
   }, [fetchContent])
 
   // No refetch on pathname change - content is already loaded for all pages (home, about, contact, etc.)
@@ -226,7 +242,7 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
 
   // Refetch when admin saves (so footer/contact updates show immediately)
   useEffect(() => {
-    const onContentUpdated = () => fetchContent()
+    const onContentUpdated = () => fetchContent(true)
     window.addEventListener('content-updated', onContentUpdated)
     return () => window.removeEventListener('content-updated', onContentUpdated)
   }, [fetchContent])
@@ -237,7 +253,7 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
         content,
         loading,
         error,
-        refetch: fetchContent,
+        refetch: () => fetchContent(true),
       }}
     >
       {children}

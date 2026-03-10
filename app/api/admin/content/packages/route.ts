@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
-import * as contentHelpers from '@/lib/prisma-content-helpers'
 
 // GET /api/admin/content/packages - Get all packages
 export async function GET(request: NextRequest) {
@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
       highlights: pkg.highlights.map((h) => h.text),
       itinerary: pkg.itinerary || '',
       images: pkg.images.map((img) => img.url),
+      included: pkg.included.map((item) => item.text),
+      notIncluded: pkg.notIncluded.map((item) => item.text),
     }))
 
     return NextResponse.json({ success: true, data: formatted })
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, category, duration, price, highlights, itinerary, images } = body
+    const { name, description, category, duration, price, highlights, itinerary, images, included, notIncluded } = body
 
     // Get max order to append new package
     const maxOrder = await prisma.package.aggregate({
@@ -85,12 +87,31 @@ export async function POST(request: NextRequest) {
             order: index,
           })) || [],
         },
+        included: {
+          create: included?.map((text: string, index: number) => ({
+            text,
+            order: index,
+          })) || [],
+        },
+        notIncluded: {
+          create: notIncluded?.map((text: string, index: number) => ({
+            text,
+            order: index,
+          })) || [],
+        },
       },
       include: {
         highlights: { orderBy: { order: 'asc' } },
         images: { orderBy: { order: 'asc' } },
+        included: { orderBy: { order: 'asc' } },
+        notIncluded: { orderBy: { order: 'asc' } },
       },
     })
+
+    revalidatePath('/api/content', 'page')
+    revalidatePath('/api/packages/[id]', 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
 
     return NextResponse.json({
       success: true,
@@ -104,6 +125,8 @@ export async function POST(request: NextRequest) {
         highlights: newPackage.highlights.map((h) => h.text),
         itinerary: newPackage.itinerary || '',
         images: newPackage.images.map((img) => img.url),
+        included: newPackage.included.map((item) => item.text),
+        notIncluded: newPackage.notIncluded.map((item) => item.text),
       },
     })
   } catch (error: any) {
@@ -121,7 +144,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name, description, category, duration, price, highlights, itinerary, images } = body
+    const { id, name, description, category, duration, price, highlights, itinerary, images, included, notIncluded } = body
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'Package ID required' }, { status: 400 })
@@ -164,6 +187,33 @@ export async function PUT(request: NextRequest) {
       })
     }
 
+    if (included) {
+      await prisma.packageIncluded.deleteMany({ where: { packageId: id } })
+      await prisma.packageIncluded.createMany({
+        data: included.map((text: string, index: number) => ({
+          packageId: id,
+          text,
+          order: index,
+        })),
+      })
+    }
+
+    if (notIncluded) {
+      await prisma.packageNotIncluded.deleteMany({ where: { packageId: id } })
+      await prisma.packageNotIncluded.createMany({
+        data: notIncluded.map((text: string, index: number) => ({
+          packageId: id,
+          text,
+          order: index,
+        })),
+      })
+    }
+
+    revalidatePath('/api/content', 'page')
+    revalidatePath('/api/packages/[id]', 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
+
     return NextResponse.json({ success: true, message: 'Package updated' })
   } catch (error: any) {
     console.error('Error updating package:', error)
@@ -187,6 +237,11 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.package.delete({ where: { id } })
+
+    revalidatePath('/api/content', 'page')
+    revalidatePath('/api/packages/[id]', 'page')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
 
     return NextResponse.json({ success: true, message: 'Package deleted' })
   } catch (error: any) {
