@@ -13,7 +13,22 @@ import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+function assertSeedAllowed() {
+  if (process.env.ALLOW_DATABASE_SEED !== 'true') {
+    throw new Error(
+      'Database seeding is blocked. Set ALLOW_DATABASE_SEED=true intentionally before running prisma/seed.ts.'
+    )
+  }
+
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+    throw new Error(
+      'Production seeding is blocked. Set ALLOW_PRODUCTION_SEED=true only for one-off controlled seed runs.'
+    )
+  }
+}
+
 async function main() {
+  assertSeedAllowed()
   console.log('🌱 Seeding database...')
 
   // ============================================================================

@@ -2,10 +2,15 @@ services:
   - type: web
     name: center-for-admission-travels
     env: node
-    buildCommand: npm ci && npx prisma generate && npm run build
+    buildCommand: npm ci && npm run build:ci
+    preDeployCommand: npm run release
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
@@ -13,6 +18,18 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      - key: RATE_LIMIT_PREFIX
+        value: cfaat
+      - key: RATE_LIMIT_FAIL_CLOSED
+        value: true
+      - key: ENABLE_TEST_EMAIL_ENDPOINT
+        value: false
+      - key: ENABLE_ADMIN_SEED_ENDPOINT
+        value: false
+      - key: ALLOW_DATABASE_SEED
+        value: false
+      - key: ALLOW_PRODUCTION_SEED
+        value: false
       - key: NODE_ENV
         value: production
 

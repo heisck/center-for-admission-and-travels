@@ -35,6 +35,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (process.env.ALLOW_DATABASE_SEED !== 'true') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Set ALLOW_DATABASE_SEED=true to allow controlled seeding.',
+        },
+        { status: 403 }
+      )
+    }
+
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Set ALLOW_PRODUCTION_SEED=true for one-off production seeding.',
+        },
+        { status: 403 }
+      )
+    }
+
     // Verify admin session
     const session = await verifyAdminSession(request)
     if (!session) {
