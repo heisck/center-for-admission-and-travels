@@ -18,6 +18,7 @@ interface NavLink {
 const ADMIN_NAV_LINKS: NavLink[] = [
   { href: '/admin', label: 'Home', mobileLabel: 'Home', exact: true },
   { href: '/admin/about', label: 'About', mobileLabel: 'About' },
+  { href: '/admin/packages', label: 'Packages', mobileLabel: 'Packages' },
   { href: '/admin/study-abroad', label: 'Study', mobileLabel: 'Study Abroad' },
   { href: '/admin/work-abroad', label: 'Work', mobileLabel: 'Work Abroad' },
   { href: '/admin/travel-tours', label: 'Travel', mobileLabel: 'Travel & Tours' },
@@ -28,6 +29,7 @@ const ADMIN_NAV_LINKS: NavLink[] = [
   { href: '/admin/newsletter', label: 'Newsletter', mobileLabel: 'Newsletter' },
   { href: '/admin/blog', label: 'Blog', mobileLabel: 'Blog' },
   { href: '/admin/payments', label: 'Payments', mobileLabel: 'Payments', badgeKey: 'payments' },
+  { href: '/admin/profile', label: 'Profile', mobileLabel: 'Admin Profile' },
 ]
 
 export function AdminNavbar() {

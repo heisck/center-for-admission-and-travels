@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 
 export default function AdminLoginPage() {
@@ -57,8 +58,14 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-red-600 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white text-2xl font-bold">A</span>
+          <div className="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-lg bg-white border border-orange-100 p-2">
+            <Image
+              src="/images/ca-20logo.png"
+              alt="Center for Admission and Travels"
+              width={48}
+              height={48}
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Admin Login</h1>
           <p className="text-muted-foreground">Access the content management system</p>

@@ -2,12 +2,27 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, Mail, MapPin, Facebook, Linkedin, Twitter, Instagram, Youtube, Loader2, Globe, Send, Music2, MessageCircle } from "lucide-react"
+import { Phone, Mail, MapPin, Facebook, Linkedin, Instagram, Youtube, Loader2, Globe, Send, Music2, MessageCircle } from "lucide-react"
 import { usePublicContent } from "@/context/public-content-context"
 import { useState } from "react"
 import { toast } from "sonner"
 import { normalizePhoneForTel } from "@/lib/contact-utils"
 import { detectSocialPlatform, normalizeSocialUrl } from "@/lib/social-links"
+
+function XBrandIcon({ size = 20, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      className={className}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M18.244 2H21l-6.51 7.44L22.14 22h-6.27l-4.91-6.42L5.29 22H2.53l6.96-7.95L1.91 2h6.43l4.44 5.9L18.24 2Zm-2.2 18h1.53L7.22 3.9H5.58L16.04 20Z" />
+    </svg>
+  )
+}
 
 export default function Footer() {
   const { content } = usePublicContent()
@@ -234,11 +249,11 @@ export default function Footer() {
 
                 if (uniqueLinks.length === 0) return null
 
-                const iconMap: Record<string, typeof Facebook> = {
+                const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
                   facebook: Facebook,
                   linkedin: Linkedin,
-                  twitter: Twitter,
-                  x: Twitter,
+                  twitter: XBrandIcon,
+                  x: XBrandIcon,
                   instagram: Instagram,
                   youtube: Youtube,
                   tiktok: Music2,

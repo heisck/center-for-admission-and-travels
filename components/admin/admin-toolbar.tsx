@@ -3,10 +3,13 @@
 import { useAdmin } from '@/context/admin-context'
 import { Undo2, Redo2, RotateCcw, Save, Eye, LogOut } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 export function AdminToolbar() {
   const { undo, redo, canUndo, canRedo, resetToDefault, saveAll, isSaving } = useAdmin()
+  const router = useRouter()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset all changes to default? This cannot be undone.')) {
@@ -18,20 +21,28 @@ export function AdminToolbar() {
     await saveAll()
   }
 
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    try {
+      await fetch('/api/admin/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch {
+      // If request fails, still redirect to login.
+    } finally {
+      setIsLoggingOut(false)
+      router.push('/admin-login')
+      router.refresh()
+    }
+  }
+
   return (
     <div className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex justify-between items-center gap-2 sm:gap-4 overflow-x-auto">
         {/* Left: Branding */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="relative w-8 h-8 flex-shrink-0">
-            <Image
-              src="/images/ca-20logo.png"
-              alt="Center for Admission and Travels logo"
-              fill
-              className="object-contain"
-              sizes="32px"
-            />
-          </div>
           <span className="font-semibold text-foreground hidden sm:inline">Admin Panel</span>
         </div>
 
@@ -91,14 +102,16 @@ export function AdminToolbar() {
 
           <div className="w-px h-6 bg-slate-300 hidden sm:block" />
 
-          <Link
-            href="/admin-login"
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
             className="p-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-1 sm:gap-2 flex-shrink-0"
             title="Logout"
           >
             <LogOut size={16} />
-            <span className="hidden md:inline">Logout</span>
-          </Link>
+            <span className="hidden md:inline">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+          </button>
         </div>
       </div>
     </div>

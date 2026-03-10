@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react'
 
 export default function AdminForgotPasswordPage() {
@@ -43,8 +44,14 @@ export default function AdminForgotPasswordPage() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-red-600 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white text-2xl font-bold">A</span>
+          <div className="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-lg bg-white border border-orange-100 p-2">
+            <Image
+              src="/images/ca-20logo.png"
+              alt="Center for Admission and Travels"
+              width={48}
+              height={48}
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Admin Password Reset</h1>
           <p className="text-muted-foreground text-sm">Enter your admin email to receive a reset link</p>

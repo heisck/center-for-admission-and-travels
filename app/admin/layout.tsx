@@ -14,16 +14,37 @@ export default function AdminLayout({
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for admin session cookie
-    const sessionCookie = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('admin_session='))
+    let isActive = true
 
-    if (!sessionCookie) {
-      router.push('/admin-login')
-    } else {
-      setIsAuthenticated(true)
-      setIsLoading(false)
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/admin/auth/session', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        })
+
+        if (!isActive) return
+
+        if (res.ok) {
+          setIsAuthenticated(true)
+        } else {
+          setIsAuthenticated(false)
+          router.push('/admin-login')
+        }
+      } catch {
+        if (!isActive) return
+        setIsAuthenticated(false)
+        router.push('/admin-login')
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    checkSession()
+
+    return () => {
+      isActive = false
     }
   }, [router])
 

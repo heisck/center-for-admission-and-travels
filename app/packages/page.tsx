@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Search, ArrowRight, Sparkles } from "lucide-react"
+import { Search, ArrowRight, ChevronDown, ChevronUp } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { useScrollToTop } from "@/hooks/use-scroll-to-top"
@@ -61,6 +61,7 @@ function PackagesContent() {
   const { content, loading } = usePublicContent()
   const [filter, setFilter] = useState<PackageFilter>("all")
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "")
+  const [expandedPackageId, setExpandedPackageId] = useState<string | null>(null)
 
   useEffect(() => {
     const q = searchParams.get("q")
@@ -98,13 +99,9 @@ function PackagesContent() {
       <Navbar />
 
       <section className="relative overflow-hidden py-16 md:py-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(14,165,233,0.08),transparent_40%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.16),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(234,88,12,0.10),transparent_40%)] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-slate-200 text-slate-700 text-sm font-medium backdrop-blur">
-            <Sparkles className="w-4 h-4 text-orange-500" />
-            Premium Curated Programs
-          </div>
-          <h1 className="mt-5 text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-orange-900">
             Packages Built For
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
               Serious Global Goals
@@ -137,8 +134,8 @@ function PackagesContent() {
                   onClick={() => setFilter(item.value)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
                     active
-                      ? "bg-slate-900 text-white shadow"
-                      : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:text-slate-900"
+                      ? "bg-gradient-to-r from-orange-600 to-red-600 text-white shadow"
+                      : "bg-white text-orange-700 border border-orange-200 hover:border-orange-400 hover:text-orange-800"
                   }`}
                 >
                   {item.label}
@@ -162,7 +159,7 @@ function PackagesContent() {
                   setFilter("all")
                   setSearchQuery("")
                 }}
-                className="mt-6 px-5 py-2.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition"
+                className="mt-6 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold hover:opacity-95 transition"
               >
                 Reset Filters
               </button>
@@ -187,7 +184,7 @@ function PackagesContent() {
                   </div>
 
                   <div className="px-1 pt-5">
-                    <h3 className="text-xl font-semibold text-slate-900 tracking-tight">{pkg.name}</h3>
+                    <h3 className="text-xl font-semibold text-orange-950 tracking-tight">{pkg.name}</h3>
                     <p className="mt-2 text-sm text-slate-600 leading-relaxed line-clamp-2">{pkg.description}</p>
                     <p className="mt-3 text-sm font-medium text-slate-800">{pkg.duration}</p>
 
@@ -202,18 +199,96 @@ function PackagesContent() {
                       ))}
                     </div>
 
-                    <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between">
+                    <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between gap-2">
                       <p className="text-xl font-semibold text-slate-900">
                         {pkg.price > 0 ? `GHS ${pkg.price.toLocaleString()}` : "Contact Us"}
                       </p>
-                      <Link
-                        href={`/checkout?id=${pkg.id}`}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-black transition"
-                      >
-                        Book Now
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedPackageId((current) => (current === pkg.id ? null : pkg.id))
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-orange-200 text-orange-700 text-sm font-semibold hover:bg-orange-50 transition"
+                        >
+                          {expandedPackageId === pkg.id ? "Hide Details" : "View Details"}
+                          {expandedPackageId === pkg.id ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </button>
+                        <Link
+                          href={`/checkout?id=${pkg.id}`}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white text-sm font-semibold hover:opacity-95 transition"
+                        >
+                          Book Now
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </div>
+
+                    {expandedPackageId === pkg.id && (
+                      <div className="mt-4 border-t border-orange-100 pt-4 space-y-4">
+                        <div>
+                          <h4 className="text-sm font-semibold text-orange-900 mb-2">All Highlights</h4>
+                          {pkg.highlights?.length ? (
+                            <ul className="space-y-1.5">
+                              {pkg.highlights.map((item, index) => (
+                                <li key={index} className="text-sm text-slate-700 flex items-start gap-2">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-2 flex-shrink-0" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-slate-500">No highlights added yet.</p>
+                          )}
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-semibold text-orange-900 mb-2">Included</h4>
+                            {pkg.included?.length ? (
+                              <ul className="space-y-1.5">
+                                {pkg.included.map((item, index) => (
+                                  <li key={index} className="text-sm text-slate-700 flex items-start gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-slate-500">No included items listed.</p>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-semibold text-orange-900 mb-2">Not Included</h4>
+                            {pkg.notIncluded?.length ? (
+                              <ul className="space-y-1.5">
+                                {pkg.notIncluded.map((item, index) => (
+                                  <li key={index} className="text-sm text-slate-700 flex items-start gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0" />
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-slate-500">No exclusions listed.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {pkg.itinerary?.trim() ? (
+                          <div>
+                            <h4 className="text-sm font-semibold text-orange-900 mb-2">Itinerary</h4>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                              {pkg.itinerary}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </article>
               ))}
