@@ -1,6 +1,6 @@
 /**
- * Health check endpoint for uptime monitoring
- * GET /api/health - Readiness-style health endpoint for monitors and load balancers
+ * Readiness probe endpoint.
+ * Returns 503 when required dependencies are unavailable.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -20,18 +20,20 @@ export async function GET(request: NextRequest) {
     checkRedisHealth(),
   ])
 
-  const criticalError = database.status === 'error'
-  const degraded = !criticalError && redis.status === 'error'
-  const status = criticalError ? 'error' : degraded ? 'degraded' : 'ok'
+  const requireRedis = process.env.HEALTH_REQUIRE_REDIS === 'true'
+  const dbReady = database.status === 'ok'
+  const redisReady = redis.status === 'ok' || redis.status === 'skipped' || !requireRedis
+  const ready = dbReady && redisReady
 
   return NextResponse.json(
     {
-      status,
+      status: ready ? 'ready' : 'not_ready',
       checks: { database, redis },
+      requireRedis,
       ...getRuntimeHealthMetadata(requestId),
     },
     {
-      status: criticalError ? 503 : 200,
+      status: ready ? 200 : 503,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       },

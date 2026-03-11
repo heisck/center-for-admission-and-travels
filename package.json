@@ -7,6 +7,11 @@
     "build:ci": "prisma generate && next build",
     "dev": "next dev",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "loadtest:smoke": "k6 run load-tests/k6/smoke.js",
+    "loadtest:peak": "k6 run load-tests/k6/peak-5k.js",
+    "loadtest:writes": "k6 run load-tests/k6/write-guardrails.js",
     "start": "next start",
     "release": "prisma migrate deploy",
     "db:generate": "prisma generate",
@@ -96,6 +101,7 @@
     "@eslint/eslintrc": "^3.3.5",
     "baseline-browser-mapping": "latest",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.1.6"
+    "eslint-config-next": "^16.1.6",
+    "vitest": "^3.2.4"
   }
 }

@@ -43,8 +43,11 @@ Use this checklist before deploying to production.
 ## Build & Deploy
 
 - [ ] `npm run build` succeeds
+- [ ] `npm test` succeeds
 - [ ] `npm run start` runs correctly
 - [ ] Set `NODE_ENV=production` in deployment
+- [ ] Run smoke load test in staging: `npm run loadtest:smoke`
+- [ ] Run peak test in staging: `npm run loadtest:peak`
 
 ## Post-Deploy
 
@@ -52,3 +55,8 @@ Use this checklist before deploying to production.
 - [ ] Test admin login, forgot password
 - [ ] Test payment flow (use small amount with live key)
 - [ ] Verify emails are delivered
+- [ ] Configure uptime checks:
+  - `/api/health/live` (liveness)
+  - `/api/health/ready` (readiness)
+  - `/api/health` (detailed status)
+- [ ] Configure alerts using `ALERTING_RUNBOOK.md`
