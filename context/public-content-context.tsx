@@ -13,6 +13,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 
 const PUBLIC_CONTENT_VERSION_KEY = 'public_content_version'
+const PUBLIC_CONTENT_CACHE_KEY = 'public_content_payload'
+const PUBLIC_CONTENT_CACHE_TTL_MS = 5 * 60_000
 
 export interface PublicContent {
   home: {
@@ -190,6 +192,57 @@ interface PublicContentContextType {
 
 const PublicContentContext = createContext<PublicContentContextType | undefined>(undefined)
 
+interface CachedPublicContentPayload {
+  data: PublicContent
+  cachedAt: number
+}
+
+function readCachedContent(): CachedPublicContentPayload | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const raw = window.sessionStorage.getItem(PUBLIC_CONTENT_CACHE_KEY)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as CachedPublicContentPayload
+    if (!parsed?.data || typeof parsed.cachedAt !== 'number') {
+      window.sessionStorage.removeItem(PUBLIC_CONTENT_CACHE_KEY)
+      return null
+    }
+
+    if (Date.now() - parsed.cachedAt > PUBLIC_CONTENT_CACHE_TTL_MS) {
+      window.sessionStorage.removeItem(PUBLIC_CONTENT_CACHE_KEY)
+      return null
+    }
+
+    return parsed
+  } catch {
+    window.sessionStorage.removeItem(PUBLIC_CONTENT_CACHE_KEY)
+    return null
+  }
+}
+
+function writeCachedContent(data: PublicContent) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.sessionStorage.setItem(
+      PUBLIC_CONTENT_CACHE_KEY,
+      JSON.stringify({
+        data,
+        cachedAt: Date.now(),
+      } satisfies CachedPublicContentPayload)
+    )
+  } catch {
+    // Ignore storage failures; network fetch still succeeds.
+  }
+}
+
+function clearCachedContent() {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.removeItem(PUBLIC_CONTENT_CACHE_KEY)
+}
+
 export function PublicContentProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<PublicContent | null>(null)
   const [loading, setLoading] = useState(true)
@@ -220,6 +273,7 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
 
       setContent(result.data)
       lastFetchedAtRef.current = Date.now()
+      writeCachedContent(result.data)
     } catch (err: any) {
       console.error('Error fetching public content:', err)
       setError(err.message || 'Failed to load content')
@@ -230,6 +284,15 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
   }, [])
 
   useEffect(() => {
+    const cached = readCachedContent()
+    if (cached) {
+      setContent(cached.data)
+      lastFetchedAtRef.current = cached.cachedAt
+      setLoading(false)
+      fetchContent(false)
+      return
+    }
+
     fetchContent(true)
   }, [fetchContent])
 
@@ -244,7 +307,10 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
 
   // Refetch when admin saves (so footer/contact updates show immediately)
   useEffect(() => {
-    const onContentUpdated = () => fetchContent(true)
+    const onContentUpdated = () => {
+      clearCachedContent()
+      fetchContent(true)
+    }
     window.addEventListener('content-updated', onContentUpdated)
     return () => window.removeEventListener('content-updated', onContentUpdated)
   }, [fetchContent])
@@ -253,6 +319,7 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
       if (event.key === PUBLIC_CONTENT_VERSION_KEY) {
+        clearCachedContent()
         fetchContent(true)
       }
     }

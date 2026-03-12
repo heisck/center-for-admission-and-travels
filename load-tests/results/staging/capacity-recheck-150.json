@@ -1,0 +1,144 @@
+{
+    "metrics": {
+        "vus": {
+            "value": 2,
+            "min": 2,
+            "max": 150
+        },
+        "http_req_duration": {
+            "avg": 914.6047741903176,
+            "min": 93.1406,
+            "med": 378.7653,
+            "max": 11270.6218,
+            "p(90)": 3130.24406,
+            "p(95)": 3923.512779999998,
+            "thresholds": {
+                "p(95)<1200": true,
+                "p(99)<2500": true
+            }
+        },
+        "data_sent": {
+            "count": 674033,
+            "rate": 18726.400247545334
+        },
+        "iteration_duration": {
+            "med": 1054.6867,
+            "max": 12054.2554,
+            "p(90)": 3749.95694,
+            "p(95)": 4586.873859999999,
+            "avg": 1527.0808443405635,
+            "min": 306.9769
+        },
+        "iterations": {
+            "count": 2995,
+            "rate": 83.20893597405212
+        },
+        "data_received": {
+            "count": 78970661,
+            "rate": 2194011.577621895
+        },
+        "http_req_connecting": {
+            "max": 116.112,
+            "p(90)": 0,
+            "p(95)": 29.142779999973495,
+            "avg": 5.410396494156927,
+            "min": 0,
+            "med": 0
+        },
+        "http_req_receiving": {
+            "med": 3.7218,
+            "max": 7389.6619,
+            "p(90)": 357.94162,
+            "p(95)": 1024.1244699999997,
+            "avg": 175.59325168614342,
+            "min": 0
+        },
+        "http_req_waiting": {
+            "avg": 738.7220011018352,
+            "min": 88.4659,
+            "med": 340.6498,
+            "max": 6410.2194,
+            "p(90)": 2403.2013999999995,
+            "p(95)": 3719.8424099999997
+        },
+        "http_req_tls_handshaking": {
+            "avg": 7.56139202003339,
+            "min": 0,
+            "med": 0,
+            "max": 338.4077,
+            "p(90)": 0,
+            "p(95)": 27.866789999974657
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 2995,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "http_req_sending": {
+            "min": 0,
+            "med": 0,
+            "max": 13.1124,
+            "p(90)": 0.70722,
+            "p(95)": 0.8685199999999998,
+            "avg": 0.28952140233722895
+        },
+        "http_reqs": {
+            "rate": 83.20893597405212,
+            "count": 2995
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 93.1406,
+            "med": 378.7653,
+            "max": 11270.6218,
+            "p(90)": 3130.24406,
+            "p(95)": 3923.512779999998,
+            "avg": 914.6047741903176
+        },
+        "checks": {
+            "passes": 5571,
+            "fails": 419,
+            "thresholds": {
+                "rate>0.99": true
+            },
+            "value": 0.9300500834724541
+        },
+        "vus_max": {
+            "value": 150,
+            "min": 150,
+            "max": 150
+        },
+        "http_req_blocked": {
+            "max": 440.1298,
+            "p(90)": 0,
+            "p(95)": 57.3950999999478,
+            "avg": 12.999761736227041,
+            "min": 0,
+            "med": 0
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "status is 200": {
+                    "name": "status is 200",
+                    "path": "::status is 200",
+                    "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                    "passes": 2995,
+                    "fails": 0
+                },
+                "response under 2s": {
+                    "name": "response under 2s",
+                    "path": "::response under 2s",
+                    "id": "92276059fa2a8367ab15a651b37ec32d",
+                    "passes": 2576,
+                    "fails": 419
+                }
+            }
+    }
+}
