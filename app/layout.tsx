@@ -1,5 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
 
 import WhatsAppButton from "@/components/whatsapp-button"
 import { AdminProvider } from "@/context/admin-context"
@@ -54,7 +56,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="font-sans antialiased overflow-x-hidden">
+      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased overflow-x-hidden`}>
         <OrganizationStructuredData />
         <WebSiteStructuredData />
         <GoogleAnalytics />
