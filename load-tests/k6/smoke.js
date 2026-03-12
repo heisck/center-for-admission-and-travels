@@ -1,5 +1,6 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
+import { buildRequestParams } from './request-config.js'
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000'
 
@@ -13,13 +14,11 @@ export const options = {
   },
 }
 
-const trafficMix = [
-  '/api/health/live',
-  '/api/health/ready',
-  '/api/content',
-  '/packages',
-  '/',
-]
+const trafficMix = (
+  __ENV.SMOKE_PATHS
+    ? __ENV.SMOKE_PATHS.split(',').map((path) => path.trim())
+    : ['/api/health/live', '/api/health/ready', '/api/content', '/packages', '/']
+).filter(Boolean)
 
 function pickPath() {
   return trafficMix[Math.floor(Math.random() * trafficMix.length)]
@@ -27,10 +26,13 @@ function pickPath() {
 
 function smokeScenario() {
   const path = pickPath()
-  const response = http.get(`${BASE_URL}${path}`, {
-    tags: { endpoint: path, scenario: 'smoke' },
-    timeout: __ENV.REQUEST_TIMEOUT || '20s',
-  })
+  const response = http.get(
+    `${BASE_URL}${path}`,
+    buildRequestParams({
+      tags: { endpoint: path, scenario: 'smoke' },
+      timeout: __ENV.REQUEST_TIMEOUT || '20s',
+    })
+  )
 
   check(response, {
     'status is 200': (r) => r.status === 200,

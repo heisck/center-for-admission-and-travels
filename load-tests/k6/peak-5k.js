@@ -1,5 +1,6 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
+import { buildRequestParams } from './request-config.js'
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000'
 const PEAK_VUS = Number(__ENV.PEAK_VUS || 5000)
@@ -29,6 +30,11 @@ export const options = {
 }
 
 function weightedPathSelector() {
+  if (__ENV.PEAK_PATHS) {
+    const paths = __ENV.PEAK_PATHS.split(',').map((path) => path.trim()).filter(Boolean)
+    return paths[Math.floor(Math.random() * paths.length)]
+  }
+
   const roll = Math.random()
   if (roll < 0.55) return '/api/content'
   if (roll < 0.75) return '/packages'
@@ -39,10 +45,13 @@ function weightedPathSelector() {
 
 function peakScenario() {
   const path = weightedPathSelector()
-  const response = http.get(`${BASE_URL}${path}`, {
-    tags: { endpoint: path, scenario: 'peak-5k' },
-    timeout: __ENV.REQUEST_TIMEOUT || '25s',
-  })
+  const response = http.get(
+    `${BASE_URL}${path}`,
+    buildRequestParams({
+      tags: { endpoint: path, scenario: 'peak-5k' },
+      timeout: __ENV.REQUEST_TIMEOUT || '25s',
+    })
+  )
 
   check(response, {
     'status is 200': (r) => r.status === 200,

@@ -1,6 +1,7 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Rate } from 'k6/metrics'
+import { buildRequestParams } from './request-config.js'
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000'
 
@@ -62,11 +63,11 @@ export function loginAbuse() {
       email: 'invalid-admin@example.com',
       password: 'definitely-wrong-password',
     }),
-    {
+    buildRequestParams({
       headers: { 'Content-Type': 'application/json' },
       tags: { endpoint: '/api/admin/auth/login', scenario: 'auth-abuse' },
       timeout: __ENV.REQUEST_TIMEOUT || '20s',
-    }
+    })
   )
 
   trackResponseMetrics(response, [401, 429])
@@ -80,11 +81,11 @@ export function newsletterAbuse() {
       email: `load-test-${__VU}-${__ITER % 100}@example.com`,
       website: '',
     }),
-    {
+    buildRequestParams({
       headers: { 'Content-Type': 'application/json' },
       tags: { endpoint: '/api/newsletter', scenario: 'newsletter-abuse' },
       timeout: __ENV.REQUEST_TIMEOUT || '20s',
-    }
+    })
   )
 
   trackResponseMetrics(response, [200, 429])

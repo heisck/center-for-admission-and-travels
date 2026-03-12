@@ -37,6 +37,19 @@ npm run loadtest:peak
 $env:BASE_URL="https://staging.example.com"
 $env:ALLOW_WRITE_LOAD="true"
 npm run loadtest:writes
+
+# Vercel-protected preview deployment
+$env:BASE_URL="https://your-preview.vercel.app"
+$env:VERCEL_PROTECTION_BYPASS="your-generated-secret"
+$env:VERCEL_SET_BYPASS_COOKIE="true"
+npm run loadtest:smoke
+
+# If you already have the issued _vercel_jwt cookie, you can reuse it directly
+$env:BASE_URL="https://your-preview.vercel.app"
+$env:VERCEL_BYPASS_COOKIE="your-vercel-jwt-cookie"
+$env:SMOKE_PATHS="/,/packages,/api/content"
+$env:PEAK_PATHS="/,/packages,/travel-tours,/api/content"
+npm run loadtest:peak
 ```
 
 ## Pass/Fail Criteria
