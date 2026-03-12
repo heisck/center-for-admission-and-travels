@@ -1,35 +1,16 @@
-"use client"
-
-import { useScrollToTop } from "@/hooks/use-scroll-to-top"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
-import { usePublicContent } from "@/context/public-content-context"
-import { MapPin, Clock, DollarSign, CheckCircle } from "lucide-react"
-import DomeGallery from './DomeGallery';
+import { MapPin, Clock, DollarSign, CheckCircle, ChevronDown } from "lucide-react"
 
-export default function TravelTours() {
-  useScrollToTop()
-  const { content, loading } = usePublicContent()
-  const [expandedPackage, setExpandedPackage] = useState<string | null>(null)
+import DomeGallery from "./DomeGallery"
+import { getSiteChromeContent, getTravelToursPageContent } from "@/lib/public-content"
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </main>
-    )
-  }
+export const revalidate = 300
 
-  const travelTours = content?.travelTours
-  const featuredPackages = travelTours?.featured || []
-  const benefits = travelTours?.benefits || []
-  const galleryImages = travelTours?.galleryImages || []
+export default async function TravelTours() {
+  const [travelTours, chrome] = await Promise.all([getTravelToursPageContent(), getSiteChromeContent()])
 
   return (
     <main className="min-h-screen bg-background">
@@ -38,29 +19,23 @@ export default function TravelTours() {
       <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-            <div className="relative h-80 rounded-2xl overflow-hidden ">
+            <div className="relative h-80 rounded-2xl overflow-hidden">
               <div style={{ width: '100%', height: '100%' }}>
-                <DomeGallery images={galleryImages.length > 0 ? galleryImages.map(img => ({ src: img, alt: '' })) : undefined} />
+                <DomeGallery images={travelTours.galleryImages.length > 0 ? travelTours.galleryImages.map((img) => ({ src: img, alt: '' })) : undefined} />
               </div>
-              {/* <Image
-                src="/images/travel.jpg"
-                alt="Travel packages showcase"
-                fill
-                className="object-cover object-center"
-              /> */}
             </div>
 
             <div>
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  {travelTours?.hero?.title || "Travel & Tours"}
+                  {travelTours.hero.title || "Travel & Tours"}
                 </span>
               </h1>
               <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                {travelTours?.hero?.description || "Explore our carefully curated collection of travel experiences designed to create unforgettable memories."}
+                {travelTours.hero.description || "Explore our carefully curated collection of travel experiences designed to create unforgettable memories."}
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                {travelTours?.hero?.paragraph || "Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication."}
+                {travelTours.hero.paragraph || "Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication."}
               </p>
             </div>
           </div>
@@ -81,7 +56,7 @@ export default function TravelTours() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {featuredPackages.map((pkg) => (
+            {travelTours.featured.map((pkg) => (
               <div
                 key={pkg.id}
                 className="group bg-white border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
@@ -117,34 +92,31 @@ export default function TravelTours() {
                   </div>
 
                   <div className="space-y-2 mb-6">
-                    {pkg.highlights?.slice(0, 3).map((h, i) => (
-                      <div key={i} className="flex items-start space-x-2 text-sm">
+                    {pkg.highlights?.slice(0, 3).map((highlight, index) => (
+                      <div key={index} className="flex items-start space-x-2 text-sm">
                         <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-foreground">{h}</span>
+                        <span className="text-foreground">{highlight}</span>
                       </div>
                     ))}
                   </div>
 
-                  <button
-                    onClick={() => setExpandedPackage(expandedPackage === pkg.id ? null : pkg.id)}
-                    className="w-full mb-3 px-4 py-2 border border-primary text-primary rounded-lg text-sm font-semibold hover:bg-primary hover:text-white transition"
-                  >
-                    {expandedPackage === pkg.id ? "Hide Details" : "View Details"}
-                  </button>
-
-                  {expandedPackage === pkg.id && (
-                    <div className="mt-6 pt-6 border-t border-border animate-fade-in mb-6">
+                  <details className="mt-6 mb-6 border-t border-border pt-4 group/details">
+                    <summary className="list-none w-full mb-3 px-4 py-2 border border-primary text-primary rounded-lg text-sm font-semibold hover:bg-primary hover:text-white transition inline-flex items-center justify-center gap-2 cursor-pointer">
+                      <span>View Details</span>
+                      <ChevronDown className="w-4 h-4 transition-transform group-open/details:rotate-180" />
+                    </summary>
+                    <div className="pt-2 animate-fade-in">
                       <h4 className="font-bold text-foreground mb-3">All Highlights</h4>
                       <div className="space-y-2">
-                        {pkg.highlights?.map((h, i) => (
-                          <div key={i} className="flex items-start space-x-2 text-sm">
+                        {pkg.highlights?.map((highlight, index) => (
+                          <div key={index} className="flex items-start space-x-2 text-sm">
                             <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                            <span className="text-foreground">{h}</span>
+                            <span className="text-foreground">{highlight}</span>
                           </div>
                         ))}
                       </div>
                     </div>
-                  )}
+                  </details>
 
                   <Link
                     href={`/checkout?id=${pkg.id}`}
@@ -168,7 +140,7 @@ export default function TravelTours() {
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {benefits.map((benefit) => (
+            {travelTours.benefits.map((benefit) => (
               <div key={benefit.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition">
                 <h3 className="text-lg font-bold text-primary mb-3">{benefit.title}</h3>
                 <p className="text-muted-foreground">{benefit.description}</p>
@@ -195,7 +167,7 @@ export default function TravelTours() {
         </div>
       </section>
 
-      <Footer />
+      <Footer contact={chrome.contact} footer={chrome.footer} />
     </main>
   )
 }

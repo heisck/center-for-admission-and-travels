@@ -1,33 +1,14 @@
-'use client'
-
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePublicContent } from '@/context/public-content-context'
-import { Skeleton } from '@/components/ui/skeleton'
 
-export default function HomeFeaturedPackages() {
-  const { content, loading } = usePublicContent()
-  const featured = content?.home?.featuredPackages || []
+import type { PackageCardContent } from '@/lib/public-content'
 
-  if (loading) {
-    return (
-      <section className="py-16 md:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 space-y-3">
-            <Skeleton className="h-10 w-[280px] mx-auto" />
-            <Skeleton className="h-4 w-[400px] mx-auto" />
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/3] rounded-2xl" />
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  }
+interface HomeFeaturedPackagesProps {
+  featuredPackages: PackageCardContent[]
+}
 
-  if (featured.length === 0) return null
+export default function HomeFeaturedPackages({ featuredPackages }: HomeFeaturedPackagesProps) {
+  if (featuredPackages.length === 0) return null
 
   return (
     <section className="py-16 md:py-24 bg-white">
@@ -45,7 +26,7 @@ export default function HomeFeaturedPackages() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featured.map((pkg) => {
+          {featuredPackages.map((pkg) => {
             const img = pkg.images?.[0] || '/images/thisshouldbeintegrated2.jpg'
             return (
               <Link
@@ -73,7 +54,7 @@ export default function HomeFeaturedPackages() {
                   <p className="text-muted-foreground line-clamp-2 mb-4">{pkg.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-primary font-bold text-lg">
-                      ${pkg.price?.toLocaleString?.() ?? pkg.price}
+                      {pkg.price > 0 ? `GHS ${pkg.price.toLocaleString()}` : 'Contact Us'}
                     </span>
                     <span className="text-primary font-semibold text-sm group-hover:translate-x-1 transition-transform">
                       View details →

@@ -1,6 +1,3 @@
-"use client"
-
-import { useScrollToTop } from "@/hooks/use-scroll-to-top"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Image from "next/image"
@@ -8,27 +5,14 @@ import { CheckCircle, ArrowRight } from "lucide-react"
 import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom"
 import Link from "next/link"
 
+import type { ServicePageContent, SiteChromeContent } from "@/lib/public-content"
+
 interface ServicePageTemplateProps {
-  service: {
-    id: string
-    title: string
-    heroImage: string
-    bannerTitle: string
-    bannerSubtitle: string
-    overview?: string
-    whyStudyOutsideThisCountry?: { title: string; highlights?: string[] }
-    benefits: string[]
-    requirements: string[]
-    countries: Array<{ name: string; description: string; image?: string }>
-    visaGuidance: string
-    successStories: Array<{ name: string; program: string; quote: string }>
-    scholarships: Array<{ name: string; amount: string; description: string }>
-  }
+  service: ServicePageContent
+  chrome: SiteChromeContent
 }
 
-export default function ServicePageTemplate({ service }: ServicePageTemplateProps) {
-  useScrollToTop()
-
+export default function ServicePageTemplate({ service, chrome }: ServicePageTemplateProps) {
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
@@ -55,7 +39,6 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
                 Discover comprehensive support and guidance tailored to help you achieve your international aspirations with confidence and clarity.
               </p>
-              {/* Top Apply Button */}
               <Link
                 href={`/apply?service=${encodeURIComponent(service.title)}`}
                 className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
@@ -228,7 +211,7 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
       </section>
 
       <TestimonialsCustom
-        testimonials={service.successStories.map(s => ({ name: s.name, role: s.program, content: s.quote }))}
+        testimonials={service.successStories.map((story) => ({ name: story.name, role: story.program, content: story.quote }))}
         title="Success Stories"
         subtitle="Hear from our satisfied clients about their transformative journeys"
       />
@@ -275,7 +258,7 @@ export default function ServicePageTemplate({ service }: ServicePageTemplateProp
         </div>
       </section>
 
-      <Footer />
+      <Footer contact={chrome.contact} footer={chrome.footer} />
     </main>
   )
 }

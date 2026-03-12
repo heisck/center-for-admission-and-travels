@@ -15,17 +15,22 @@ const DEFAULT_SUPPORT_CONTACT: SupportContact = {
 
 const getCachedSupportContact = unstable_cache(
   async (): Promise<SupportContact> => {
-    const contact = await prisma.contactInfo.findUnique({
-      where: { id: 'contact' },
-      select: { email: true, phone: true, whatsappNumber: true },
-    })
+    try {
+      const contact = await prisma.contactInfo.findUnique({
+        where: { id: 'contact' },
+        select: { email: true, phone: true, whatsappNumber: true },
+      })
 
-    if (!contact) return DEFAULT_SUPPORT_CONTACT
+      if (!contact) return DEFAULT_SUPPORT_CONTACT
 
-    return {
-      email: contact.email?.trim() || DEFAULT_SUPPORT_CONTACT.email,
-      phone: contact.phone?.trim() || DEFAULT_SUPPORT_CONTACT.phone,
-      whatsappNumber: contact.whatsappNumber?.trim() || DEFAULT_SUPPORT_CONTACT.whatsappNumber,
+      return {
+        email: contact.email?.trim() || DEFAULT_SUPPORT_CONTACT.email,
+        phone: contact.phone?.trim() || DEFAULT_SUPPORT_CONTACT.phone,
+        whatsappNumber: contact.whatsappNumber?.trim() || DEFAULT_SUPPORT_CONTACT.whatsappNumber,
+      }
+    } catch (error) {
+      console.error('[support-contact] Failed to load support contact:', error)
+      return DEFAULT_SUPPORT_CONTACT
     }
   },
   ['support-contact'],
@@ -35,4 +40,3 @@ const getCachedSupportContact = unstable_cache(
 export async function getSupportContact(): Promise<SupportContact> {
   return getCachedSupportContact()
 }
-

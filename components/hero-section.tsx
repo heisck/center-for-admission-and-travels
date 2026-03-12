@@ -1,16 +1,12 @@
-"use client"
+'use client'
 
 import Link from "next/link"
 import { useState, useEffect } from 'react'
-import { usePublicContent } from "@/context/public-content-context"
-//import Image from "next/image"
+
 import Masonry from './Masonry'
 import './hero-section.css'
-// import Stack from './Stack'
+import type { HomeHeroContent } from "@/lib/public-content"
 
-
-
-// Fallback images if database doesn't have any
 const fallbackItems = [
   {
     id: "1",
@@ -44,42 +40,48 @@ const fallbackItems = [
   },
 ]
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  hero: HomeHeroContent
+}
+
+export default function HeroSection({ hero }: HeroSectionProps) {
   const [masonryLoaded, setMasonryLoaded] = useState(false)
-  const { content } = usePublicContent()
 
   useEffect(() => {
     const timer = setTimeout(() => setMasonryLoaded(true), 500)
     return () => clearTimeout(timer)
   }, [])
 
-  // Use content from database if available, otherwise use defaults
-  const heroTitle = content?.home?.hero?.title || "Looking To Travel"
-  const heroSubtitle = content?.home?.hero?.subtitle || "& Enrich Your Future"
-  const heroDescription = content?.home?.hero?.description || "Welcome to Center for Admission and Travels, where your dreams of studying, working, and traveling abroad become reality. We guide you with honesty, professionalism, and care every step of the way."
-  const stats = content?.home?.hero?.stats || [
-    { value: "50+", label: "Success Stories" },
-    { value: "15+", label: "Destinations" },
-    { value: "100%", label: "Satisfaction" }
-  ]
+  const heroTitle = hero.title || "Looking To Travel"
+  const heroDescription =
+    hero.description ||
+    "Welcome to Center for Admission and Travels, where your dreams of studying, working, and traveling abroad become reality. We guide you with honesty, professionalism, and care every step of the way."
+  const stats = hero.stats?.length
+    ? hero.stats
+    : [
+        { value: "50+", label: "Success Stories" },
+        { value: "15+", label: "Destinations" },
+        { value: "100%", label: "Satisfaction" },
+      ]
 
-  // Transform database images to Masonry format
-  const heroImages = content?.home?.hero?.images || []
+  const heroImages = hero.images || []
   const items = heroImages.length > 0
     ? heroImages.map((img, index) => ({
         id: `db-${index}`,
-        img: img,
+        img,
         url: "#",
-        height: [400, 350, 400, 600, 300][index % 5] || 400, // Cycle through heights
+        height: [400, 350, 400, 600, 300][index % 5] || 400,
       }))
     : fallbackItems
 
+  const titleParts = heroTitle.split(' ')
+  const accentTitle = titleParts.length > 2 ? titleParts.slice(0, -2).join(' ') : heroTitle
+  const trailingTitle = titleParts.length > 2 ? titleParts.slice(-2).join(' ') : ''
+
   return (
     <section className="relative overflow-hidden md:py-22">
-      {/* Background gradient - hidden on mobile when Masonry is visible */}
       <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-30"></div>
 
-      {/* Mobile: Full-width hero with Masonry background */}
       <div className="md:hidden relative w-full" style={{ minHeight: '420px', zIndex: 10 }}>
         <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 5 }}>
           <div style={{ width: '100%', height: '100%' }}>
@@ -100,10 +102,14 @@ export default function HeroSection() {
           <div className="px-4">
             <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4">
               <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                {heroTitle.split(' ').slice(0, -2).join(' ')}
+                {accentTitle}
               </span>
-              <br />
-              <span className="text-foreground">{heroTitle.split(' ').slice(-2).join(' ')}</span>
+              {trailingTitle ? (
+                <>
+                  <br />
+                  <span className="text-foreground">{trailingTitle}</span>
+                </>
+              ) : null}
             </h1>
             <p className={`text-lg mt-6 leading-relaxed transition-colors duration-500 ${masonryLoaded ? 'text-white' : 'text-muted-foreground'}`}>
               {heroDescription}
@@ -115,13 +121,13 @@ export default function HeroSection() {
               href="#services"
               className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
             >
-              View Our Services
+              {hero.cta1Text || "View Our Services"}
             </a>
             <Link
               href="/contact"
               className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
             >
-              Contact Us
+              {hero.cta2Text || "Contact Us"}
             </Link>
           </div>
 
@@ -137,16 +143,19 @@ export default function HeroSection() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Desktop: Grid layout with content on left, Masonry on right */}
         <div className="hidden md:grid md:grid-cols-2 gap-12 items-center">
           <div className="relative md:space-y-8 space-y-4 animate-fade-in">
             <div className="relative z-20">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  {heroTitle.split(' ').slice(0, -2).join(' ')}
+                  {accentTitle}
                 </span>
-                <br />
-                <span className="text-foreground">{heroTitle.split(' ').slice(-2).join(' ')}</span>
+                {trailingTitle ? (
+                  <>
+                    <br />
+                    <span className="text-foreground">{trailingTitle}</span>
+                  </>
+                ) : null}
               </h1>
               <p className="text-lg text-muted-foreground mt-6 leading-relaxed">
                 {heroDescription}
@@ -158,13 +167,13 @@ export default function HeroSection() {
                 href="#services"
                 className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
               >
-                View Our Services
+                {hero.cta1Text || "View Our Services"}
               </a>
               <Link
                 href="/contact"
                 className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
               >
-                Contact Us
+                {hero.cta2Text || "Contact Us"}
               </Link>
             </div>
 

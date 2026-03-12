@@ -1,14 +1,15 @@
-"use client"
-
 import { Suspense } from "react"
+
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import ApplyFormContent from "./apply-form-content"
-import { usePublicContent } from "@/context/public-content-context"
+import { getSiteChromeContent } from "@/lib/public-content"
 
-export default function ApplyPage() {
-  const { content } = usePublicContent()
-  const supportEmail = content?.contact?.email?.trim() || ""
+export const revalidate = 300
+
+export default async function ApplyPage() {
+  const chrome = await getSiteChromeContent()
+  const supportEmail = chrome.contact.email?.trim() || ""
 
   return (
     <main className="min-h-screen bg-background flex flex-col">
@@ -32,7 +33,6 @@ export default function ApplyPage() {
               <ApplyFormContent />
             </Suspense>
 
-            {/* Info Cards */}
             <div className="grid md:grid-cols-2 gap-6 mt-12">
               <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
                 <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
@@ -66,7 +66,7 @@ export default function ApplyPage() {
         </section>
       </div>
 
-      <Footer />
+      <Footer contact={chrome.contact} footer={chrome.footer} />
     </main>
   )
 }

@@ -1,17 +1,13 @@
-'use client'
-
-import { useScrollToTop } from '@/hooks/use-scroll-to-top'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePublicContent } from '@/context/public-content-context'
-import { Skeleton } from '@/components/ui/skeleton'
+import { getBlogPosts, getSiteChromeContent } from '@/lib/public-content'
 
-export default function BlogPage() {
-  useScrollToTop()
-  const { content, loading } = usePublicContent()
-  const posts = content?.blogPosts || []
+export const revalidate = 300
+
+export default async function BlogPage() {
+  const [posts, chrome] = await Promise.all([getBlogPosts(), getSiteChromeContent()])
 
   return (
     <main className="min-h-screen bg-background">
@@ -32,13 +28,7 @@ export default function BlogPage() {
 
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-video rounded-2xl" />
-              ))}
-            </div>
-          ) : posts.length === 0 ? (
+          {posts.length === 0 ? (
             <div className="text-center py-16 bg-slate-50 rounded-2xl border border-border">
               <p className="text-lg text-muted-foreground mb-6">
                 New posts coming soon. Stay tuned for travel tips, visa guides, and success stories.
@@ -83,7 +73,7 @@ export default function BlogPage() {
         </div>
       </section>
 
-      <Footer />
+      <Footer contact={chrome.contact} footer={chrome.footer} />
     </main>
   )
 }

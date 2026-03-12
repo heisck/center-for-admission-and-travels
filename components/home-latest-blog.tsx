@@ -1,34 +1,14 @@
-'use client'
-
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePublicContent } from '@/context/public-content-context'
-import { Skeleton } from '@/components/ui/skeleton'
 
-export default function HomeLatestBlog() {
-  const { content, loading } = usePublicContent()
-  const posts = content?.blogPosts || []
-  const latest = posts.slice(0, 3)
+import type { BlogPostSummary } from '@/lib/public-content'
 
-  if (loading) {
-    return (
-      <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 space-y-3">
-            <Skeleton className="h-10 w-[240px] mx-auto" />
-            <Skeleton className="h-4 w-[360px] mx-auto" />
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-2xl" />
-            ))}
-          </div>
-        </div>
-      </section>
-    )
-  }
+interface HomeLatestBlogProps {
+  posts: BlogPostSummary[]
+}
 
-  if (latest.length === 0) return null
+export default function HomeLatestBlog({ posts }: HomeLatestBlogProps) {
+  if (posts.length === 0) return null
 
   return (
     <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
@@ -46,7 +26,7 @@ export default function HomeLatestBlog() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {latest.map((post) => (
+          {posts.map((post) => (
             <Link
               key={post.id}
               href={`/blog/${post.slug}`}

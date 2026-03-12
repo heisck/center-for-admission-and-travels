@@ -1,57 +1,23 @@
-"use client"
-
 import './page.css'
-import { useScrollToTop } from "@/hooks/use-scroll-to-top"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import Image from "next/image"
 import { CheckCircle } from "lucide-react"
 import FounderSection from "@/components/founder-section"
-import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom"
-import { usePublicContent } from "@/context/public-content-context"
+import { getAboutPageContent, getSiteChromeContent } from "@/lib/public-content"
 
-export default function About() {
-  useScrollToTop()
-  const { content, loading } = usePublicContent()
+export const revalidate = 300
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </main>
-    )
-  }
-
-  const about = content?.about
-  if (!about) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Content Not Available</h1>
-          <p className="text-muted-foreground mb-4">The about page content is currently being loaded. Please try refreshing the page.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </main>
-    )
-  }
+export default async function About() {
+  const [about, chrome] = await Promise.all([getAboutPageContent(), getSiteChromeContent()])
 
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero */}
       <section className="relative py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Image - Top Left */}
             <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
               <Image
                 src={about.heroImage || "/images/thisshouldbeintegrated4.jpg"}
@@ -61,7 +27,6 @@ export default function About() {
               />
             </div>
 
-            {/* Content */}
             <div className="order-1 md:order-2">
               <h1 className="text-5xl md:text-6xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
@@ -76,7 +41,6 @@ export default function About() {
         </div>
       </section>
 
-      {/* Mission & Vision */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12">
@@ -113,7 +77,6 @@ export default function About() {
         </div>
       </section>
 
-      {/* Core Values */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-12">
@@ -131,9 +94,9 @@ export default function About() {
           </div>
         </div>
       </section>
-      <FounderSection />
 
-      {/* Team */}
+      <FounderSection founder={about.founder} />
+
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-4">
@@ -159,21 +122,21 @@ export default function About() {
                 </div>
                 <h3 className="text-lg font-bold text-foreground">{member.name}</h3>
                 <p className="text-primary font-semibold">{member.role}</p>
-                {member.description && (
+                {member.description ? (
                   <div className="text-sm text-muted-foreground leading-relaxed mt-2">
                     <details>
                       <summary className="cursor-pointer">More Info</summary>
                       <div className="mt-2">{member.description}</div>
                     </details>
                   </div>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <Footer />
+      <Footer contact={chrome.contact} footer={chrome.footer} />
     </main>
   )
 }

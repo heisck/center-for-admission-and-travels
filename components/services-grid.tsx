@@ -1,81 +1,52 @@
-"use client"
-
 import Link from "next/link"
 import { Globe, Briefcase, Plane, GraduationCap } from "lucide-react"
-import { usePublicContent } from "@/context/public-content-context"
 
-// Icon mapping for services
-const iconMap: Record<string, any> = {
-  'GraduationCap': GraduationCap,
-  'Briefcase': Briefcase,
-  'Plane': Plane,
-  'Globe': Globe,
+import type { HomeServiceContent } from "@/lib/public-content"
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  GraduationCap,
+  Briefcase,
+  Plane,
+  Globe,
 }
 
-export default function ServicesGrid() {
-  const { content } = usePublicContent()
-  
-  // Use services from database if available, otherwise use defaults
-  const defaultServices = [
+interface ServicesGridProps {
+  services: HomeServiceContent[]
+}
+
+export default function ServicesGrid({ services }: ServicesGridProps) {
+  const defaultServices: HomeServiceContent[] = [
     {
-      icon: GraduationCap,
+      id: "study-abroad",
+      icon: "GraduationCap",
       title: "Study Abroad",
       description: "Admission guidance, university selection, and visa processing for top institutions worldwide",
       href: "/study-abroad",
     },
     {
-      icon: Briefcase,
+      id: "work-abroad",
+      icon: "Briefcase",
       title: "Work Abroad",
       description: "Job placement assistance and relocation support in verified international companies",
       href: "/work-abroad",
     },
     {
-      icon: Plane,
+      id: "travel-tours",
+      icon: "Plane",
       title: "Travel & Tours",
       description: "Curated travel packages to Dubai, Europe, Asia, and more with full support",
       href: "/travel-tours",
     },
     {
-      icon: Globe,
+      id: "global-network",
+      icon: "Globe",
       title: "Global Network",
       description: "Partnerships with accredited universities and verified employers worldwide",
       href: "/global-network",
     },
   ]
 
-  // Title to route mapping for fallback
-  const titleToRouteMap: Record<string, string> = {
-    'Study Abroad': '/study-abroad',
-    'Work Abroad': '/work-abroad',
-    'Travel & Tours': '/travel-tours',
-    'Travel Tours': '/travel-tours',
-    'Global Network': '/global-network',
-  }
-
-  // Map database services to component format
-  const services = content?.home?.services?.length 
-    ? content.home.services.map((svc) => {
-        // Find matching service page by title (case-insensitive)
-        const servicePage = content?.servicePages?.find(
-          sp => sp.title?.toLowerCase() === svc.title?.toLowerCase() || 
-                sp.id?.toLowerCase() === svc.title?.toLowerCase().replace(/\s+/g, '-')
-        )
-        const Icon = iconMap[svc.icon] || GraduationCap
-        
-        // Determine href: use servicePage route, then title mapping, then fallback
-        let href = servicePage?.route
-        if (!href) {
-          href = titleToRouteMap[svc.title] || `/${svc.title.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')}`
-        }
-        
-        return {
-          icon: Icon,
-          title: svc.title,
-          description: svc.description,
-          href,
-        }
-      })
-    : defaultServices
+  const cards = services.length > 0 ? services : defaultServices
 
   return (
     <section id="services" className="py-12 md:py-24 bg-white">
@@ -91,11 +62,11 @@ export default function ServicesGrid() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {services.map((service, idx) => {
-            const Icon = service.icon
+          {cards.map((service, idx) => {
+            const Icon = iconMap[service.icon] || GraduationCap
             return (
               <Link
-                key={idx}
+                key={service.id || idx}
                 href={service.href}
                 className="group p-8 rounded-2xl border border-border hover:border-primary bg-white hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
               >

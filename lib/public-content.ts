@@ -2,299 +2,807 @@ import { unstable_cache } from 'next/cache'
 
 import { prisma } from '@/lib/prisma'
 
+export type PackageCategory = 'travel' | 'study' | 'work'
+
+export interface HomeHeroStat {
+  value: string
+  label: string
+}
+
+export interface HomeHeroContent {
+  title: string
+  subtitle: string
+  description: string
+  cta1Text: string
+  cta2Text: string
+  stats: HomeHeroStat[]
+  images: string[]
+}
+
+export interface HomeServiceContent {
+  id: string
+  icon: string
+  title: string
+  description: string
+  href: string
+}
+
+export interface BlogPostSummary {
+  id: string
+  slug: string
+  title: string
+  excerpt: string
+  imageUrl: string | null
+  packageId: string | null
+  publishedAt: string | null
+}
+
+export interface PackageCardContent {
+  id: string
+  name: string
+  description: string
+  category: PackageCategory
+  duration: string
+  price: number
+  highlights: string[]
+  itinerary: string
+  images: string[]
+  included: string[]
+  notIncluded: string[]
+}
+
+export interface AboutFounderContent {
+  name: string
+  title: string
+  description: string
+  image: string
+  vision: string
+  mission: string
+  values: string
+}
+
+export interface AboutContent {
+  heroTitle: string
+  heroSubtitle: string
+  heroImage: string
+  mission: {
+    title: string
+    description: string
+    points: string[]
+  }
+  vision: {
+    title: string
+    description: string
+    points: string[]
+  }
+  coreValues: Array<{
+    id: string
+    title: string
+    description: string
+  }>
+  founder: AboutFounderContent
+  team: Array<{
+    id: string
+    name: string
+    role: string
+    image: string
+    description: string
+  }>
+  successStories: Array<{
+    id: string
+    name: string
+    program: string
+    quote: string
+  }>
+}
+
+export interface TravelToursContent {
+  hero: {
+    title: string
+    description: string
+    paragraph: string
+    image: string
+  }
+  featured: Array<{
+    id: string
+    name: string
+    description: string
+    duration: string
+    price: number
+    image: string
+    highlights: string[]
+  }>
+  benefits: Array<{
+    id: string
+    title: string
+    description: string
+  }>
+  galleryImages: string[]
+}
+
+export interface ContactContent {
+  phone: string
+  email: string
+  address: {
+    street: string
+    city: string
+    region: string
+    country: string
+  }
+  whatsappNumber: string
+  location: {
+    latitude: number | null
+    longitude: number | null
+  }
+}
+
+export interface FooterContent {
+  companyDescription: string
+  socialLinks: Array<{
+    id: string
+    platform: string
+    url: string
+  }>
+}
+
+export interface ServicePageContent {
+  id: string
+  title: string
+  description: string
+  icon: string
+  route: string
+  heroImage: string
+  bannerTitle: string
+  bannerSubtitle: string
+  overview?: string
+  whyStudyOutsideThisCountry?: {
+    title: string
+    highlights?: string[]
+  }
+  benefits: string[]
+  requirements: string[]
+  countries: Array<{
+    name: string
+    description: string
+    image: string
+  }>
+  visaGuidance: string
+  successStories: Array<{
+    name: string
+    program: string
+    quote: string
+  }>
+  scholarships: Array<{
+    name: string
+    amount: string
+    description: string
+  }>
+}
+
+export interface SiteChromeContent {
+  contact: ContactContent
+  footer: FooterContent
+}
+
+export interface HomePageContent {
+  hero: HomeHeroContent
+  services: HomeServiceContent[]
+  featuredPackages: PackageCardContent[]
+  latestBlogPosts: BlogPostSummary[]
+}
+
+export interface PublicContentPayload {
+  home: {
+    hero: HomeHeroContent
+    services: Array<{
+      id: string
+      icon: string
+      title: string
+      description: string
+    }>
+    featuredPackages: PackageCardContent[]
+  }
+  blogPosts: BlogPostSummary[]
+  about: AboutContent
+  packages: PackageCardContent[]
+  travelTours: TravelToursContent
+  contact: ContactContent
+  footer: FooterContent
+  servicePages: ServicePageContent[]
+}
+
 const DEFAULT_PUBLIC_CONTENT_CACHE_SECONDS = 300
+const PUBLIC_CONTENT_TAG = 'public-content'
 
 const PUBLIC_CONTENT_CACHE_SECONDS = (() => {
   const parsed = Number.parseInt(process.env.PUBLIC_CONTENT_CACHE_REVALIDATE_SECONDS || '', 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_PUBLIC_CONTENT_CACHE_SECONDS
 })()
 
-async function buildPublicContentPayload() {
-  const results = await Promise.allSettled([
-    prisma.homePage.findUnique({
-      where: { id: 'home' },
-      include: {
-        heroImages: { orderBy: { order: 'asc' } },
-        heroStats: { orderBy: { order: 'asc' } },
-        services: { orderBy: { order: 'asc' } },
-        featuredPackages: {
-          orderBy: { order: 'asc' },
-          include: {
-            package: {
-              include: {
-                highlights: { orderBy: { order: 'asc' } },
-                images: { orderBy: { order: 'asc' } },
-              },
-            },
-          },
-        },
-      },
-    }),
-    prisma.aboutPage.findUnique({
-      where: { id: 'about' },
-      include: {
-        mission: { include: { points: { orderBy: { order: 'asc' } } } },
-        vision: { include: { points: { orderBy: { order: 'asc' } } } },
-        coreValues: { orderBy: { order: 'asc' } },
-        founder: true,
-        teamMembers: { orderBy: { order: 'asc' } },
-        successStories: { orderBy: { order: 'asc' } },
-      },
-    }),
-    prisma.package.findMany({
-      orderBy: { order: 'asc' },
-      include: {
-        highlights: { orderBy: { order: 'asc' } },
-        images: { orderBy: { order: 'asc' } },
-        included: { orderBy: { order: 'asc' } },
-        notIncluded: { orderBy: { order: 'asc' } },
-      },
-    }),
-    prisma.travelToursPage.findUnique({
-      where: { id: 'travel-tours' },
-      include: {
-        featuredPackages: {
-          orderBy: { order: 'asc' },
-          include: { highlights: { orderBy: { order: 'asc' } } },
-        },
-        benefits: { orderBy: { order: 'asc' } },
-        galleryImages: { orderBy: { order: 'asc' } },
-      },
-    }),
-    prisma.contactInfo.findUnique({ where: { id: 'contact' } }),
-    prisma.footerInfo.findUnique({
-      where: { id: 'footer' },
-      include: { socialLinks: { orderBy: { order: 'asc' } } },
-    }),
-    (prisma as any).blogPost
-      ? (prisma as any).blogPost.findMany({
-          where: { published: true },
-          orderBy: [{ publishedAt: 'desc' }, { order: 'asc' }],
-          take: 10,
-        })
-      : Promise.resolve([]),
-    prisma.servicePage.findMany({
-      include: {
-        whyStudySection: { include: { highlights: { orderBy: { order: 'asc' } } } },
-        benefits: { orderBy: { order: 'asc' } },
-        requirements: { orderBy: { order: 'asc' } },
-        countries: { orderBy: { order: 'asc' } },
-        successStories: { orderBy: { order: 'asc' } },
-        scholarships: { orderBy: { order: 'asc' } },
-      },
-    }),
-  ])
+const DEFAULT_CONTACT: ContactContent = {
+  phone: '',
+  email: '',
+  address: {
+    street: '',
+    city: '',
+    region: '',
+    country: '',
+  },
+  whatsappNumber: '',
+  location: {
+    latitude: null,
+    longitude: null,
+  },
+}
 
-  const homePage = results[0].status === 'fulfilled' ? results[0].value : null
-  const aboutPage = results[1].status === 'fulfilled' ? results[1].value : null
-  const packages = results[2].status === 'fulfilled' ? results[2].value : []
-  const travelToursPage = results[3].status === 'fulfilled' ? results[3].value : null
-  const contactInfo = results[4].status === 'fulfilled' ? results[4].value : null
-  const footerInfo = results[5].status === 'fulfilled' ? results[5].value : null
-  const blogPosts = results[6].status === 'fulfilled' ? results[6].value : []
-  const servicePages = results[7].status === 'fulfilled' ? results[7].value : []
+const DEFAULT_FOOTER: FooterContent = {
+  companyDescription: '',
+  socialLinks: [],
+}
 
-  results.forEach((result, index) => {
-    if (result.status === 'rejected') {
-      console.error(`Failed to fetch content at index ${index}:`, result.reason)
-    }
-  })
+const DEFAULT_HOME_CONTENT: HomePageContent = {
+  hero: {
+    title: '',
+    subtitle: '',
+    description: '',
+    cta1Text: '',
+    cta2Text: '',
+    stats: [],
+    images: [],
+  },
+  services: [],
+  featuredPackages: [],
+  latestBlogPosts: [],
+}
 
+const DEFAULT_ABOUT_CONTENT: AboutContent = {
+  heroTitle: '',
+  heroSubtitle: '',
+  heroImage: '',
+  mission: {
+    title: '',
+    description: '',
+    points: [],
+  },
+  vision: {
+    title: '',
+    description: '',
+    points: [],
+  },
+  coreValues: [],
+  founder: {
+    name: '',
+    title: '',
+    description: '',
+    image: '',
+    vision: '',
+    mission: '',
+    values: '',
+  },
+  team: [],
+  successStories: [],
+}
+
+const DEFAULT_TRAVEL_TOURS_CONTENT: TravelToursContent = {
+  hero: {
+    title: '',
+    description: '',
+    paragraph: '',
+    image: '',
+  },
+  featured: [],
+  benefits: [],
+  galleryImages: [],
+}
+
+function logPublicContentError(scope: string, error: unknown) {
+  console.error(`[public-content] Failed to load ${scope}:`, error)
+}
+
+function mapPackage(pkg: any): PackageCardContent {
   return {
-    home: {
-      hero: {
-        title: homePage?.heroTitle || '',
-        subtitle: homePage?.heroSubtitle || '',
-        description: homePage?.heroDescription || '',
-        cta1Text: homePage?.heroCta1Text || '',
-        cta2Text: homePage?.heroCta2Text || '',
-        images: homePage?.heroImages?.map((img) => img.url) || [],
-        stats:
-          homePage?.heroStats?.map((stat) => ({
-            value: stat.value,
-            label: stat.label,
-          })) || [],
-      },
-      services:
-        homePage?.services?.map((svc) => ({
-          id: svc.id,
-          icon: svc.icon,
-          title: svc.title,
-          description: svc.description,
-        })) || [],
-      featuredPackages:
-        (homePage?.featuredPackages ?? [])
-          .map((fp: any) => fp.package)
-          .filter(Boolean)
-          .map((pkg: any) => ({
-            id: pkg.id,
-            name: pkg.name,
-            description: pkg.description,
-            category: pkg.category,
-            duration: pkg.duration,
-            price: pkg.price,
-            highlights: pkg.highlights?.map((h: any) => h.text) || [],
-            images: pkg.images?.map((img: any) => img.url) || [],
-          })) || [],
-    },
-    about: {
-      heroTitle: aboutPage?.heroTitle || '',
-      heroSubtitle: aboutPage?.heroSubtitle || '',
-      heroImage: aboutPage?.heroImageUrl || '',
-      mission: {
-        title: aboutPage?.mission?.title || '',
-        description: aboutPage?.mission?.description || '',
-        points: aboutPage?.mission?.points?.map((p) => p.text) || [],
-      },
-      vision: {
-        title: aboutPage?.vision?.title || '',
-        description: aboutPage?.vision?.description || '',
-        points: aboutPage?.vision?.points?.map((p) => p.text) || [],
-      },
-      coreValues:
-        aboutPage?.coreValues?.map((cv) => ({
-          id: cv.id,
-          title: cv.title,
-          description: cv.description,
-        })) || [],
-      founder: {
-        name: aboutPage?.founder?.name || '',
-        title: aboutPage?.founder?.title || '',
-        description: aboutPage?.founder?.description || '',
-        image: aboutPage?.founder?.imageUrl || '',
-        vision: aboutPage?.founder?.vision || '',
-        mission: aboutPage?.founder?.mission || '',
-        values: aboutPage?.founder?.values || '',
-      },
-      team:
-        aboutPage?.teamMembers?.map((tm) => ({
-          id: tm.id,
-          name: tm.name,
-          role: tm.role,
-          image: tm.imageUrl,
-          description: tm.description,
-        })) || [],
-      successStories:
-        aboutPage?.successStories?.map((ss) => ({
-          id: ss.id,
-          name: ss.name,
-          program: ss.program,
-          quote: ss.quote,
-        })) || [],
-    },
-    packages: packages.map((pkg) => ({
-      id: pkg.id,
-      name: pkg.name,
-      description: pkg.description,
-      category: pkg.category,
-      duration: pkg.duration,
-      price: pkg.price,
-      highlights: pkg.highlights?.map((h) => h.text) || [],
-      itinerary: pkg.itinerary || '',
-      images: pkg.images?.map((img) => img.url) || [],
-      included: pkg.included?.map((item) => item.text) || [],
-      notIncluded: pkg.notIncluded?.map((item) => item.text) || [],
-    })),
-    travelTours: {
-      hero: {
-        title: travelToursPage?.heroTitle || '',
-        description: travelToursPage?.heroDescription || '',
-        paragraph: travelToursPage?.heroParagraph || '',
-        image: travelToursPage?.heroImageUrl || '',
-      },
-      featured:
-        travelToursPage?.featuredPackages?.map((fp) => ({
-          id: fp.id,
-          name: fp.name,
-          description: fp.description,
-          duration: fp.duration,
-          price: fp.price,
-          image: fp.imageUrl,
-          highlights: fp.highlights?.map((h) => h.text) || [],
-        })) || [],
-      benefits:
-        travelToursPage?.benefits?.map((benefit) => ({
-          id: benefit.id,
-          title: benefit.title,
-          description: benefit.description,
-        })) || [],
-      galleryImages: travelToursPage?.galleryImages?.map((img) => img.url) || [],
-    },
-    contact: {
-      phone: contactInfo?.phone || '',
-      email: contactInfo?.email || '',
-      address: {
-        street: contactInfo?.addressStreet || '',
-        city: contactInfo?.addressCity || '',
-        region: contactInfo?.addressRegion || '',
-        country: contactInfo?.addressCountry || '',
-      },
-      whatsappNumber: contactInfo?.whatsappNumber || '',
-      location: {
-        latitude: contactInfo?.mapLatitude ?? null,
-        longitude: contactInfo?.mapLongitude ?? null,
-      },
-    },
-    footer: {
-      companyDescription: footerInfo?.companyDescription || '',
-      socialLinks:
-        footerInfo?.socialLinks?.map((sl) => ({
-          id: sl.id,
-          platform: sl.platform,
-          url: sl.url,
-        })) || [],
-    },
-    blogPosts: blogPosts.map((bp: any) => ({
-      id: bp.id,
-      slug: bp.slug,
-      title: bp.title,
-      excerpt: bp.excerpt || '',
-      imageUrl: bp.imageUrl || null,
-      packageId: bp.packageId || null,
-      publishedAt: bp.publishedAt?.toISOString?.() || null,
-    })),
-    servicePages: servicePages.map((sp) => ({
-      id: sp.serviceId,
-      title: sp.title,
-      description: sp.description,
-      icon: sp.icon,
-      route: sp.route,
-      heroImage: sp.heroImageUrl,
-      bannerTitle: sp.bannerTitle,
-      bannerSubtitle: sp.bannerSubtitle,
-      overview: sp.overview || undefined,
-      whyStudyOutsideThisCountry: sp.whyStudySection
-        ? {
-            title: sp.whyStudySection.title,
-            highlights: sp.whyStudySection.highlights?.map((h) => h.text) || [],
-          }
-        : undefined,
-      benefits: sp.benefits?.map((benefit) => benefit.text) || [],
-      requirements: sp.requirements?.map((requirement) => requirement.text) || [],
-      countries:
-        sp.countries?.map((country) => ({
-          name: country.name,
-          description: country.description,
-          image: country.imageUrl,
-        })) || [],
-      visaGuidance: sp.visaGuidance || '',
-      successStories:
-        sp.successStories?.map((story) => ({
-          name: story.name,
-          program: story.program,
-          quote: story.quote,
-        })) || [],
-      scholarships:
-        sp.scholarships?.map((scholarship) => ({
-          name: scholarship.name,
-          amount: scholarship.amount,
-          description: scholarship.description,
-        })) || [],
-    })),
+    id: pkg.id,
+    name: pkg.name,
+    description: pkg.description,
+    category: pkg.category,
+    duration: pkg.duration,
+    price: pkg.price,
+    highlights: pkg.highlights?.map((item: any) => item.text) || [],
+    itinerary: pkg.itinerary || '',
+    images: pkg.images?.map((img: any) => img.url) || [],
+    included: pkg.included?.map((item: any) => item.text) || [],
+    notIncluded: pkg.notIncluded?.map((item: any) => item.text) || [],
   }
 }
 
-export const getPublicContent = unstable_cache(buildPublicContentPayload, ['public-content:v1'], {
-  revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
-  tags: ['public-content'],
-})
+function mapBlogPost(post: any): BlogPostSummary {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt || '',
+    imageUrl: post.imageUrl || null,
+    packageId: post.packageId || null,
+    publishedAt: post.publishedAt?.toISOString?.() || null,
+  }
+}
+
+function mapContact(contactInfo: any): ContactContent {
+  if (!contactInfo) return DEFAULT_CONTACT
+
+  return {
+    phone: contactInfo.phone || '',
+    email: contactInfo.email || '',
+    address: {
+      street: contactInfo.addressStreet || '',
+      city: contactInfo.addressCity || '',
+      region: contactInfo.addressRegion || '',
+      country: contactInfo.addressCountry || '',
+    },
+    whatsappNumber: contactInfo.whatsappNumber || '',
+    location: {
+      latitude: contactInfo.mapLatitude ?? null,
+      longitude: contactInfo.mapLongitude ?? null,
+    },
+  }
+}
+
+function mapFooter(footerInfo: any): FooterContent {
+  if (!footerInfo) return DEFAULT_FOOTER
+
+  return {
+    companyDescription: footerInfo.companyDescription || '',
+    socialLinks:
+      footerInfo.socialLinks?.map((link: any) => ({
+        id: link.id,
+        platform: link.platform,
+        url: link.url,
+      })) || [],
+  }
+}
+
+function mapAbout(aboutPage: any): AboutContent {
+  return {
+    heroTitle: aboutPage?.heroTitle || '',
+    heroSubtitle: aboutPage?.heroSubtitle || '',
+    heroImage: aboutPage?.heroImageUrl || '',
+    mission: {
+      title: aboutPage?.mission?.title || '',
+      description: aboutPage?.mission?.description || '',
+      points: aboutPage?.mission?.points?.map((item: any) => item.text) || [],
+    },
+    vision: {
+      title: aboutPage?.vision?.title || '',
+      description: aboutPage?.vision?.description || '',
+      points: aboutPage?.vision?.points?.map((item: any) => item.text) || [],
+    },
+    coreValues:
+      aboutPage?.coreValues?.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+      })) || [],
+    founder: {
+      name: aboutPage?.founder?.name || '',
+      title: aboutPage?.founder?.title || '',
+      description: aboutPage?.founder?.description || '',
+      image: aboutPage?.founder?.imageUrl || '',
+      vision: aboutPage?.founder?.vision || '',
+      mission: aboutPage?.founder?.mission || '',
+      values: aboutPage?.founder?.values || '',
+    },
+    team:
+      aboutPage?.teamMembers?.map((member: any) => ({
+        id: member.id,
+        name: member.name,
+        role: member.role,
+        image: member.imageUrl,
+        description: member.description,
+      })) || [],
+    successStories:
+      aboutPage?.successStories?.map((story: any) => ({
+        id: story.id,
+        name: story.name,
+        program: story.program,
+        quote: story.quote,
+      })) || [],
+  }
+}
+
+function mapServicePage(page: any): ServicePageContent {
+  return {
+    id: page?.serviceId || '',
+    title: page?.title || '',
+    description: page?.description || '',
+    icon: page?.icon || '',
+    route: page?.route || '',
+    heroImage: page?.heroImageUrl || '',
+    bannerTitle: page?.bannerTitle || '',
+    bannerSubtitle: page?.bannerSubtitle || '',
+    overview: page?.overview || undefined,
+    whyStudyOutsideThisCountry: page?.whyStudySection
+      ? {
+          title: page.whyStudySection.title,
+          highlights: page.whyStudySection.highlights?.map((item: any) => item.text) || [],
+        }
+      : undefined,
+    benefits: page?.benefits?.map((item: any) => item.text) || [],
+    requirements: page?.requirements?.map((item: any) => item.text) || [],
+    countries:
+      page?.countries?.map((country: any) => ({
+        name: country.name,
+        description: country.description,
+        image: country.imageUrl,
+      })) || [],
+    visaGuidance: page?.visaGuidance || '',
+    successStories:
+      page?.successStories?.map((story: any) => ({
+        name: story.name,
+        program: story.program,
+        quote: story.quote,
+      })) || [],
+    scholarships:
+      page?.scholarships?.map((scholarship: any) => ({
+        name: scholarship.name,
+        amount: scholarship.amount,
+        description: scholarship.description,
+      })) || [],
+  }
+}
+
+const TITLE_TO_ROUTE_MAP: Record<string, string> = {
+  'Study Abroad': '/study-abroad',
+  'Work Abroad': '/work-abroad',
+  'Travel & Tours': '/travel-tours',
+  'Travel Tours': '/travel-tours',
+  'Global Network': '/global-network',
+}
+
+function buildServiceHref(
+  service: { title?: string | null },
+  servicePages: Array<{ title: string; route: string; serviceId: string }>
+) {
+  const matchingPage = servicePages.find(
+    (page) =>
+      page.title?.toLowerCase() === service.title?.toLowerCase() ||
+      page.serviceId?.toLowerCase() === service.title?.toLowerCase().replace(/\s+/g, '-')
+  )
+
+  if (matchingPage?.route) return matchingPage.route
+  if (service.title && TITLE_TO_ROUTE_MAP[service.title]) return TITLE_TO_ROUTE_MAP[service.title]
+  if (!service.title) return '/'
+
+  return `/${service.title.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')}`
+}
+
+export const getSiteChromeContent = unstable_cache(
+  async (): Promise<SiteChromeContent> => {
+    try {
+      const [contactInfo, footerInfo] = await Promise.all([
+        prisma.contactInfo.findUnique({ where: { id: 'contact' } }),
+        prisma.footerInfo.findUnique({
+          where: { id: 'footer' },
+          include: {
+            socialLinks: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        }),
+      ])
+
+      return {
+        contact: mapContact(contactInfo),
+        footer: mapFooter(footerInfo),
+      }
+    } catch (error) {
+      logPublicContentError('site chrome', error)
+      return {
+        contact: DEFAULT_CONTACT,
+        footer: DEFAULT_FOOTER,
+      }
+    }
+  },
+  ['site-chrome'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getBlogPosts = unstable_cache(
+  async (): Promise<BlogPostSummary[]> => {
+    try {
+      if (!(prisma as any).blogPost) return []
+
+      const posts = await (prisma as any).blogPost.findMany({
+        where: { published: true },
+        orderBy: [{ publishedAt: 'desc' }, { order: 'asc' }],
+        take: 24,
+      })
+
+      return posts.map(mapBlogPost)
+    } catch (error) {
+      logPublicContentError('blog posts', error)
+      return []
+    }
+  },
+  ['blog-posts'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getHomePageContent = unstable_cache(
+  async (): Promise<HomePageContent> => {
+    try {
+      const [homePage, servicePages, blogPosts] = await Promise.all([
+        prisma.homePage.findUnique({
+          where: { id: 'home' },
+          include: {
+            heroImages: { orderBy: { order: 'asc' } },
+            heroStats: { orderBy: { order: 'asc' } },
+            services: { orderBy: { order: 'asc' } },
+            featuredPackages: {
+              orderBy: { order: 'asc' },
+              include: {
+                package: {
+                  include: {
+                    highlights: { orderBy: { order: 'asc' } },
+                    images: { orderBy: { order: 'asc' } },
+                    included: { orderBy: { order: 'asc' } },
+                    notIncluded: { orderBy: { order: 'asc' } },
+                  },
+                },
+              },
+            },
+          },
+        }),
+        prisma.servicePage.findMany({
+          select: {
+            serviceId: true,
+            title: true,
+            route: true,
+          },
+        }),
+        getBlogPosts(),
+      ])
+
+      return {
+        hero: {
+          title: homePage?.heroTitle || '',
+          subtitle: homePage?.heroSubtitle || '',
+          description: homePage?.heroDescription || '',
+          cta1Text: homePage?.heroCta1Text || '',
+          cta2Text: homePage?.heroCta2Text || '',
+          images: homePage?.heroImages?.map((img) => img.url) || [],
+          stats:
+            homePage?.heroStats?.map((stat) => ({
+              value: stat.value,
+              label: stat.label,
+            })) || [],
+        },
+        services:
+          homePage?.services?.map((service) => ({
+            id: service.id,
+            icon: service.icon,
+            title: service.title,
+            description: service.description,
+            href: buildServiceHref(service, servicePages),
+          })) || [],
+        featuredPackages:
+          (homePage?.featuredPackages ?? [])
+            .map((item: any) => item.package)
+            .filter(Boolean)
+            .map(mapPackage) || [],
+        latestBlogPosts: blogPosts.slice(0, 3),
+      }
+    } catch (error) {
+      logPublicContentError('home page', error)
+      return DEFAULT_HOME_CONTENT
+    }
+  },
+  ['home-page'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getPackagesPageContent = unstable_cache(
+  async (): Promise<PackageCardContent[]> => {
+    try {
+      const packages = await prisma.package.findMany({
+        orderBy: { order: 'asc' },
+        include: {
+          highlights: { orderBy: { order: 'asc' } },
+          images: { orderBy: { order: 'asc' } },
+          included: { orderBy: { order: 'asc' } },
+          notIncluded: { orderBy: { order: 'asc' } },
+        },
+      })
+
+      return packages.map(mapPackage)
+    } catch (error) {
+      logPublicContentError('packages page', error)
+      return []
+    }
+  },
+  ['packages-page'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getAboutPageContent = unstable_cache(
+  async (): Promise<AboutContent> => {
+    try {
+      const aboutPage = await prisma.aboutPage.findUnique({
+        where: { id: 'about' },
+        include: {
+          mission: { include: { points: { orderBy: { order: 'asc' } } } },
+          vision: { include: { points: { orderBy: { order: 'asc' } } } },
+          coreValues: { orderBy: { order: 'asc' } },
+          founder: true,
+          teamMembers: { orderBy: { order: 'asc' } },
+          successStories: { orderBy: { order: 'asc' } },
+        },
+      })
+
+      return mapAbout(aboutPage)
+    } catch (error) {
+      logPublicContentError('about page', error)
+      return DEFAULT_ABOUT_CONTENT
+    }
+  },
+  ['about-page'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getTravelToursPageContent = unstable_cache(
+  async (): Promise<TravelToursContent> => {
+    try {
+      const page = await prisma.travelToursPage.findUnique({
+        where: { id: 'travel-tours' },
+        include: {
+          featuredPackages: {
+            orderBy: { order: 'asc' },
+            include: { highlights: { orderBy: { order: 'asc' } } },
+          },
+          benefits: { orderBy: { order: 'asc' } },
+          galleryImages: { orderBy: { order: 'asc' } },
+        },
+      })
+
+      return {
+        hero: {
+          title: page?.heroTitle || '',
+          description: page?.heroDescription || '',
+          paragraph: page?.heroParagraph || '',
+          image: page?.heroImageUrl || '',
+        },
+        featured:
+          page?.featuredPackages?.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            duration: item.duration,
+            price: item.price,
+            image: item.imageUrl,
+            highlights: item.highlights?.map((highlight) => highlight.text) || [],
+          })) || [],
+        benefits:
+          page?.benefits?.map((benefit) => ({
+            id: benefit.id,
+            title: benefit.title,
+            description: benefit.description,
+          })) || [],
+        galleryImages: page?.galleryImages?.map((img) => img.url) || [],
+      }
+    } catch (error) {
+      logPublicContentError('travel tours page', error)
+      return DEFAULT_TRAVEL_TOURS_CONTENT
+    }
+  },
+  ['travel-tours-page'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getAllServicePages = unstable_cache(
+  async (): Promise<ServicePageContent[]> => {
+    try {
+      const servicePages = await prisma.servicePage.findMany({
+        include: {
+          whyStudySection: { include: { highlights: { orderBy: { order: 'asc' } } } },
+          benefits: { orderBy: { order: 'asc' } },
+          requirements: { orderBy: { order: 'asc' } },
+          countries: { orderBy: { order: 'asc' } },
+          successStories: { orderBy: { order: 'asc' } },
+          scholarships: { orderBy: { order: 'asc' } },
+        },
+      })
+
+      return servicePages.map(mapServicePage)
+    } catch (error) {
+      logPublicContentError('service pages', error)
+      return []
+    }
+  },
+  ['service-pages'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getServicePageByRoute = unstable_cache(
+  async (route: string): Promise<ServicePageContent | null> => {
+    try {
+      const normalizedRoute = route.startsWith('/') ? route : `/${route}`
+      const serviceId = normalizedRoute.slice(1)
+
+      const servicePage = await prisma.servicePage.findFirst({
+        where: {
+          OR: [{ route: normalizedRoute }, { serviceId }],
+        },
+        include: {
+          whyStudySection: { include: { highlights: { orderBy: { order: 'asc' } } } },
+          benefits: { orderBy: { order: 'asc' } },
+          requirements: { orderBy: { order: 'asc' } },
+          countries: { orderBy: { order: 'asc' } },
+          successStories: { orderBy: { order: 'asc' } },
+          scholarships: { orderBy: { order: 'asc' } },
+        },
+      })
+
+      return servicePage ? mapServicePage(servicePage) : null
+    } catch (error) {
+      logPublicContentError(`service page route ${route}`, error)
+      return null
+    }
+  },
+  ['service-page-by-route'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export async function getPublicContent(): Promise<PublicContentPayload> {
+  const [home, about, packages, travelTours, chrome, blogPosts, servicePages] = await Promise.all([
+    getHomePageContent(),
+    getAboutPageContent(),
+    getPackagesPageContent(),
+    getTravelToursPageContent(),
+    getSiteChromeContent(),
+    getBlogPosts(),
+    getAllServicePages(),
+  ])
+
+  return {
+    home: {
+      hero: home.hero,
+      services: home.services.map((service) => ({
+        id: service.id,
+        icon: service.icon,
+        title: service.title,
+        description: service.description,
+      })),
+      featuredPackages: home.featuredPackages,
+    },
+    blogPosts,
+    about,
+    packages,
+    travelTours,
+    contact: chrome.contact,
+    footer: chrome.footer,
+    servicePages,
+  }
+}

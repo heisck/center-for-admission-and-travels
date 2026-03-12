@@ -1,8 +1,5 @@
-'use client'
+import { buildWhatsAppUrl } from "@/lib/contact-utils"
 
-import { useState, useEffect, useCallback } from "react"
-
-/** WhatsApp logo SVG - official style */
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
@@ -11,41 +8,13 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
-export default function WhatsAppButton() {
-  const [number, setNumber] = useState("")
+interface WhatsAppButtonProps {
+  whatsappNumber?: string | null
+}
 
-  const fetchNumber = useCallback(async () => {
-    try {
-      const res = await fetch("/api/contact/whatsapp", { cache: "no-store" })
-      const data = await res.json()
-      if (data.success && data.whatsappNumber) {
-        setNumber(data.whatsappNumber)
-      }
-    } catch {
-      // Keep fallback on error
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchNumber()
-  }, [fetchNumber])
-
-  // Refetch when tab gains focus (admin may have updated in another tab)
-  useEffect(() => {
-    const onFocus = () => fetchNumber()
-    window.addEventListener("focus", onFocus)
-    return () => window.removeEventListener("focus", onFocus)
-  }, [fetchNumber])
-
-  // Refetch when admin saves contact
-  useEffect(() => {
-    const onContentUpdated = () => fetchNumber()
-    window.addEventListener("content-updated", onContentUpdated)
-    return () => window.removeEventListener("content-updated", onContentUpdated)
-  }, [fetchNumber])
-
-  const href = `https://wa.me/${number}`
-  if (!number) return null
+export default function WhatsAppButton({ whatsappNumber }: WhatsAppButtonProps) {
+  const href = buildWhatsAppUrl(whatsappNumber)
+  if (!href) return null
 
   return (
     <a
