@@ -849,10 +849,12 @@ export default function DomeGallery({
                       backfaceVisibility: 'hidden'
                     }}
                   >
-                    <img
+                  <img
                       src={it.src}
                       draggable={false}
                       alt={it.alt}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover pointer-events-none"
                       style={{
                         backfaceVisibility: 'hidden',

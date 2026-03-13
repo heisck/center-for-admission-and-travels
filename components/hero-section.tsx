@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState, useEffect } from 'react'
 
-import Masonry from './Masonry'
+import HeroMasonryPanel from '@/components/hero-masonry-panel'
 import './hero-section.css'
 import type { HomeHeroContent } from "@/lib/public-content"
 
@@ -83,21 +83,11 @@ export default function HeroSection({ hero }: HeroSectionProps) {
       <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-30"></div>
 
       <div className="md:hidden relative w-full" style={{ minHeight: '420px', zIndex: 10 }}>
-        <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 5 }}>
-          <div style={{ width: '100%', height: '100%' }}>
-            <Masonry
-              items={items}
-              ease="power3.out"
-              duration={0.6}
-              stagger={0.05}
-              animateFrom="bottom"
-              scaleOnHover={true}
-              hoverScale={0.95}
-              blurToFocus={true}
-              colorShiftOnHover={true}
-            />
+          <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 5 }}>
+            <div style={{ width: '100%', height: '100%' }}>
+              <HeroMasonryPanel items={items} />
+            </div>
           </div>
-        </div>
         <div className="hero-content-wrapper" style={{ zIndex: 20, position: 'relative', backgroundColor: masonryLoaded ? 'rgba(0, 0, 0, 0.25)' : 'transparent', paddingBottom: '24px', backdropFilter: masonryLoaded ? 'blur(4px)' : 'none', transition: 'all 0.5s ease-in' }}>
           <div className="px-4">
             <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4">
@@ -189,17 +179,7 @@ export default function HeroSection({ hero }: HeroSectionProps) {
 
           <div className="relative h-full">
             <div className="relative w-full h-96 rounded-2xl">
-              <Masonry
-                items={items}
-                ease="power3.out"
-                duration={0.6}
-                stagger={0.05}
-                animateFrom="bottom"
-                scaleOnHover={true}
-                hoverScale={0.95}
-                blurToFocus={true}
-                colorShiftOnHover={true}
-              />
+              <HeroMasonryPanel items={items} />
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { MapPin, Clock, DollarSign, CheckCircle, ChevronDown } from "lucide-react"
 
-import DomeGallery from "./DomeGallery"
+import TravelDomeGalleryPanel from "./travel-dome-gallery-panel"
 import { getSiteChromeContent, getTravelToursPageContent } from "@/lib/public-content"
 
 export const revalidate = 300
@@ -21,7 +21,7 @@ export default async function TravelTours() {
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
             <div className="relative h-80 rounded-2xl overflow-hidden">
               <div style={{ width: '100%', height: '100%' }}>
-                <DomeGallery images={travelTours.galleryImages.length > 0 ? travelTours.galleryImages.map((img) => ({ src: img, alt: '' })) : undefined} />
+                <TravelDomeGalleryPanel images={travelTours.galleryImages.length > 0 ? travelTours.galleryImages.map((img) => ({ src: img, alt: '' })) : []} />
               </div>
             </div>
 

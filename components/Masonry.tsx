@@ -1,7 +1,17 @@
 "use client"
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { gsap } from 'gsap';
+
+let gsapLoader: Promise<typeof import('gsap')> | null = null;
+
+async function loadGsap() {
+  if (!gsapLoader) {
+    gsapLoader = import('gsap');
+  }
+
+  const mod = await gsapLoader;
+  return mod.gsap;
+}
 
 const useMedia = (queries: string[], values: number[], defaultValue: number): number => {
   const get = () => {
@@ -15,7 +25,7 @@ const useMedia = (queries: string[], values: number[], defaultValue: number): nu
     const handler = () => setValue(get);
     queries.forEach(q => window.matchMedia(q).addEventListener('change', handler));
     return () => queries.forEach(q => window.matchMedia(q).removeEventListener('change', handler));
-  }, [queries]);
+  }, [defaultValue, queries, values]);
 
   return value;
 };
@@ -74,6 +84,7 @@ interface MasonryProps {
   hoverScale?: number;
   blurToFocus?: boolean;
   colorShiftOnHover?: boolean;
+  enableHoverEffects?: boolean;
 }
 
 const Masonry: React.FC<MasonryProps> = ({
@@ -85,7 +96,8 @@ const Masonry: React.FC<MasonryProps> = ({
   scaleOnHover = true,
   hoverScale = 0.95,
   blurToFocus = true,
-  colorShiftOnHover = false
+  colorShiftOnHover = false,
+  enableHoverEffects = true
 }) => {
   const columns = useMedia(
     ['(min-width:1500px)', '(min-width:1000px)', '(min-width:600px)', '(min-width:400px)'],
@@ -95,6 +107,10 @@ const Masonry: React.FC<MasonryProps> = ({
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
   const [imagesReady, setImagesReady] = useState(false);
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
 
   const getInitialPosition = (item: GridItem) => {
     const containerRect = containerRef.current?.getBoundingClientRect();
@@ -136,7 +152,21 @@ const Masonry: React.FC<MasonryProps> = ({
   };
 
   useEffect(() => {
-    preloadImages(items.map(i => i.img)).then(() => setImagesReady(true));
+    let active = true;
+    const readyTimer = window.setTimeout(() => {
+      if (active) setImagesReady(true);
+    }, 900);
+
+    preloadImages(items.map(i => i.img)).then(() => {
+      if (!active) return;
+      window.clearTimeout(readyTimer);
+      setImagesReady(true);
+    });
+
+    return () => {
+      active = false;
+      window.clearTimeout(readyTimer);
+    };
   }, [items]);
 
   const grid = useMemo<GridItem[]>(() => {
@@ -161,71 +191,90 @@ const Masonry: React.FC<MasonryProps> = ({
 
   useLayoutEffect(() => {
     if (!imagesReady) return;
+    let active = true;
 
-    grid.forEach((item, index) => {
-      const selector = `[data-key="${item.id}"]`;
-      const animProps = { x: item.x, y: item.y, width: item.w, height: item.h };
+    loadGsap().then((gsap) => {
+      if (!active) return;
 
-      if (!hasMounted.current) {
-        const start = getInitialPosition(item);
-        gsap.fromTo(
-          selector,
-          {
-            opacity: 0,
-            x: start.x,
-            y: start.y,
-            width: item.w,
-            height: item.h,
-            ...(blurToFocus && { filter: 'blur(10px)' })
-          },
-          {
-            opacity: 1,
+      grid.forEach((item, index) => {
+        const selector = `[data-key="${item.id}"]`;
+        const animProps = { x: item.x, y: item.y, width: item.w, height: item.h };
+
+        if (!hasMounted.current && !prefersReducedMotion) {
+          const start = getInitialPosition(item);
+          gsap.fromTo(
+            selector,
+            {
+              opacity: 0,
+              x: start.x,
+              y: start.y,
+              width: item.w,
+              height: item.h,
+              ...(blurToFocus && { filter: 'blur(10px)' })
+            },
+            {
+              opacity: 1,
+              ...animProps,
+              ...(blurToFocus && { filter: 'blur(0px)' }),
+              duration: 0.8,
+              ease: 'power3.out',
+              delay: index * stagger
+            }
+          );
+        } else {
+          gsap.to(selector, {
             ...animProps,
-            ...(blurToFocus && { filter: 'blur(0px)' }),
-            duration: 0.8,
-            ease: 'power3.out',
-            delay: index * stagger
-          }
-        );
-      } else {
-        gsap.to(selector, {
-          ...animProps,
-          duration,
-          ease,
-          overwrite: 'auto'
-        });
-      }
+            opacity: 1,
+            filter: 'blur(0px)',
+            duration: prefersReducedMotion ? 0 : duration,
+            ease,
+            overwrite: 'auto'
+          });
+        }
+      });
+
+      hasMounted.current = true;
     });
 
-    hasMounted.current = true;
-  }, [grid, imagesReady, stagger, animateFrom, blurToFocus, duration, ease]);
+    return () => {
+      active = false;
+    };
+  }, [grid, imagesReady, stagger, animateFrom, blurToFocus, duration, ease, prefersReducedMotion]);
 
   const handleMouseEnter = (id: string, element: HTMLElement) => {
-    if (scaleOnHover) {
-      gsap.to(`[data-key="${id}"]`, {
-        scale: hoverScale,
-        duration: 0.3,
-        ease: 'power2.out'
-      });
-    }
-    if (colorShiftOnHover) {
-      const overlay = element.querySelector('.color-overlay') as HTMLElement;
-      if (overlay) gsap.to(overlay, { opacity: 0.3, duration: 0.3 });
-    }
+    if (!enableHoverEffects || prefersReducedMotion) return;
+
+    loadGsap().then((gsap) => {
+      if (scaleOnHover) {
+        gsap.to(`[data-key="${id}"]`, {
+          scale: hoverScale,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+      if (colorShiftOnHover) {
+        const overlay = element.querySelector('.color-overlay') as HTMLElement;
+        if (overlay) gsap.to(overlay, { opacity: 0.3, duration: 0.3 });
+      }
+    });
   };
 
   const handleMouseLeave = (id: string, element: HTMLElement) => {
-    if (scaleOnHover) {
-      gsap.to(`[data-key="${id}"]`, {
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.out'
-      });
-    }
-    if (colorShiftOnHover) {
-      const overlay = element.querySelector('.color-overlay') as HTMLElement;
-      if (overlay) gsap.to(overlay, { opacity: 0, duration: 0.3 });
-    }
+    if (!enableHoverEffects || prefersReducedMotion) return;
+
+    loadGsap().then((gsap) => {
+      if (scaleOnHover) {
+        gsap.to(`[data-key="${id}"]`, {
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+      if (colorShiftOnHover) {
+        const overlay = element.querySelector('.color-overlay') as HTMLElement;
+        if (overlay) gsap.to(overlay, { opacity: 0, duration: 0.3 });
+      }
+    });
   };
 
   return (
