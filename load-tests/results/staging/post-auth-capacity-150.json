@@ -1,0 +1,144 @@
+{
+    "metrics": {
+        "http_req_duration": {
+            "p(95)": 19595.453700000002,
+            "avg": 6227.285691720935,
+            "min": 558.3885,
+            "med": 3865.8926,
+            "max": 20002.5705,
+            "p(90)": 15587.31064,
+            "thresholds": {
+                "p(95)<1200": true,
+                "p(99)<2500": true
+            }
+        },
+        "http_req_receiving": {
+            "min": 0,
+            "med": 1969.0854,
+            "max": 19334.2767,
+            "p(90)": 11181.24644,
+            "p(95)": 15411.385759999997,
+            "avg": 4021.3160240930224
+        },
+        "vus": {
+            "max": 150,
+            "value": 1,
+            "min": 1
+        },
+        "http_req_failed": {
+            "passes": 54,
+            "fails": 1021,
+            "thresholds": {
+                "rate<0.01": true
+            },
+            "value": 0.05023255813953489
+        },
+        "http_req_waiting": {
+            "avg": 2205.8187968372076,
+            "min": 176.2925,
+            "med": 1741.5038,
+            "max": 18434.042,
+            "p(90)": 3248.1640400000006,
+            "p(95)": 6057.82139
+        },
+        "http_reqs": {
+            "count": 1075,
+            "rate": 19.466748604958017
+        },
+        "iteration_duration": {
+            "avg": 6876.951921023255,
+            "min": 944.166,
+            "med": 4632.7037,
+            "max": 20966.7344,
+            "p(90)": 16483.4442,
+            "p(95)": 20261.2078
+        },
+        "http_req_sending": {
+            "avg": 0.1508707906976744,
+            "min": 0,
+            "med": 0,
+            "max": 2.2244,
+            "p(90)": 0.47498000000000007,
+            "p(95)": 0.5589399999999999
+        },
+        "checks": {
+            "passes": 1179,
+            "fails": 971,
+            "thresholds": {
+                "rate>0.99": true
+            },
+            "value": 0.5483720930232558
+        },
+        "http_req_connecting": {
+            "avg": 9.62812093023256,
+            "min": 0,
+            "med": 0,
+            "max": 72.574,
+            "p(90)": 68.025,
+            "p(95)": 69.8963
+        },
+        "http_req_tls_handshaking": {
+            "p(90)": 226.26016,
+            "p(95)": 330.04087999999996,
+            "avg": 45.42826009302326,
+            "min": 0,
+            "med": 0,
+            "max": 2377.2265
+        },
+        "data_received": {
+            "count": 107276117,
+            "rate": 1942620.6520512213
+        },
+        "http_req_blocked": {
+            "p(95)": 399.9087,
+            "avg": 55.086151813953485,
+            "min": 0,
+            "med": 0,
+            "max": 2443.2782,
+            "p(90)": 294.8029
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 5501.5001737512275,
+            "min": 558.3885,
+            "med": 3663.7707,
+            "max": 19809.3807,
+            "p(90)": 12184.689,
+            "p(95)": 16077.4256
+        },
+        "iterations": {
+            "rate": 19.466748604958017,
+            "count": 1075
+        },
+        "vus_max": {
+            "value": 150,
+            "min": 150,
+            "max": 150
+        },
+        "data_sent": {
+            "rate": 11912.925802100168,
+            "count": 657860
+        }
+    },
+    "root_group": {
+        "checks": {
+            "status is 200": {
+                "fails": 54,
+                "name": "status is 200",
+                "path": "::status is 200",
+                "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                "passes": 1021
+            },
+            "response under 2s": {
+                "name": "response under 2s",
+                "path": "::response under 2s",
+                "id": "92276059fa2a8367ab15a651b37ec32d",
+                "passes": 158,
+                "fails": 917
+            }
+        },
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {}
+    }
+}
