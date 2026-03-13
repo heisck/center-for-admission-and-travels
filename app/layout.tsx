@@ -5,7 +5,6 @@ import { GeistMono } from "geist/font/mono"
 
 import CookieConsent from "@/components/cookie-consent"
 import SiteWhatsAppButton from "@/components/site-whatsapp-button"
-import { UserAuthProviderWrapper } from "@/components/user-auth-provider-wrapper"
 import { Toaster } from "@/components/ui/sonner"
 import { OrganizationStructuredData, WebSiteStructuredData } from "@/components/structured-data"
 import { GoogleAnalytics } from "@/components/google-analytics"
@@ -56,13 +55,11 @@ export default function RootLayout({
         <OrganizationStructuredData />
         <WebSiteStructuredData />
         <GoogleAnalytics />
-        <UserAuthProviderWrapper>
-          {children}
-          <SiteWhatsAppButton />
-          <Toaster />
-          <CookieConsent />
-          {AnalyticsComponent ? <AnalyticsComponent /> : null}
-        </UserAuthProviderWrapper>
+        {children}
+        <SiteWhatsAppButton />
+        <Toaster />
+        <CookieConsent />
+        {AnalyticsComponent ? <AnalyticsComponent /> : null}
       </body>
     </html>
   )

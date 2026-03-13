@@ -1,0 +1,144 @@
+{
+    "metrics": {
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 3798,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "http_reqs": {
+            "count": 3798,
+            "rate": 81.57309964022032
+        },
+        "vus_max": {
+            "max": 100,
+            "value": 100,
+            "min": 100
+        },
+        "http_req_blocked": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 6.947570115850448,
+            "min": 0,
+            "med": 0,
+            "max": 290.2941
+        },
+        "http_req_waiting": {
+            "avg": 258.02223112164324,
+            "min": 88.1516,
+            "med": 153.31740000000002,
+            "max": 1548.2202,
+            "p(90)": 568.5934400000001,
+            "p(95)": 608.309995
+        },
+        "vus": {
+            "value": 25,
+            "min": 25,
+            "max": 100
+        },
+        "http_req_sending": {
+            "p(95)": 0.82633,
+            "avg": 0.34671740389678757,
+            "min": 0,
+            "med": 0.40105,
+            "max": 4.7722,
+            "p(90)": 0.7316400000000002
+        },
+        "data_sent": {
+            "count": 1143047,
+            "rate": 24550.25982739729
+        },
+        "iteration_duration": {
+            "min": 350.0389,
+            "med": 1104.8832499999999,
+            "max": 7115.5658,
+            "p(90)": 1728.4898300000002,
+            "p(95)": 2164.336364999996,
+            "avg": 1201.3232947340684
+        },
+        "http_req_receiving": {
+            "min": 0,
+            "med": 154.79590000000002,
+            "max": 6530.3057,
+            "p(90)": 839.0890800000003,
+            "p(95)": 1305.9041299999997,
+            "avg": 332.0153503686154
+        },
+        "data_received": {
+            "count": 268409564,
+            "rate": 5764876.27924173
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 499.45325,
+            "max": 6633.686,
+            "p(90)": 1012.7150400000003,
+            "p(95)": 1442.2543499999988,
+            "avg": 590.3842988941548,
+            "min": 120.7836
+        },
+        "iterations": {
+            "count": 3798,
+            "rate": 81.57309964022032
+        },
+        "checks": {
+            "passes": 7495,
+            "fails": 101,
+            "thresholds": {
+                "rate>0.99": true
+            },
+            "value": 0.9867035281727224
+        },
+        "http_req_tls_handshaking": {
+            "min": 0,
+            "med": 0,
+            "max": 231.9197,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 5.419057872564504
+        },
+        "http_req_duration": {
+            "max": 6633.686,
+            "p(90)": 1012.7150400000003,
+            "p(95)": 1442.2543499999988,
+            "avg": 590.3842988941548,
+            "min": 120.7836,
+            "med": 499.45325,
+            "thresholds": {
+                "p(95)<1200": true,
+                "p(99)<2500": true
+            }
+        },
+        "http_req_connecting": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 1.521022037914692,
+            "min": 0,
+            "med": 0,
+            "max": 61.4228
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "status is 200": {
+                    "name": "status is 200",
+                    "path": "::status is 200",
+                    "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                    "passes": 3798,
+                    "fails": 0
+                },
+                "response under 2s": {
+                    "id": "92276059fa2a8367ab15a651b37ec32d",
+                    "passes": 3697,
+                    "fails": 101,
+                    "name": "response under 2s",
+                    "path": "::response under 2s"
+                }
+            }
+    }
+}

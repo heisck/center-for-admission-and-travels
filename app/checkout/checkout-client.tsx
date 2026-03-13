@@ -7,7 +7,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { CreditCard, Smartphone, MessageCircle, Loader2, AlertCircle, Shield, Clock, MapPin, LogIn } from "lucide-react"
 
-import { useUserAuth } from "@/context/user-auth-context"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import { buildWhatsAppUrl } from "@/lib/contact-utils"
 
 interface PackageData {
@@ -36,7 +36,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
   const router = useRouter()
   const searchParams = useSearchParams()
   const packageId = searchParams.get("id")
-  const { user, isLoading: authLoading } = useUserAuth()
+  const { user, isLoading: authLoading } = useCurrentUser()
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)

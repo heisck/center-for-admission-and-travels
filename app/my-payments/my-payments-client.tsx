@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import { buildWhatsAppUrl } from '@/lib/contact-utils'
-import { useUserAuth } from '@/context/user-auth-context'
+import { useCurrentUser } from '@/hooks/use-current-user'
 import {
   Loader2,
   CreditCard,
@@ -50,7 +50,7 @@ interface MyPaymentsClientProps {
 }
 
 export default function MyPaymentsClient({ supportWhatsAppNumber }: MyPaymentsClientProps) {
-  const { user, isLoading: authLoading } = useUserAuth()
+  const { user, isLoading: authLoading } = useCurrentUser()
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -6,7 +6,6 @@ import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { useUserAuth } from "@/context/user-auth-context"
 
 export default function SignIn() {
   return (
@@ -24,7 +23,6 @@ function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") || "/"
-  const { refreshUser } = useUserAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [formData, setFormData] = useState({
@@ -78,7 +76,6 @@ function SignInContent() {
         toast.success("Welcome back!", {
           description: `Signed in as ${data.user?.displayName || data.user?.username || data.user?.email}`,
         })
-        await refreshUser()
         router.push(redirectTo)
         router.refresh()
       } catch {

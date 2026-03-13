@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { User, Mail, Phone, Lock, Save, Loader2, Send } from "lucide-react"
 import { toast } from "sonner"
-import { useUserAuth } from "@/context/user-auth-context"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 
@@ -20,7 +20,7 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, isLoading: authLoading, refreshUser } = useUserAuth()
+  const { user, isLoading: authLoading, refreshUser } = useCurrentUser()
 
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)

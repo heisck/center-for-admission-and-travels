@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, createSessionToken, getUserSessionCookieName, pruneUserSessions } from '@/lib/user-auth'
+import { getUserSessionHintCookieName } from '@/lib/user-session-cookies'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { hashResetToken } from '@/lib/reset-token'
 import { getClientIp } from '@/lib/security'
@@ -69,6 +70,13 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(getUserSessionCookieName(), sessionToken, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      expires: expiresAt,
+    })
+    response.cookies.set(getUserSessionHintCookieName(), '1', {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',

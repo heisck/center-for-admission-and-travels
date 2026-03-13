@@ -1,11 +1,15 @@
 "use client"
 
 import Link from "next/link"
-import { useUserAuth } from "@/context/user-auth-context"
+import { useEffect, useState } from "react"
+import { hasUserSessionHint } from "@/hooks/use-current-user"
 
 export default function CTASection() {
-  const { user, isLoading } = useUserAuth()
-  const isLoggedIn = !!user
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    setIsLoggedIn(hasUserSessionHint())
+  }, [])
 
   return (
     <section className="py-20 bg-white">
@@ -21,18 +25,12 @@ export default function CTASection() {
           consultation.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
-          {isLoading ? (
-            <div className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold opacity-60">
-              Loading...
-            </div>
-          ) : (
-            <Link
-              href={isLoggedIn ? "/contact" : "/signin"}
-              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
-            >
-              {isLoggedIn ? "Contact Us Today" : "Get Started Today"}
-            </Link>
-          )}
+          <Link
+            href={isLoggedIn ? "/contact" : "/signin"}
+            className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+          >
+            {isLoggedIn ? "Contact Us Today" : "Get Started Today"}
+          </Link>
           <a
             href="#services"
             className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"

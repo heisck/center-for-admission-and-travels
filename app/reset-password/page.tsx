@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Lock, Loader2, CheckCircle2, Eye, EyeOff, XCircle } from 'lucide-react'
-import { useUserAuth } from '@/context/user-auth-context'
 
 export default function ResetPasswordPage() {
   return (
@@ -22,7 +21,6 @@ export default function ResetPasswordPage() {
 function ResetPasswordContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { refreshUser } = useUserAuth()
   const rawToken = searchParams.get('token')
   const token = rawToken ? rawToken.trim() : null
   const [password, setPassword] = useState('')
@@ -74,7 +72,6 @@ function ResetPasswordContent() {
       const data = await res.json()
       if (data.success) {
         setSuccess(true)
-        await refreshUser()
         setTimeout(() => router.push('/'), 1500)
       } else {
         setError(data.error || 'Failed to reset password')

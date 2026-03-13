@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { Menu, X, User as UserIcon, LogOut, CreditCard } from "lucide-react"
-import { useUserAuth } from "@/context/user-auth-context"
+import { useCurrentUser } from "@/hooks/use-current-user"
 import './navbar.css'
 
 const NAV_LINKS = [
@@ -24,7 +24,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const { user, isLoading, logout } = useUserAuth()
+  const { user, isLoading, logout } = useCurrentUser()
   const userMenuRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
 
@@ -118,6 +118,7 @@ export default function Navbar() {
                       onClick={async () => {
                         await logout()
                         setShowUserMenu(false)
+                        window.location.href = "/"
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
                     >
@@ -191,7 +192,11 @@ export default function Navbar() {
                   My Payments
                 </Link>
                 <button
-                  onClick={() => { setIsOpen(false); logout() }}
+                  onClick={async () => {
+                    setIsOpen(false)
+                    await logout()
+                    window.location.href = "/"
+                  }}
                   className="block w-full px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
                 >
                   Sign Out
