@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSessionToken, getUserSessionCookieName, hashPassword, pruneUserSessions } from '@/lib/user-auth'
+import { createSessionToken, hashPassword, pruneUserSessions } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/email'
 import { welcomeEmail } from '@/lib/email-templates'
 import { getSupportContact } from '@/lib/support-contact'
 import { getClientIp } from '@/lib/security'
+import { getUserSessionCookieName, getUserSessionHintCookieName } from '@/lib/user-session-cookies'
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
@@ -78,6 +79,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, user })
     response.cookies.set(getUserSessionCookieName(), token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      expires: expiresAt,
+    })
+    response.cookies.set(getUserSessionHintCookieName(), '1', {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',

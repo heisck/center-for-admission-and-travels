@@ -1,11 +1,7 @@
 import { hash, compare } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
-const USER_SESSION_COOKIE = 'user_session'
-
-export function getUserSessionCookieName() {
-  return USER_SESSION_COOKIE
-}
+export { getUserSessionCookieName } from '@/lib/user-session-cookies'
 
 export function createSessionToken(): string {
   const buf = crypto.getRandomValues(new Uint8Array(32))

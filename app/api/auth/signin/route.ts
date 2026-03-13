@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSessionToken, getUserSessionCookieName, pruneUserSessions, verifyPassword } from '@/lib/user-auth'
+import { createSessionToken, pruneUserSessions, verifyPassword } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
+import { getUserSessionCookieName, getUserSessionHintCookieName } from '@/lib/user-session-cookies'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,6 +64,12 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(getUserSessionCookieName(), token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      expires: expiresAt,
+    })
+    response.cookies.set(getUserSessionHintCookieName(), '1', {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',

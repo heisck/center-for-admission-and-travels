@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserSessionCookieName } from '@/lib/user-auth'
+import { getUserSessionCookieName, getUserSessionHintCookieName } from '@/lib/user-session-cookies'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +13,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true })
     response.cookies.set(getUserSessionCookieName(), '', {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 0,
+    })
+    response.cookies.set(getUserSessionHintCookieName(), '', {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
