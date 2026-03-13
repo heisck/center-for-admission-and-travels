@@ -12,6 +12,47 @@ export interface CurrentUser {
 
 const USER_SESSION_HINT_COOKIE = "user_session_hint"
 
+type CurrentUserStore = {
+  user: CurrentUser | null
+  resolved: boolean
+  promise: Promise<CurrentUser | null> | null
+  listeners: Set<() => void>
+}
+
+const currentUserStore: CurrentUserStore = {
+  user: null,
+  resolved: false,
+  promise: null,
+  listeners: new Set(),
+}
+
+function notifyCurrentUserListeners() {
+  currentUserStore.listeners.forEach((listener) => listener())
+}
+
+function updateCurrentUserStore(user: CurrentUser | null, resolved: boolean) {
+  currentUserStore.user = user
+  currentUserStore.resolved = resolved
+  notifyCurrentUserListeners()
+}
+
+function subscribeToCurrentUser(listener: () => void) {
+  currentUserStore.listeners.add(listener)
+
+  return () => {
+    currentUserStore.listeners.delete(listener)
+  }
+}
+
+function readCurrentUserSnapshot() {
+  const hasHint = hasUserSessionHint()
+
+  return {
+    user: hasHint ? currentUserStore.user : null,
+    isLoading: hasHint ? !currentUserStore.resolved : false,
+  }
+}
+
 export function hasUserSessionHint() {
   if (typeof document === "undefined") return false
 
@@ -28,21 +69,27 @@ export function clearUserSessionHint() {
   document.cookie = `${USER_SESSION_HINT_COOKIE}=; Max-Age=0; Path=/; SameSite=Strict${secureSuffix}`
 }
 
+export function primeCurrentUserCache(user: CurrentUser | null) {
+  updateCurrentUserStore(user, true)
+}
+
 export function useCurrentUser() {
-  const [user, setUser] = useState<CurrentUser | null>(null)
-  const [isLoading, setIsLoading] = useState(() => hasUserSessionHint())
+  const [snapshot, setSnapshot] = useState(() => readCurrentUserSnapshot())
 
   const refreshUser = useCallback(async () => {
     if (!hasUserSessionHint()) {
       clearUserSessionHint()
-      setUser(null)
-      setIsLoading(false)
+      updateCurrentUserStore(null, true)
       return null
     }
 
-    setIsLoading(true)
+    if (currentUserStore.promise) {
+      return currentUserStore.promise
+    }
 
-    try {
+    updateCurrentUserStore(currentUserStore.user, false)
+
+    currentUserStore.promise = (async () => {
       const res = await fetch("/api/auth/me", { cache: "no-store" })
       const data = await res.json()
       const nextUser = data.user || null
@@ -51,14 +98,22 @@ export function useCurrentUser() {
         clearUserSessionHint()
       }
 
-      setUser(nextUser)
+      updateCurrentUserStore(nextUser, true)
       return nextUser
-    } catch (error) {
-      console.error("Failed to fetch user:", error)
-      setUser(null)
+    })()
+      .catch((error) => {
+        console.error("Failed to fetch user:", error)
+        updateCurrentUserStore(null, true)
+        return null
+      })
+      .finally(() => {
+        currentUserStore.promise = null
+      })
+
+    try {
+      return await currentUserStore.promise
+    } catch {
       return null
-    } finally {
-      setIsLoading(false)
     }
   }, [])
 
@@ -69,24 +124,28 @@ export function useCurrentUser() {
       console.error("Logout failed:", error)
     } finally {
       clearUserSessionHint()
-      setUser(null)
-      setIsLoading(false)
+      updateCurrentUserStore(null, true)
     }
   }, [])
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      setIsLoading(false)
-      return
+    const unsubscribe = subscribeToCurrentUser(() => {
+      setSnapshot(readCurrentUserSnapshot())
+    })
+
+    if (!hasUserSessionHint()) {
+      updateCurrentUserStore(null, true)
+      return unsubscribe
     }
 
-    if (hasUserSessionHint()) {
-      refreshUser()
-      return
+    if (!currentUserStore.resolved || currentUserStore.user === null) {
+      void refreshUser()
+    } else {
+      setSnapshot(readCurrentUserSnapshot())
     }
 
-    setIsLoading(false)
+    return unsubscribe
   }, [refreshUser])
 
-  return { user, isLoading, refreshUser, logout }
+  return { user: snapshot.user, isLoading: snapshot.isLoading, refreshUser, logout }
 }

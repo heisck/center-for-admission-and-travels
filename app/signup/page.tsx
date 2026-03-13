@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { primeCurrentUserCache } from "@/hooks/use-current-user"
 
 export default function SignUp() {
   return (
@@ -95,6 +96,7 @@ function SignUpContent() {
         toast.success("Account created successfully!", {
           description: `Welcome, ${data.user?.displayName || data.user?.username}!`,
         })
+        primeCurrentUserCache(data.user || null)
         if (formData.subscribeNewsletter) {
           try {
             await fetch("/api/newsletter", {

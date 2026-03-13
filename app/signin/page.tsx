@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { primeCurrentUserCache } from "@/hooks/use-current-user"
 
 export default function SignIn() {
   return (
@@ -76,6 +77,7 @@ function SignInContent() {
         toast.success("Welcome back!", {
           description: `Signed in as ${data.user?.displayName || data.user?.username || data.user?.email}`,
         })
+        primeCurrentUserCache(data.user || null)
         router.push(redirectTo)
         router.refresh()
       } catch {

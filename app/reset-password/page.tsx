@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Lock, Loader2, CheckCircle2, Eye, EyeOff, XCircle } from 'lucide-react'
+import { primeCurrentUserCache } from '@/hooks/use-current-user'
 
 export default function ResetPasswordPage() {
   return (
@@ -71,6 +72,7 @@ function ResetPasswordContent() {
       })
       const data = await res.json()
       if (data.success) {
+        primeCurrentUserCache(data.user || null)
         setSuccess(true)
         setTimeout(() => router.push('/'), 1500)
       } else {

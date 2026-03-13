@@ -80,11 +80,9 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="hidden md:flex gap-3 md:gap-2 items-center">
-            {isLoading ? (
-              <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-            ) : user ? (
-              <div className="relative">
+          <div className="hidden md:flex min-w-[240px] justify-end gap-3 md:gap-2 items-center">
+            {user ? (
+              <div className="relative flex justify-end">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold whitespace-nowrap"
@@ -128,6 +126,8 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
+            ) : isLoading ? (
+              <div className="h-10 w-[220px] rounded-lg border border-border bg-slate-100 animate-pulse" />
             ) : (
               <>
                 <Link
