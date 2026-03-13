@@ -509,6 +509,18 @@ export const getSiteChromeContent = unstable_cache(
   }
 )
 
+const getSiteChromeEnvelopeJson = unstable_cache(
+  async (): Promise<string> => {
+    const chrome = await getSiteChromeContent()
+    return JSON.stringify({ success: true, data: chrome })
+  },
+  ['site-chrome-envelope-json'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
 export const getBlogPosts = unstable_cache(
   async (): Promise<BlogPostSummary[]> => {
     try {
@@ -816,4 +828,24 @@ const getCachedPublicContentPayload = unstable_cache(
 
 export async function getPublicContent(): Promise<PublicContentPayload> {
   return getCachedPublicContentPayload()
+}
+
+const getPublicContentEnvelopeJson = unstable_cache(
+  async (): Promise<string> => {
+    const content = await getCachedPublicContentPayload()
+    return JSON.stringify({ success: true, data: content })
+  },
+  ['public-content-envelope-json'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export async function getCachedSiteChromeEnvelopeJson(): Promise<string> {
+  return getSiteChromeEnvelopeJson()
+}
+
+export async function getCachedPublicContentEnvelopeJson(): Promise<string> {
+  return getPublicContentEnvelopeJson()
 }

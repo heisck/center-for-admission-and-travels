@@ -5,23 +5,20 @@
  */
 
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { getSiteChromeContent } from '@/lib/public-content'
 
 export const revalidate = 60
-export const dynamic = 'force-dynamic'
+const BROWSER_CACHE_SECONDS = 15
 
 export async function GET() {
   try {
-    const contact = await prisma.contactInfo.findUnique({
-      where: { id: 'contact' },
-      select: { whatsappNumber: true },
-    })
-    const number = contact?.whatsappNumber?.replace(/\D/g, '') || ''
+    const chrome = await getSiteChromeContent()
+    const number = chrome.contact.whatsappNumber?.replace(/\D/g, '') || ''
     return NextResponse.json(
       { success: true, whatsappNumber: number },
       {
         headers: {
-          'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+          'Cache-Control': `public, max-age=${BROWSER_CACHE_SECONDS}, s-maxage=60, stale-while-revalidate=60`,
         },
       }
     )

@@ -751,7 +751,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     
     const loadContentFromAPI = async () => {
       try {
-        const response = await fetch('/api/content')
+        const response = await fetch('/api/content', { cache: 'no-store' })
         if (!response.ok) {
           throw new Error(`API returned ${response.status}`)
         }

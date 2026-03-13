@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { getClientWhatsAppNumber } from "@/lib/client-site-chrome"
 import WhatsAppButton from "@/components/whatsapp-button"
 
 const FALLBACK_WHATSAPP_NUMBER = "+233248422663"
@@ -13,16 +14,9 @@ export default function SiteWhatsAppButton() {
     let active = true
 
     const fetchChrome = async () => {
-      try {
-        const response = await fetch("/api/site-chrome", { cache: "force-cache" })
-        const result = await response.json()
-        const nextWhatsappNumber = result?.success ? result.data?.contact?.whatsappNumber?.trim() : ""
-
-        if (!active || !nextWhatsappNumber) return
-        setWhatsappNumber(nextWhatsappNumber)
-      } catch {
-        // Keep the last known number if shared chrome cannot be fetched.
-      }
+      const nextWhatsappNumber = await getClientWhatsAppNumber()
+      if (!active || !nextWhatsappNumber) return
+      setWhatsappNumber(nextWhatsappNumber)
     }
 
     fetchChrome()

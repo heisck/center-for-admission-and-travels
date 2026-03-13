@@ -11,26 +11,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAudit } from '@/lib/admin-audit'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { verifyAdminSession } from '@/lib/auth-helpers'
-import { getPublicContent } from '@/lib/public-content'
+import { getCachedPublicContentEnvelopeJson } from '@/lib/public-content'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 
 const PUBLIC_CONTENT_EDGE_CACHE_SECONDS = 30
 const PUBLIC_CONTENT_EDGE_STALE_SECONDS = 60
+const PUBLIC_CONTENT_BROWSER_CACHE_SECONDS = 10
 
 // GET /api/content - Fetch all content for frontend
 export async function GET() {
   try {
-    const content = await getPublicContent()
+    const body = await getCachedPublicContentEnvelopeJson()
 
-    return NextResponse.json(
-      { success: true, data: content },
-      {
-        headers: {
-          'Cache-Control': `public, max-age=0, s-maxage=${PUBLIC_CONTENT_EDGE_CACHE_SECONDS}, stale-while-revalidate=${PUBLIC_CONTENT_EDGE_STALE_SECONDS}`,
-        },
-      }
-    )
+    return new NextResponse(body, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': `public, max-age=${PUBLIC_CONTENT_BROWSER_CACHE_SECONDS}, s-maxage=${PUBLIC_CONTENT_EDGE_CACHE_SECONDS}, stale-while-revalidate=${PUBLIC_CONTENT_EDGE_STALE_SECONDS}`,
+      },
+    })
   } catch (error) {
     console.error('Error fetching content:', error)
     return NextResponse.json({ success: false, error: 'Failed to fetch content' }, { status: 500 })
