@@ -3,14 +3,12 @@ import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 
-import WhatsAppButton from "@/components/whatsapp-button"
-import { AdminProvider } from "@/context/admin-context"
+import CookieConsent from "@/components/cookie-consent"
+import SiteWhatsAppButton from "@/components/site-whatsapp-button"
 import { UserAuthProviderWrapper } from "@/components/user-auth-provider-wrapper"
 import { Toaster } from "@/components/ui/sonner"
-import CookieConsent from "@/components/cookie-consent"
 import { OrganizationStructuredData, WebSiteStructuredData } from "@/components/structured-data"
 import { GoogleAnalytics } from "@/components/google-analytics"
-import { getSupportContact } from "@/lib/support-contact"
 import "./globals.css"
 
 let AnalyticsComponent: React.ComponentType | null = null
@@ -47,28 +45,24 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const supportContact = await getSupportContact()
-
   return (
     <html lang="en">
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased overflow-x-hidden`}>
         <OrganizationStructuredData />
         <WebSiteStructuredData />
         <GoogleAnalytics />
-        <AdminProvider>
-          <UserAuthProviderWrapper>
-            {children}
-            <WhatsAppButton whatsappNumber={supportContact.whatsappNumber} />
-            <Toaster />
-            <CookieConsent />
-            {AnalyticsComponent ? <AnalyticsComponent /> : null}
-          </UserAuthProviderWrapper>
-        </AdminProvider>
+        <UserAuthProviderWrapper>
+          {children}
+          <SiteWhatsAppButton />
+          <Toaster />
+          <CookieConsent />
+          {AnalyticsComponent ? <AnalyticsComponent /> : null}
+        </UserAuthProviderWrapper>
       </body>
     </html>
   )
