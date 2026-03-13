@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
 
 import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
+import Footer from "@/components/footer-server"
 import CheckoutClient from "@/app/checkout/checkout-client"
 import { getSiteChromeContent } from "@/lib/public-content"
 

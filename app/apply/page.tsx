@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 
 import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
+import Footer from "@/components/footer-server"
 import ApplyFormContent from "./apply-form-content"
 import { getSiteChromeContent } from "@/lib/public-content"
 

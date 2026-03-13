@@ -1,6 +1,6 @@
 import './page.css'
 import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
+import Footer from "@/components/footer-server"
 import Image from "next/image"
 import { CheckCircle } from "lucide-react"
 import FounderSection from "@/components/founder-section"

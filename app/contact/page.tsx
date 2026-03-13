@@ -1,5 +1,5 @@
 import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
+import Footer from "@/components/footer-server"
 
 import ContactPageClient from "@/app/contact/contact-page-client"
 import { getSiteChromeContent } from "@/lib/public-content"
