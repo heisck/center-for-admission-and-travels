@@ -4,89 +4,13 @@ import Link from "next/link"
 import Image from "next/image"
 import { MapPin, Clock, DollarSign, CheckCircle, ChevronDown } from "lucide-react"
 
+import DomeGallery from "./DomeGallery"
 import { getSiteChromeContent, getTravelToursPageContent } from "@/lib/public-content"
 
 export const revalidate = 300
 
-function buildHeroImages(heroImage: string, galleryImages: string[]) {
-  return Array.from(new Set([heroImage, ...galleryImages].filter(Boolean))).slice(0, 4)
-}
-
-function TravelHeroShowcase({ images, title }: { images: string[]; title: string }) {
-  if (images.length === 0) {
-    return (
-      <div className="relative h-80 rounded-[2rem] overflow-hidden border border-orange-100 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.26),_transparent_45%),linear-gradient(135deg,_#fff7ed_0%,_#ffffff_55%,_#ffe4d6_100%)] p-8 flex flex-col justify-between shadow-[0_20px_50px_rgba(234,88,12,0.12)]">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.35em] uppercase text-orange-600/80">Travel Desk</p>
-          <h2 className="mt-3 text-3xl font-bold text-slate-900">Designed for seamless departures</h2>
-        </div>
-        <div className="grid grid-cols-3 gap-3 text-sm text-slate-600">
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-            <p className="text-2xl font-bold text-orange-600">Visa</p>
-            <p>Guidance with clear documentation support.</p>
-          </div>
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-            <p className="text-2xl font-bold text-orange-600">Tours</p>
-            <p>Curated routes for families, teams, and solo travelers.</p>
-          </div>
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-            <p className="text-2xl font-bold text-orange-600">Care</p>
-            <p>Hands-on coordination from booking to return.</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const [primaryImage, ...secondaryImages] = images
-
-  return (
-    <div className="grid h-80 grid-cols-[1.35fr_0.95fr] gap-4">
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white shadow-[0_22px_50px_rgba(234,88,12,0.18)]">
-        <Image
-          src={primaryImage}
-          alt={title}
-          fill
-          priority
-          sizes="(max-width: 768px) 100vw, 42vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/30 via-transparent to-transparent" />
-      </div>
-
-      <div className="grid gap-4 grid-rows-[1.1fr_0.9fr]">
-        <div className="grid grid-cols-2 gap-4">
-          {secondaryImages.slice(0, 2).map((image, index) => (
-            <div
-              key={`${image}-${index}`}
-              className="relative overflow-hidden rounded-[1.5rem] border border-white/60 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.10)]"
-            >
-              <Image
-                src={image}
-                alt={`${title} preview ${index + 2}`}
-                fill
-                sizes="(max-width: 768px) 50vw, 18vw"
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-[1.75rem] border border-orange-100 bg-white/85 p-6 shadow-[0_18px_40px_rgba(234,88,12,0.12)] backdrop-blur">
-          <p className="text-xs font-semibold tracking-[0.32em] uppercase text-orange-600/80">Tailored Journeys</p>
-          <h2 className="mt-3 text-2xl font-bold text-slate-900">Premium planning with fewer moving parts</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Every itinerary is organized to feel polished, clear, and easy to trust from inquiry to takeoff.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default async function TravelTours() {
   const [travelTours, chrome] = await Promise.all([getTravelToursPageContent(), getSiteChromeContent()])
-  const heroImages = buildHeroImages(travelTours.hero.image, travelTours.galleryImages)
 
   return (
     <main className="min-h-screen bg-background">
@@ -95,11 +19,10 @@ export default async function TravelTours() {
       <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-            <div className="relative">
-              <TravelHeroShowcase
-                images={heroImages}
-                title={travelTours.hero.title || "Travel and tours by CFAAT"}
-              />
+            <div className="relative h-80 rounded-2xl overflow-hidden">
+              <div style={{ width: '100%', height: '100%' }}>
+                <DomeGallery images={travelTours.galleryImages.length > 0 ? travelTours.galleryImages.map((img) => ({ src: img, alt: '' })) : undefined} />
+              </div>
             </div>
 
             <div>
