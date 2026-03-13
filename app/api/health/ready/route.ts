@@ -5,8 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import {
-  checkDatabaseHealth,
-  checkRedisHealth,
+  getCachedReadinessChecks,
   getRuntimeHealthMetadata,
 } from '@/lib/health-check'
 
@@ -15,10 +14,7 @@ export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || crypto.randomUUID()
-  const [database, redis] = await Promise.all([
-    checkDatabaseHealth(),
-    checkRedisHealth(),
-  ])
+  const { database, redis } = await getCachedReadinessChecks()
 
   const requireRedis = process.env.HEALTH_REQUIRE_REDIS === 'true'
   const dbReady = database.status === 'ok'

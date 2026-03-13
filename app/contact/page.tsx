@@ -1,4 +1,4 @@
-import Navbar from "@/components/navbar"
+import PublicNavbar from "@/components/public-navbar"
 import Footer from "@/components/footer-server"
 
 import ContactPageClient from "@/app/contact/contact-page-client"
@@ -11,7 +11,7 @@ export default async function Contact() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
+      <PublicNavbar currentPath="/contact" />
       <ContactPageClient contact={chrome.contact} />
       <Footer contact={chrome.contact} footer={chrome.footer} />
     </main>

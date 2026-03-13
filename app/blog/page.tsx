@@ -1,4 +1,4 @@
-import Navbar from '@/components/navbar'
+import PublicNavbar from '@/components/public-navbar'
 import Footer from '@/components/footer-server'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -11,7 +11,7 @@ export default async function BlogPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
+      <PublicNavbar currentPath="/blog" />
 
       <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

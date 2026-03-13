@@ -8,6 +8,20 @@ export interface HealthCheckResult {
   message?: string
 }
 
+interface ReadinessSnapshot {
+  database: HealthCheckResult
+  redis: HealthCheckResult
+}
+
+const DEFAULT_HEALTH_READINESS_CACHE_MS = 3000
+const HEALTH_READINESS_CACHE_MS = (() => {
+  const parsed = Number.parseInt(process.env.HEALTH_READINESS_CACHE_MS || '', 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_HEALTH_READINESS_CACHE_MS
+})()
+
+let readinessSnapshot: { expiresAt: number; value: ReadinessSnapshot } | null = null
+let readinessInFlight: Promise<ReadinessSnapshot> | null = null
+
 async function timed<T>(fn: () => Promise<T>): Promise<{ value: T; latencyMs: number }> {
   const start = Date.now()
   const value = await fn()
@@ -61,6 +75,33 @@ export async function checkRedisHealth(): Promise<HealthCheckResult> {
   } catch {
     return { status: 'error', latencyMs: 0, message: 'Redis is unreachable' }
   }
+}
+
+export async function getCachedReadinessChecks(): Promise<ReadinessSnapshot> {
+  const now = Date.now()
+
+  if (readinessSnapshot && readinessSnapshot.expiresAt > now) {
+    return readinessSnapshot.value
+  }
+
+  if (readinessInFlight) {
+    return readinessInFlight
+  }
+
+  readinessInFlight = Promise.all([checkDatabaseHealth(), checkRedisHealth()])
+    .then(([database, redis]) => {
+      const value = { database, redis }
+      readinessSnapshot = {
+        expiresAt: Date.now() + HEALTH_READINESS_CACHE_MS,
+        value,
+      }
+      return value
+    })
+    .finally(() => {
+      readinessInFlight = null
+    })
+
+  return readinessInFlight
 }
 
 export function getRuntimeHealthMetadata(requestId: string | null) {

@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
 
-import Navbar from "@/components/navbar"
+import PublicNavbar from "@/components/public-navbar"
 import Footer from "@/components/footer-server"
 import CheckoutClient from "@/app/checkout/checkout-client"
 import { getSiteChromeContent } from "@/lib/public-content"
@@ -13,7 +13,7 @@ export default async function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
+      <PublicNavbar />
       <Suspense
         fallback={
           <div className="flex items-center justify-center py-32">

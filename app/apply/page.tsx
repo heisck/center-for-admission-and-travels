@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 
-import Navbar from "@/components/navbar"
+import PublicNavbar from "@/components/public-navbar"
 import Footer from "@/components/footer-server"
 import ApplyFormContent from "./apply-form-content"
 import { getSiteChromeContent } from "@/lib/public-content"
@@ -13,7 +13,7 @@ export default async function ApplyPage() {
 
   return (
     <main className="min-h-screen bg-background flex flex-col">
-      <Navbar />
+      <PublicNavbar currentPath="/apply" />
 
       <div className="flex-grow">
         <section className="py-12 md:py-20 bg-gradient-to-br from-orange-50 to-red-50">

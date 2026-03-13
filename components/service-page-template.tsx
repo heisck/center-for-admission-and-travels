@@ -1,5 +1,5 @@
-import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
+import Footer from "@/components/footer-server"
+import PublicNavbar from "@/components/public-navbar"
 import Image from "next/image"
 import { CheckCircle, ArrowRight } from "lucide-react"
 import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom"
@@ -15,7 +15,7 @@ interface ServicePageTemplateProps {
 export default function ServicePageTemplate({ service, chrome }: ServicePageTemplateProps) {
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
+      <PublicNavbar currentPath={service.route} />
 
       <section className="relative py-12 md:py-24 bg-gradient-to-br from-orange-50 to-red-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -1,4 +1,4 @@
-import Navbar from "@/components/navbar"
+import PublicNavbar from "@/components/public-navbar"
 import HeroSection from "@/components/hero-section"
 import ServicesGrid from "@/components/services-grid"
 import HomeFeaturedPackages from "@/components/home-featured-packages"
@@ -14,7 +14,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
+      <PublicNavbar currentPath="/" />
       <HeroSection hero={home.hero} />
       <ServicesGrid services={home.services} />
       <HomeFeaturedPackages featuredPackages={home.featuredPackages} />

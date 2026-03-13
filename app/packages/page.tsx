@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 
-import Navbar from "@/components/navbar"
+import PublicNavbar from "@/components/public-navbar"
 import Footer from "@/components/footer-server"
 
 import PackagesPageClient from "@/app/packages/packages-page-client"
@@ -13,7 +13,7 @@ export default async function PackagesPage() {
 
   return (
     <main className="min-h-screen bg-[#f6f7fb]">
-      <Navbar />
+      <PublicNavbar currentPath="/packages" />
       <Suspense fallback={<div className="py-24" />}>
         <PackagesPageClient packages={packages} />
       </Suspense>

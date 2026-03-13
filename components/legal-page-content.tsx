@@ -1,6 +1,6 @@
 import { getLegalPage } from '@/lib/legal'
 import { plainTextToHtml, looksLikeHtml } from '@/lib/plain-text-to-html'
-import Navbar from '@/components/navbar'
+import PublicNavbar from '@/components/public-navbar'
 import Footer from '@/components/footer'
 
 interface LegalPageContentProps {
@@ -24,7 +24,7 @@ export default async function LegalPageContent({
 
   return (
     <>
-      <Navbar />
+      <PublicNavbar />
       <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 sm:p-12">

@@ -1,11 +1,11 @@
 import Link from "next/link"
-import Navbar from "@/components/navbar"
+import PublicNavbar from "@/components/public-navbar"
 import Footer from "@/components/footer-server"
 
 export default function NotFound() {
   return (
     <>
-      <Navbar />
+      <PublicNavbar />
       <main className="min-h-[70vh] flex items-center justify-center px-4">
         <div className="text-center max-w-lg">
           <p className="text-[8rem] font-extrabold leading-none bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent select-none">

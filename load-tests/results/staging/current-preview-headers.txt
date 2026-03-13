@@ -1,13 +1,13 @@
 HTTP/1.1 307 Temporary Redirect
 Cache-Control: public, max-age=0, must-revalidate
 Content-Type: text/plain
-Date: Fri, 13 Mar 2026 08:32:09 GMT
+Date: Fri, 13 Mar 2026 09:23:37 GMT
 Location: /
 Server: Vercel
-Set-Cookie: _vercel_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJjZW50ZXItZm9yLWEtZ2l0LTBhZTNkMS1rZWx2aW5rd2FiZW5hcGFya2luZ3N0b24tNTY3M3MtcHJvamVjdHMudmVyY2VsLmFwcCIsImJ5cGFzcyI6IkprSVV4a2lpcHJDT0NnWjJ3R2JjM1BDQXBwWGMyNDR1Iiwic3ViIjoicHJvdGVjdGlvbi1ieXBhc3MtYXV0b21hdGlvbiIsImlhdCI6MTc3MzM5MDcyOX0.IgdAYxaKkf2XtLxSrz9d9LIwnQwIrXproL3EZOoWYo8; Max-Age=604800; Path=/; Secure; HttpOnly; SameSite=Lax
+Set-Cookie: _vercel_jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcm90ZWN0aW9uLWJ5cGFzcy1hdXRvbWF0aW9uIiwiYXVkIjoiY2VudGVyLWZvci1hLWdpdC0wYWUzZDEta2Vsdmlua3dhYmVuYXBhcmtpbmdzdG9uLTU2NzNzLXByb2plY3RzLnZlcmNlbC5hcHAiLCJieXBhc3MiOiJKa0lVeGtpaXByQ09DZ1oyd0diYzNQQ0FwcFhjMjQ0dSIsImlhdCI6MTc3MzM5MzgxN30.Y0U-NwJfggpWx6trl4nZTfiPm2JuiRU2zFaTjWKa7BQ; Max-Age=604800; Path=/; Secure; HttpOnly; SameSite=Lax
 Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 X-Robots-Tag: noindex
-X-Vercel-Id: cpt1::5kpjb-1773390729010-629a1be799b5
+X-Vercel-Id: cpt1::bd7ln-1773393817552-d58ceae4ed8c
 Transfer-Encoding: chunked
 
 Redirecting...

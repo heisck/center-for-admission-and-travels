@@ -1,4 +1,4 @@
-import Navbar from "@/components/navbar"
+import PublicNavbar from "@/components/public-navbar"
 import Footer from "@/components/footer-server"
 
 import MyPaymentsClient from "@/app/my-payments/my-payments-client"
@@ -11,7 +11,7 @@ export default async function MyPaymentsPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
+      <PublicNavbar />
       <MyPaymentsClient supportWhatsAppNumber={chrome.contact.whatsappNumber} />
       <Footer contact={chrome.contact} footer={chrome.footer} />
     </main>

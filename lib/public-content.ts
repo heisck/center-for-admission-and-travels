@@ -775,34 +775,45 @@ export const getServicePageByRoute = unstable_cache(
   }
 )
 
-export async function getPublicContent(): Promise<PublicContentPayload> {
-  const [home, about, packages, travelTours, chrome, blogPosts, servicePages] = await Promise.all([
-    getHomePageContent(),
-    getAboutPageContent(),
-    getPackagesPageContent(),
-    getTravelToursPageContent(),
-    getSiteChromeContent(),
-    getBlogPosts(),
-    getAllServicePages(),
-  ])
+const getCachedPublicContentPayload = unstable_cache(
+  async (): Promise<PublicContentPayload> => {
+    const [home, about, packages, travelTours, chrome, blogPosts, servicePages] = await Promise.all([
+      getHomePageContent(),
+      getAboutPageContent(),
+      getPackagesPageContent(),
+      getTravelToursPageContent(),
+      getSiteChromeContent(),
+      getBlogPosts(),
+      getAllServicePages(),
+    ])
 
-  return {
-    home: {
-      hero: home.hero,
-      services: home.services.map((service) => ({
-        id: service.id,
-        icon: service.icon,
-        title: service.title,
-        description: service.description,
-      })),
-      featuredPackages: home.featuredPackages,
-    },
-    blogPosts,
-    about,
-    packages,
-    travelTours,
-    contact: chrome.contact,
-    footer: chrome.footer,
-    servicePages,
+    return {
+      home: {
+        hero: home.hero,
+        services: home.services.map((service) => ({
+          id: service.id,
+          icon: service.icon,
+          title: service.title,
+          description: service.description,
+        })),
+        featuredPackages: home.featuredPackages,
+      },
+      blogPosts,
+      about,
+      packages,
+      travelTours,
+      contact: chrome.contact,
+      footer: chrome.footer,
+      servicePages,
+    }
+  },
+  ['public-content-payload'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
   }
+)
+
+export async function getPublicContent(): Promise<PublicContentPayload> {
+  return getCachedPublicContentPayload()
 }
