@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import Image from "next/image"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 type MasonryItem = {
   id: string
@@ -44,21 +44,55 @@ function MasonryFallback({ items }: { items: MasonryItem[] }) {
 
 export default function HeroMasonryPanel({ items }: { items: MasonryItem[] }) {
   const [shouldAnimate, setShouldAnimate] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const panelRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const schedule =
-      typeof window !== "undefined" && "requestIdleCallback" in window
-        ? (window as Window & typeof globalThis & { requestIdleCallback: (cb: IdleRequestCallback, opts?: IdleRequestOptions) => number }).requestIdleCallback
-        : null
-
-    if (schedule) {
-      const id = schedule(() => setShouldAnimate(true), { timeout: 900 })
-      return () => window.cancelIdleCallback?.(id)
+    const element = panelRef.current
+    if (!element) {
+      setIsVisible(true)
+      return
     }
 
-    const timer = window.setTimeout(() => setShouldAnimate(true), 250)
-    return () => window.clearTimeout(timer)
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      setIsVisible(true)
+      return
+    }
+
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setIsVisible(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: "200px" }
+    )
+
+    observer.observe(element)
+
+    return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    if (!isVisible || shouldAnimate) return
+
+    let timeoutId: number | null = null
+    let rafId: number | null = null
+
+    rafId = window.requestAnimationFrame(() => {
+      timeoutId = window.setTimeout(() => setShouldAnimate(true), 120)
+    })
+
+    return () => {
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId)
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+      }
+    }
+  }, [isVisible, shouldAnimate])
 
   const prefersReducedHover = useMemo(() => {
     if (typeof window === "undefined") return false
@@ -66,20 +100,26 @@ export default function HeroMasonryPanel({ items }: { items: MasonryItem[] }) {
   }, [])
 
   if (!shouldAnimate) {
-    return <MasonryFallback items={items} />
+    return (
+      <div ref={panelRef} className="h-full w-full">
+        <MasonryFallback items={items} />
+      </div>
+    )
   }
 
   return (
-    <Masonry
-      items={items}
-      ease="power3.out"
-      duration={0.6}
-      stagger={0.05}
-      animateFrom="bottom"
-      scaleOnHover={!prefersReducedHover}
-      hoverScale={0.96}
-      blurToFocus
-      colorShiftOnHover={!prefersReducedHover}
-    />
+    <div ref={panelRef} className="h-full w-full">
+      <Masonry
+        items={items}
+        ease="power3.out"
+        duration={0.6}
+        stagger={0.05}
+        animateFrom="bottom"
+        scaleOnHover={!prefersReducedHover}
+        hoverScale={0.96}
+        blurToFocus
+        colorShiftOnHover={!prefersReducedHover}
+      />
+    </div>
   )
 }
