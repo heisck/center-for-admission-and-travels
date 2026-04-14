@@ -2,16 +2,23 @@
 
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
+/* ---------- lazy-but-early GSAP loader ---------- */
 let gsapLoader: Promise<typeof import('gsap')> | null = null;
+let gsapInstance: typeof import('gsap').gsap | null = null;
 
-async function loadGsap() {
+function ensureGsapLoading() {
   if (!gsapLoader) {
-    gsapLoader = import('gsap');
+    gsapLoader = import('gsap').then((mod) => {
+      gsapInstance = mod.gsap;
+      return mod;
+    });
   }
-
-  const mod = await gsapLoader;
-  return mod.gsap;
 }
+
+// Start loading immediately at module evaluation time
+ensureGsapLoading();
+
+/* ---------- hooks ---------- */
 
 const useMedia = (queries: string[], values: number[], defaultValue: number): number => {
   const get = () => {
@@ -60,6 +67,8 @@ const preloadImages = async (urls: string[]): Promise<void> => {
   );
 };
 
+/* ---------- types ---------- */
+
 interface Item {
   id: string;
   img: string;
@@ -87,6 +96,8 @@ interface MasonryProps {
   enableHoverEffects?: boolean;
 }
 
+/* ---------- component ---------- */
+
 const Masonry: React.FC<MasonryProps> = ({
   items,
   ease = 'power3.out',
@@ -95,7 +106,6 @@ const Masonry: React.FC<MasonryProps> = ({
   animateFrom = 'bottom',
   scaleOnHover = true,
   hoverScale = 0.95,
-  blurToFocus = true,
   colorShiftOnHover = false,
   enableHoverEffects = true
 }) => {
@@ -106,20 +116,16 @@ const Masonry: React.FC<MasonryProps> = ({
   );
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
-  const [imagesReady, setImagesReady] = useState(false);
+  const [ready, setReady] = useState(false);
   const prefersReducedMotion = useMemo(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
 
-  const getInitialPosition = (item: GridItem) => {
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    if (!containerRect) return { x: item.x, y: item.y };
-
+  const getStartOffset = (item: GridItem) => {
     let direction = animateFrom;
     if (animateFrom === 'random') {
-      const dirs = ['top', 'bottom', 'left', 'right'];
-      // Deterministic selection based on item id to avoid SSR/CSR hydration mismatches.
+      const dirs = ['top', 'bottom', 'left', 'right'] as const;
       const seededHash = (str: string) => {
         let h = 2166136261 >>> 0;
         for (let i = 0; i < str.length; i++) {
@@ -127,40 +133,44 @@ const Masonry: React.FC<MasonryProps> = ({
         }
         return h;
       };
-
-      const idx = seededHash(String(item.id)) % dirs.length;
-      direction = dirs[idx] as typeof animateFrom;
+      direction = dirs[seededHash(String(item.id)) % dirs.length];
     }
 
     switch (direction) {
       case 'top':
-        return { x: item.x, y: -200 };
+        return { x: item.x, y: item.y - 120 };
       case 'bottom':
-        return { x: item.x, y: window.innerHeight + 200 };
+        return { x: item.x, y: item.y + 120 };
       case 'left':
-        return { x: -200, y: item.y };
+        return { x: item.x - 120, y: item.y };
       case 'right':
-        return { x: window.innerWidth + 200, y: item.y };
-      case 'center':
-        return {
-          x: containerRect.width / 2 - item.w / 2,
-          y: containerRect.height / 2 - item.h / 2
-        };
+        return { x: item.x + 120, y: item.y };
+      case 'center': {
+        const rect = containerRef.current?.getBoundingClientRect();
+        const cx = rect ? rect.width / 2 - item.w / 2 : item.x;
+        const cy = rect ? rect.height / 2 - item.h / 2 : item.y;
+        return { x: cx, y: cy };
+      }
       default:
-        return { x: item.x, y: item.y + 100 };
+        return { x: item.x, y: item.y + 80 };
     }
   };
 
+  // Preload images + GSAP in parallel, then mark ready
   useEffect(() => {
     let active = true;
+
     const readyTimer = window.setTimeout(() => {
-      if (active) setImagesReady(true);
+      if (active) setReady(true);
     }, 900);
 
-    preloadImages(items.map(i => i.img)).then(() => {
+    Promise.all([
+      preloadImages(items.map(i => i.img)),
+      gsapLoader,
+    ]).then(() => {
       if (!active) return;
       window.clearTimeout(readyTimer);
-      setImagesReady(true);
+      setReady(true);
     });
 
     return () => {
@@ -190,91 +200,87 @@ const Masonry: React.FC<MasonryProps> = ({
   const hasMounted = useRef(false);
 
   useLayoutEffect(() => {
-    if (!imagesReady) return;
-    let active = true;
+    if (!ready || !gsapInstance || grid.length === 0) return;
+    const gsap = gsapInstance;
 
-    loadGsap().then((gsap) => {
-      if (!active) return;
-
-      grid.forEach((item, index) => {
-        const selector = `[data-key="${item.id}"]`;
-        const animProps = { x: item.x, y: item.y, width: item.w, height: item.h };
-
-        if (!hasMounted.current && !prefersReducedMotion) {
-          const start = getInitialPosition(item);
-          gsap.fromTo(
-            selector,
-            {
-              opacity: 0,
-              x: start.x,
-              y: start.y,
-              width: item.w,
-              height: item.h,
-              ...(blurToFocus && { filter: 'blur(10px)' })
-            },
-            {
-              opacity: 1,
-              ...animProps,
-              ...(blurToFocus && { filter: 'blur(0px)' }),
-              duration: 0.8,
-              ease: 'power3.out',
-              delay: index * stagger
-            }
-          );
-        } else {
-          gsap.to(selector, {
-            ...animProps,
-            opacity: 1,
-            filter: 'blur(0px)',
-            duration: prefersReducedMotion ? 0 : duration,
-            ease,
-            overwrite: 'auto'
-          });
-        }
+    if (!hasMounted.current && !prefersReducedMotion) {
+      // Entrance animation: set start positions, then animate to final
+      grid.forEach((item) => {
+        const start = getStartOffset(item);
+        gsap.set(`[data-key="${item.id}"]`, {
+          x: start.x,
+          y: start.y,
+          scale: 0.92,
+          opacity: 0,
+          force3D: true,
+        });
       });
 
-      hasMounted.current = true;
-    });
+      // Single batched animation with stagger
+      const targets = grid.map(item => `[data-key="${item.id}"]`);
+      gsap.to(targets, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.7,
+        ease: 'power3.out',
+        stagger: stagger,
+        force3D: true,
+        overwrite: true,
+        // Per-target final positions via function values
+        x: (_index: number) => grid[_index].x,
+        y: (_index: number) => grid[_index].y,
+      });
+    } else {
+      // Resize / subsequent layout — snap to position
+      grid.forEach((item) => {
+        gsap.to(`[data-key="${item.id}"]`, {
+          x: item.x,
+          y: item.y,
+          opacity: 1,
+          scale: 1,
+          duration: prefersReducedMotion ? 0 : duration,
+          ease,
+          overwrite: 'auto',
+          force3D: true,
+        });
+      });
+    }
 
-    return () => {
-      active = false;
-    };
-  }, [grid, imagesReady, stagger, animateFrom, blurToFocus, duration, ease, prefersReducedMotion]);
+    hasMounted.current = true;
+  }, [grid, ready, stagger, animateFrom, duration, ease, prefersReducedMotion]);
 
   const handleMouseEnter = (id: string, element: HTMLElement) => {
-    if (!enableHoverEffects || prefersReducedMotion) return;
+    if (!enableHoverEffects || prefersReducedMotion || !gsapInstance) return;
+    const gsap = gsapInstance;
 
-    loadGsap().then((gsap) => {
-      if (scaleOnHover) {
-        gsap.to(`[data-key="${id}"]`, {
-          scale: hoverScale,
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-      }
-      if (colorShiftOnHover) {
-        const overlay = element.querySelector('.color-overlay') as HTMLElement;
-        if (overlay) gsap.to(overlay, { opacity: 0.3, duration: 0.3 });
-      }
-    });
+    if (scaleOnHover) {
+      gsap.to(`[data-key="${id}"]`, {
+        scale: hoverScale,
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+    }
+    if (colorShiftOnHover) {
+      const overlay = element.querySelector('.color-overlay') as HTMLElement;
+      if (overlay) gsap.to(overlay, { opacity: 0.3, duration: 0.3 });
+    }
   };
 
   const handleMouseLeave = (id: string, element: HTMLElement) => {
-    if (!enableHoverEffects || prefersReducedMotion) return;
+    if (!enableHoverEffects || prefersReducedMotion || !gsapInstance) return;
+    const gsap = gsapInstance;
 
-    loadGsap().then((gsap) => {
-      if (scaleOnHover) {
-        gsap.to(`[data-key="${id}"]`, {
-          scale: 1,
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-      }
-      if (colorShiftOnHover) {
-        const overlay = element.querySelector('.color-overlay') as HTMLElement;
-        if (overlay) gsap.to(overlay, { opacity: 0, duration: 0.3 });
-      }
-    });
+    if (scaleOnHover) {
+      gsap.to(`[data-key="${id}"]`, {
+        scale: 1,
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+    }
+    if (colorShiftOnHover) {
+      const overlay = element.querySelector('.color-overlay') as HTMLElement;
+      if (overlay) gsap.to(overlay, { opacity: 0, duration: 0.3 });
+    }
   };
 
   return (
@@ -283,20 +289,19 @@ const Masonry: React.FC<MasonryProps> = ({
         <div
           key={item.id}
           data-key={item.id}
-          className="absolute box-content"
+          className="absolute"
           style={{
-            willChange: 'transform, width, height, opacity',
+            willChange: 'transform, opacity',
             width: item.w,
             height: item.h,
-            transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
-            opacity: imagesReady ? 0 : 1
+            opacity: 0,
           }}
           onClick={() => window.open(item.url, '_blank', 'noopener')}
           onMouseEnter={e => handleMouseEnter(item.id, e.currentTarget)}
           onMouseLeave={e => handleMouseLeave(item.id, e.currentTarget)}
         >
           <div
-            className="relative w-full h-full bg-cover bg-center rounded-[10px] shadow-[0px_10px_50px_-10px_rgba(0,0,0,0.2)] uppercase text-[10px] leading-[10px]"
+            className="relative w-full h-full bg-cover bg-center rounded-[10px] shadow-[0px_10px_50px_-10px_rgba(0,0,0,0.2)]"
             style={{ backgroundImage: `url(${item.img})` }}
           >
             {colorShiftOnHover && (

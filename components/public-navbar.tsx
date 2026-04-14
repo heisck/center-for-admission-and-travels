@@ -31,7 +31,7 @@ export default function PublicNavbar({ currentPath }: PublicNavbarProps) {
             />
           </Link>
 
-          <div className="hidden md:flex space-x-1">
+          <div className="hidden lg:flex space-x-1">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

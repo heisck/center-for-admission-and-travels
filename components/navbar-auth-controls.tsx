@@ -28,7 +28,7 @@ export default function NavbarAuthControls() {
   }, [showUserMenu])
 
   return (
-    <div className="hidden md:flex min-w-[240px] justify-end gap-3 md:gap-2 items-center">
+    <div className="hidden lg:flex min-w-[240px] justify-end gap-2 items-center">
       {user ? (
         <div className="relative flex justify-end">
           <button

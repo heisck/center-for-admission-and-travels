@@ -1,5 +1,1 @@
-@media (max-width: 840px) {
-  .signup-button {
-    display: none;
-  }
-}
+/* No navbar-specific overrides needed — breakpoints handled via Tailwind lg: utilities */

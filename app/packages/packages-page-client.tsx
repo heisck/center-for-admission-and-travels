@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Search, ArrowRight, ChevronDown, ChevronUp } from "lucide-react"
@@ -26,11 +26,25 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
   const [filter, setFilter] = useState<PackageFilter>("all")
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "")
   const [expandedPackageId, setExpandedPackageId] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const q = searchParams.get("q")
-    if (q !== null) setSearchQuery(q)
+    if (q !== null) {
+      setSearchQuery(q)
+      if (q) setSearchOpen(true)
+    }
   }, [searchParams])
+
+  const toggleSearch = useCallback(() => {
+    setSearchOpen((prev) => {
+      if (!prev) {
+        requestAnimationFrame(() => searchInputRef.current?.focus())
+      }
+      return !prev
+    })
+  }, [])
 
   const filteredPackages = useMemo(() => {
     let result = filter === "all" ? packages : packages.filter((pkg) => pkg.category === filter)
@@ -49,41 +63,94 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
 
   return (
     <>
-      <section className="relative overflow-hidden py-16 md:py-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.16),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(234,88,12,0.10),transparent_40%)] pointer-events-none" />
+      <section className="relative overflow-hidden py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-orange-900">
-            Packages Built For
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              Packages Built For
+            </span>
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
               Serious Global Goals
             </span>
           </h1>
-          <p className="mt-5 max-w-3xl text-lg text-slate-600 leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-2xl">
             Explore study, work, and travel options prepared with clear planning, verified pathways, and full support.
             Find your best fit and move from interest to action quickly.
           </p>
 
-          <div className="mt-10">
-            <div className="relative max-w-2xl">
+          {/* Mobile: full-width search always visible */}
+          <div className="mt-8 lg:hidden">
+            <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="search"
                 placeholder="Search destinations, programs, or keywords"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-300 shadow-sm"
+                className="w-full pl-12 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-300 shadow-sm"
               />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {FILTERS.map((item) => {
+                const active = filter === item.value
+                return (
+                  <button
+                    key={item.value}
+                    onClick={() => setFilter(item.value)}
+                    className={`px-3 py-2 rounded-full text-sm font-semibold transition text-center ${
+                      active
+                        ? "bg-gradient-to-r from-orange-600 to-red-600 text-white shadow"
+                        : "bg-white text-orange-700 border border-orange-200 hover:border-orange-400 hover:text-orange-800"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2.5">
+          {/* Desktop: collapsible search icon + filters on one row */}
+          <div className="mt-8 hidden lg:flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={toggleSearch}
+              className={`flex-shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-full border transition ${
+                searchOpen || searchQuery
+                  ? "bg-gradient-to-r from-orange-600 to-red-600 text-white border-transparent shadow"
+                  : "bg-white text-orange-700 border-orange-200 hover:border-orange-400 hover:text-orange-800"
+              }`}
+              aria-label="Toggle search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                searchOpen ? "max-w-md w-full opacity-100" : "max-w-0 opacity-0"
+              }`}
+            >
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  placeholder="Search destinations, programs..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onBlur={() => { if (!searchQuery) setSearchOpen(false) }}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-full border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-300 shadow-sm text-sm"
+                />
+              </div>
+            </div>
+
             {FILTERS.map((item) => {
               const active = filter === item.value
               return (
                 <button
                   key={item.value}
                   onClick={() => setFilter(item.value)}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                  className={`px-4 py-2.5 rounded-full text-sm font-semibold transition whitespace-nowrap ${
                     active
                       ? "bg-gradient-to-r from-orange-600 to-red-600 text-white shadow"
                       : "bg-white text-orange-700 border border-orange-200 hover:border-orange-400 hover:text-orange-800"
@@ -97,7 +164,7 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
         </div>
       </section>
 
-      <section className="pb-20">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {filteredPackages.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-3xl p-10 text-center">
@@ -150,25 +217,25 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
                       ))}
                     </div>
 
-                    <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <p className="text-xl font-semibold text-slate-900">
+                    <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between gap-3 flex-nowrap">
+                      <p className="text-lg font-semibold text-slate-900 whitespace-nowrap shrink-0">
                         {pkg.price > 0 ? `GHS ${pkg.price.toLocaleString()}` : "Contact Us"}
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={() => setExpandedPackageId((current) => (current === pkg.id ? null : pkg.id))}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-orange-200 text-orange-700 text-sm font-semibold hover:bg-orange-50 transition"
+                          className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl border border-orange-200 text-orange-700 text-xs sm:text-sm font-semibold hover:bg-orange-50 transition whitespace-nowrap"
                         >
-                          {expandedPackageId === pkg.id ? "Hide Details" : "View Details"}
-                          {expandedPackageId === pkg.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          {expandedPackageId === pkg.id ? "Hide" : "Details"}
+                          {expandedPackageId === pkg.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                         </button>
                         <Link
                           href={`/checkout?id=${pkg.id}`}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white text-sm font-semibold hover:opacity-95 transition"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white text-xs sm:text-sm font-semibold hover:opacity-95 transition whitespace-nowrap"
                         >
                           Book Now
-                          <ArrowRight className="w-4 h-4" />
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
                     </div>

@@ -12,7 +12,7 @@ export default async function PackagesPage() {
   const [packages, chrome] = await Promise.all([getPackagesPageContent(), getSiteChromeContent()])
 
   return (
-    <main className="min-h-screen bg-[#f6f7fb]">
+    <main className="min-h-screen bg-background">
       <PublicNavbar currentPath="/packages" />
       <Suspense fallback={<div className="py-24" />}>
         <PackagesPageClient packages={packages} />

@@ -1,7 +1,6 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 
 type DomeImage = { src: string; alt?: string }
@@ -17,30 +16,8 @@ const DomeGallery = dynamic(() => import("./DomeGallery"), {
   loading: () => null,
 })
 
-function TravelDomeFallback({ images }: { images: DomeImage[] }) {
-  const previewImages = images.slice(0, 4)
-
-  return (
-    <div className="grid h-full grid-cols-2 gap-3 rounded-2xl overflow-hidden">
-      {previewImages.map((image, index) => (
-        <div
-          key={`${image.src}-${index}`}
-          className={`relative overflow-hidden rounded-2xl bg-slate-200 ${
-            index === 0 ? "row-span-2" : ""
-          }`}
-        >
-          <Image
-            src={image.src}
-            alt={image.alt || ""}
-            fill
-            sizes="(max-width: 768px) 50vw, 25vw"
-            className="object-cover"
-            priority={index < 2}
-          />
-        </div>
-      ))}
-    </div>
-  )
+function DomePlaceholder() {
+  return <div className="h-full w-full" aria-hidden />
 }
 
 
@@ -132,7 +109,7 @@ export default function TravelDomeGalleryPanel({ images }: { images: DomeImage[]
   }, [images])
 
   if (!shouldAnimate) {
-    return <TravelDomeFallback images={galleryImages} />
+    return <DomePlaceholder />
   }
 
   return (

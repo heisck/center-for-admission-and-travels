@@ -22,13 +22,13 @@ export default function MobileNavbarMenu({ currentPath }: MobileNavbarMenuProps)
   const { user, logout } = useCurrentUser()
 
   return (
-    <div className="md:hidden relative">
+    <div className="lg:hidden relative">
       <button onClick={() => setIsOpen((current) => !current)} className="p-2 hover:bg-muted rounded-lg">
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full mt-2 w-[min(92vw,22rem)] rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-xl p-4 space-y-2">
+        <div className="absolute right-0 top-full mt-2 w-[min(92vw,22rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-xl p-4 space-y-2">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}

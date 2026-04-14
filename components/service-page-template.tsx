@@ -6,6 +6,7 @@ import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom
 import Link from "next/link"
 
 import type { ServicePageContent, SiteChromeContent } from "@/lib/public-content"
+import "./service-hero.css"
 
 interface ServicePageTemplateProps {
   service: ServicePageContent
@@ -17,31 +18,28 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
     <main className="min-h-screen bg-background">
       <PublicNavbar currentPath={service.route} />
 
-      <section className="relative py-12 md:py-24 bg-gradient-to-br from-orange-50 to-red-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative h-80 md:h-96 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
-              <Image
-                src={service.heroImage}
-                alt={service.bannerTitle}
-                fill
-                className="object-cover object-center"
-              />
-            </div>
+      <section className="relative min-h-[75vh] md:min-h-[80vh] flex items-end overflow-hidden">
+        <Image
+          src={service.heroImage}
+          alt={service.bannerTitle}
+          fill
+          priority
+          className="object-cover object-center service-hero-img"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/30 to-black/65" />
 
-            <div className="order-1 md:order-2">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  {service.bannerTitle}
-                </span>
+        <div className="relative z-10 w-full pb-12 md:pb-16 pt-32">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-white service-hero-fade service-hero-fade-1">
+                {service.bannerTitle}
               </h1>
-              <p className="text-xl text-muted-foreground mb-6">{service.bannerSubtitle}</p>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-                Discover comprehensive support and guidance tailored to help you achieve your international aspirations with confidence and clarity.
+              <p className="text-lg md:text-xl text-white/85 mb-6 leading-relaxed service-hero-fade service-hero-fade-2">
+                {service.bannerSubtitle}
               </p>
               <Link
                 href={`/apply?service=${encodeURIComponent(service.title)}`}
-                className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105 service-hero-fade service-hero-fade-3"
               >
                 Click to Apply <ArrowRight className="w-5 h-5" />
               </Link>
