@@ -284,7 +284,13 @@ const Masonry: React.FC<MasonryProps> = ({
           key={item.id}
           data-key={item.id}
           className="absolute box-content"
-          style={{ willChange: 'transform, width, height, opacity' }}
+          style={{
+            willChange: 'transform, width, height, opacity',
+            width: item.w,
+            height: item.h,
+            transform: `translate3d(${item.x}px, ${item.y}px, 0)`,
+            opacity: imagesReady ? 0 : 1
+          }}
           onClick={() => window.open(item.url, '_blank', 'noopener')}
           onMouseEnter={e => handleMouseEnter(item.id, e.currentTarget)}
           onMouseLeave={e => handleMouseLeave(item.id, e.currentTarget)}

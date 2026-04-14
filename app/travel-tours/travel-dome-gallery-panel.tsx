@@ -43,6 +43,29 @@ function TravelDomeFallback({ images }: { images: DomeImage[] }) {
   )
 }
 
+
+function getAdaptiveRadiusRange() {
+  if (typeof window === "undefined") {
+    return { minRadius: 260, maxRadius: 520, fit: 0.44 }
+  }
+
+  const width = window.innerWidth
+
+  if (width < 480) {
+    return { minRadius: 180, maxRadius: 300, fit: 0.34 }
+  }
+
+  if (width < 768) {
+    return { minRadius: 220, maxRadius: 360, fit: 0.38 }
+  }
+
+  if (width < 1024) {
+    return { minRadius: 260, maxRadius: 440, fit: 0.42 }
+  }
+
+  return { minRadius: 320, maxRadius: 560, fit: 0.5 }
+}
+
 function getAdaptiveSegments() {
   if (typeof window === "undefined") return 22
 
@@ -72,9 +95,16 @@ function getAdaptiveSegments() {
 export default function TravelDomeGalleryPanel({ images }: { images: DomeImage[] }) {
   const [shouldAnimate, setShouldAnimate] = useState(false)
   const [segments, setSegments] = useState(22)
+  const [radiusConfig, setRadiusConfig] = useState({ minRadius: 260, maxRadius: 520, fit: 0.44 })
 
   useEffect(() => {
-    setSegments(getAdaptiveSegments())
+    const syncResponsiveValues = () => {
+      setSegments(getAdaptiveSegments())
+      setRadiusConfig(getAdaptiveRadiusRange())
+    }
+
+    syncResponsiveValues()
+    window.addEventListener("resize", syncResponsiveValues)
 
     const schedule =
       typeof window !== "undefined" && "requestIdleCallback" in window
@@ -83,11 +113,17 @@ export default function TravelDomeGalleryPanel({ images }: { images: DomeImage[]
 
     if (schedule) {
       const id = schedule(() => setShouldAnimate(true), { timeout: 900 })
-      return () => window.cancelIdleCallback?.(id)
+      return () => {
+        window.removeEventListener("resize", syncResponsiveValues)
+        window.cancelIdleCallback?.(id)
+      }
     }
 
     const timer = window.setTimeout(() => setShouldAnimate(true), 250)
-    return () => window.clearTimeout(timer)
+    return () => {
+      window.removeEventListener("resize", syncResponsiveValues)
+      window.clearTimeout(timer)
+    }
   }, [])
 
   const galleryImages = useMemo(() => {
@@ -103,10 +139,15 @@ export default function TravelDomeGalleryPanel({ images }: { images: DomeImage[]
     <DomeGallery
       images={galleryImages}
       segments={segments}
+      fit={radiusConfig.fit}
+      minRadius={radiusConfig.minRadius}
+      maxRadius={radiusConfig.maxRadius}
       maxVerticalRotationDeg={4}
       dragSensitivity={24}
       dragDampening={0.78}
       enlargeTransitionMs={260}
+      openedImageWidth="min(78vw, 380px)"
+      openedImageHeight="min(78vw, 380px)"
     />
   )
 }
