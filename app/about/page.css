@@ -1,12 +1,46 @@
 @media (max-width: 768px) {
   .team-grid {
-    grid-template-columns: 1fr 1fr; 
+    grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 577px) {
   .team-grid {
     grid-template-columns: 1fr;
-    justify-items: center;
+    justify-items: stretch;
+  }
+
+  .team-member-card {
+    width: 100%;
+  }
+}
+
+.team-member-details {
+  width: 100%;
+}
+
+.team-member-details summary {
+  display: block;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .team-member-card {
+    animation: aboutFadeIn 400ms ease both;
+  }
+
+  .team-member-card:nth-child(2) { animation-delay: 80ms; }
+  .team-member-card:nth-child(3) { animation-delay: 160ms; }
+  .team-member-card:nth-child(4) { animation-delay: 240ms; }
+}
+
+@keyframes aboutFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

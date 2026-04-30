@@ -110,7 +110,7 @@ export default async function About() {
 
           <div className="grid md:grid-cols-4 gap-8 team-grid">
             {about.team?.map((member, idx) => (
-              <div key={member.id || idx} className="group">
+              <div key={member.id || idx} className="group w-full max-w-sm mx-auto md:max-w-none md:mx-0 team-member-card">
                 <div className="relative h-64 mb-4 rounded-xl overflow-hidden shadow-lg">
                   <Image
                     src={member.image || "/placeholder.svg"}
@@ -124,7 +124,7 @@ export default async function About() {
                 <p className="text-primary font-semibold">{member.role}</p>
                 {member.description ? (
                   <div className="text-sm text-muted-foreground leading-relaxed mt-2">
-                    <details>
+                    <details className="team-member-details">
                       <summary className="cursor-pointer">More Info</summary>
                       <div className="mt-2">{member.description}</div>
                     </details>
