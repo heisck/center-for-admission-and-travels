@@ -41,6 +41,22 @@ const nextConfig = {
             : []),
         ],
       },
+      {
+        source: '/admin/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/admin-login',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/admin-forgot-password',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/admin-reset-password',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
     ]
   },
 }

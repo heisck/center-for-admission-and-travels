@@ -1,3 +1,4 @@
+import DOMPurify from 'isomorphic-dompurify'
 import { getLegalPage } from '@/lib/legal'
 import { plainTextToHtml, looksLikeHtml } from '@/lib/plain-text-to-html'
 import PublicNavbar from '@/components/public-navbar'
@@ -38,7 +39,11 @@ export default async function LegalPageContent({
             {htmlContent ? (
               <div
                 className="space-y-8 text-muted-foreground leading-relaxed prose prose-slate max-w-none prose-headings:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline"
-                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(htmlContent, {
+                    USE_PROFILES: { html: true },
+                  }),
+                }}
               />
             ) : (
               <p className="text-muted-foreground">

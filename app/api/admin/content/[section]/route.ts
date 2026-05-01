@@ -34,9 +34,6 @@ export async function GET(
     const resolvedParams = await Promise.resolve(params)
     const { section } = resolvedParams
 
-    // Debug: Log the section being requested
-    console.log('GET /api/admin/content/[section] - Section:', section)
-
     // Fetch from database using Prisma
     let data = null
 
@@ -175,9 +172,6 @@ export async function PUT(
     const resolvedParams = await Promise.resolve(params)
     const { section } = resolvedParams
     const body = await request.json()
-
-    // Debug: Log the section being updated
-    console.log('PUT /api/admin/content/[section] - Section:', section, 'Body keys:', Object.keys(body))
 
     // Update database using Prisma
     switch (section) {

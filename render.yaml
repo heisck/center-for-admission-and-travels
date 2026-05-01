@@ -5,6 +5,7 @@ services:
     buildCommand: npm ci && npm run build:ci
     preDeployCommand: npm run release
     startCommand: npm start
+    healthCheckPath: /api/health/live
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -17,6 +18,24 @@ services:
       - key: CLOUDINARY_API_KEY
         sync: false
       - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: PAYMENT_CURRENCY
+        value: GHS
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: NEXT_PUBLIC_BASE_URL
         sync: false
       - key: RATE_LIMIT_PREFIX
         value: cfaat

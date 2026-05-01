@@ -39,9 +39,9 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
               </p>
               <Link
                 href={`/apply?service=${encodeURIComponent(service.title)}`}
-                className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105 service-hero-fade service-hero-fade-3"
+                className="inline-flex items-center justify-center whitespace-nowrap gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105 service-hero-fade service-hero-fade-3"
               >
-                Click to Apply <ArrowRight className="w-5 h-5" />
+                Click to Apply <ArrowRight className="w-5 h-5 flex-shrink-0" />
               </Link>
             </div>
           </div>
@@ -248,9 +248,9 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
             </p>
             <Link
               href={`/apply?service=${encodeURIComponent(service.title)}`}
-              className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-bold text-lg hover:shadow-xl transition transform hover:scale-105"
+              className="inline-flex items-center justify-center whitespace-nowrap gap-2 px-8 sm:px-10 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-bold text-base sm:text-lg hover:shadow-xl transition transform hover:scale-105"
             >
-              Click to Apply Now <ArrowRight className="w-6 h-6" />
+              Click to Apply Now <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
             </Link>
           </div>
         </div>

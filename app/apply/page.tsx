@@ -17,7 +17,7 @@ export default async function ApplyPage() {
 
       <div className="flex-grow">
         <section className="py-12 md:py-20 bg-gradient-to-br from-orange-50 to-red-50">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
