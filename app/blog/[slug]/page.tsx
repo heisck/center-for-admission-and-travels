@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import DOMPurify from 'isomorphic-dompurify'
 
 interface BlogPost {
   id: string
@@ -117,7 +118,11 @@ export default function BlogPostPage() {
 
           <div
             className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground"
-            dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }}
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(post.content.replace(/\n/g, '<br />'), {
+                USE_PROFILES: { html: true },
+              }),
+            }}
           />
         </div>
       </article>
