@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === 'production'
 const scriptSrc = isProduction
-  ? "script-src 'self' 'unsafe-inline' https://js.paystack.co https://*.paystack.co"
+  ? "script-src 'self' 'unsafe-inline' https://js.paystack.co https://*.paystack.co https://vercel.live"
   : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co https://*.paystack.co https://vercel.live"
 
 const contentSecurityPolicy = [

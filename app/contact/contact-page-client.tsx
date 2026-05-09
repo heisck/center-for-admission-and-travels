@@ -127,6 +127,7 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
                   <select
                     id="contact-subject"
                     name="subject"
+                    autoComplete="off"
                     value={formData.subject}
                     onChange={handleChange}
                     required
@@ -144,6 +145,7 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
                   <textarea
                     id="contact-message"
                     name="message"
+                    autoComplete="off"
                     value={formData.message}
                     onChange={handleChange}
                     required
