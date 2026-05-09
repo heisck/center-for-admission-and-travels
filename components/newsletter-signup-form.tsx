@@ -42,6 +42,7 @@ export default function NewsletterSignupForm() {
           id="newsletter-email"
           name="email"
           type="email"
+          autoComplete="email"
           placeholder="Your email"
           value={newsletterEmail}
           onChange={(event) => setNewsletterEmail(event.target.value)}

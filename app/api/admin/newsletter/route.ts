@@ -31,17 +31,17 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    const emails = subscribers.map((s) => s.email)
+    const emails = subscribers.map((s: any) => s.email)
     const usersWithEmail = await prisma.user.findMany({
       where: { email: { in: emails } },
       select: { email: true, username: true },
     })
-    const userEmailSet = new Set(usersWithEmail.map((u) => u.email.toLowerCase()))
+    const userEmailSet = new Set(usersWithEmail.map((u: any) => u.email.toLowerCase()))
 
-    const subscribersWithUser = subscribers.map((s) => ({
+    const subscribersWithUser = subscribers.map((s: any) => ({
       ...s,
       isRegisteredUser: userEmailSet.has(s.email.toLowerCase()),
-      userUsername: usersWithEmail.find((u) => u.email.toLowerCase() === s.email.toLowerCase())?.username,
+      userUsername: usersWithEmail.find((u: any) => u.email.toLowerCase() === s.email.toLowerCase())?.username,
     }))
 
     return NextResponse.json({ success: true, subscribers: subscribersWithUser })

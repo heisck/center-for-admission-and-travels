@@ -18,7 +18,7 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
     <main className="min-h-screen bg-background">
       <PublicNavbar currentPath={service.route} />
 
-      <section className="relative min-h-[75vh] md:min-h-[80vh] 2xl:min-h-[88vh] flex items-end overflow-hidden">
+      <section className="relative min-h-[75vh] md:min-h-[80vh] flex items-end overflow-hidden">
         <Image
           src={service.heroImage}
           alt={service.bannerTitle}
@@ -29,12 +29,12 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/30 to-black/65" />
 
         <div className="relative z-10 w-full pb-12 md:pb-16 pt-32">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
-            <div className="max-w-2xl 2xl:max-w-4xl">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl 2xl:text-7xl font-bold mb-4 text-white service-hero-fade service-hero-fade-1">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-white service-hero-fade service-hero-fade-1">
                 {service.bannerTitle}
               </h1>
-              <p className="text-lg md:text-xl 2xl:text-2xl text-white/85 mb-6 leading-relaxed service-hero-fade service-hero-fade-2">
+              <p className="text-lg md:text-xl text-white/85 mb-6 leading-relaxed service-hero-fade service-hero-fade-2">
                 {service.bannerSubtitle}
               </p>
               <Link

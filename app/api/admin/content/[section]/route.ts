@@ -16,6 +16,9 @@ import * as contentHelpers from '@/lib/prisma-content-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
 
+type UrlRow = { url: string }
+type FeaturedPackageRow = { package: unknown }
+
 // GET /api/admin/content/[section] - Get specific section
 export async function GET(
   request: NextRequest,
@@ -35,7 +38,7 @@ export async function GET(
     const { section } = resolvedParams
 
     // Fetch from database using Prisma
-    let data = null
+    let data: any = null
 
     switch (section) {
       case 'home': {
@@ -55,11 +58,11 @@ export async function GET(
             description: homePage?.heroDescription || '',
             cta1Text: homePage?.heroCta1Text || '',
             cta2Text: homePage?.heroCta2Text || '',
-            images: homePage?.heroImages?.map((img) => img.url) || [],
+            images: homePage?.heroImages?.map((img: UrlRow) => img.url) || [],
             stats: homePage?.heroStats || [],
           },
           services: homePage?.services || [],
-          featuredPackages: homePage?.featuredPackages?.map((fp) => fp.package) || [],
+          featuredPackages: homePage?.featuredPackages?.map((fp: FeaturedPackageRow) => fp.package) || [],
         }
         break
       }
@@ -114,7 +117,7 @@ export async function GET(
           hero: travelToursPage,
           featured: travelToursPage?.featuredPackages || [],
           benefits: travelToursPage?.benefits || [],
-          galleryImages: travelToursPage?.galleryImages.map((img) => img.url) || [],
+          galleryImages: travelToursPage?.galleryImages.map((img: UrlRow) => img.url) || [],
         }
         break
       }

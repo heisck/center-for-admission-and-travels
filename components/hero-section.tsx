@@ -132,11 +132,11 @@ export default function HeroSection({ hero }: HeroSectionProps) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12">
-        <div className="hidden md:grid md:grid-cols-2 gap-12 2xl:gap-16 items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="hidden md:grid md:grid-cols-2 gap-12 items-center">
           <div className="relative md:space-y-8 space-y-4 animate-fade-in">
             <div className="relative z-20">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl 2xl:text-7xl font-bold leading-tight mb-4">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   {accentTitle}
                 </span>
@@ -147,7 +147,7 @@ export default function HeroSection({ hero }: HeroSectionProps) {
                   </>
                 ) : null}
               </h1>
-              <p className="text-lg 2xl:text-2xl text-muted-foreground mt-6 leading-relaxed">
+              <p className="text-lg text-muted-foreground mt-6 leading-relaxed">
                 {heroDescription}
               </p>
             </div>
@@ -155,13 +155,13 @@ export default function HeroSection({ hero }: HeroSectionProps) {
             <div className="relative z-20 flex gap-4 flex-wrap">
               <a
                 href="#services"
-                className="px-8 py-3 2xl:px-10 2xl:py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
               >
                 {hero.cta1Text || "View Our Services"}
               </a>
               <Link
                 href="/contact"
-                className="px-8 py-3 2xl:px-10 2xl:py-4 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
+                className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
               >
                 {hero.cta2Text || "Contact Us"}
               </Link>
@@ -170,7 +170,7 @@ export default function HeroSection({ hero }: HeroSectionProps) {
             <div className="relative z-20 grid grid-cols-3 md:gap-6 pt-8">
               {stats.map((stat, idx) => (
                 <div key={idx}>
-                  <div className="text-3xl 2xl:text-4xl font-bold text-primary">{stat.value}</div>
+                  <div className="text-3xl font-bold text-primary">{stat.value}</div>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               ))}

@@ -32,18 +32,18 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const formatted = packages.map((pkg) => ({
+    const formatted = packages.map((pkg: any) => ({
       id: pkg.id,
       name: pkg.name,
       description: pkg.description,
       category: pkg.category,
       duration: pkg.duration,
       price: pkg.price,
-      highlights: pkg.highlights.map((h) => h.text),
+      highlights: pkg.highlights.map((h: any) => h.text),
       itinerary: pkg.itinerary || '',
-      images: pkg.images.map((img) => img.url),
-      included: pkg.included.map((item) => item.text),
-      notIncluded: pkg.notIncluded.map((item) => item.text),
+      images: pkg.images.map((img: any) => img.url),
+      included: pkg.included.map((item: any) => item.text),
+      notIncluded: pkg.notIncluded.map((item: any) => item.text),
     }))
 
     return NextResponse.json({ success: true, data: formatted })
@@ -139,11 +139,11 @@ export async function POST(request: NextRequest) {
         category: newPackage.category,
         duration: newPackage.duration,
         price: newPackage.price,
-        highlights: newPackage.highlights.map((h) => h.text),
+        highlights: newPackage.highlights.map((h: any) => h.text),
         itinerary: newPackage.itinerary || '',
-        images: newPackage.images.map((img) => img.url),
-        included: newPackage.included.map((item) => item.text),
-        notIncluded: newPackage.notIncluded.map((item) => item.text),
+        images: newPackage.images.map((img: any) => img.url),
+        included: newPackage.included.map((item: any) => item.text),
+        notIncluded: newPackage.notIncluded.map((item: any) => item.text),
       },
     })
   } catch (error: any) {

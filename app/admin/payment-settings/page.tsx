@@ -17,10 +17,6 @@ export default function AdminPaymentSettingsPage() {
   })
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  useEffect(() => {
-    fetchSettings()
-  }, [])
-
   const fetchSettings = async () => {
     try {
       const response = await fetch('/api/admin/payment-settings')
@@ -40,6 +36,10 @@ export default function AdminPaymentSettingsPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchSettings()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

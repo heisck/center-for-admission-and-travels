@@ -53,7 +53,7 @@ export async function GET(
           category: 'travel', // Travel tours packages are always travel category
           duration: featuredPkg.duration,
           price: featuredPkg.price,
-          highlights: featuredPkg.highlights?.map((h) => h.text) || [],
+          highlights: featuredPkg.highlights?.map((h: any) => h.text) || [],
           itinerary: '', // Travel tours packages don't have itinerary in the schema
           images: featuredPkg.imageUrl ? [featuredPkg.imageUrl] : [],
           included: [],
@@ -86,11 +86,11 @@ export async function GET(
       category: pkg.category,
       duration: pkg.duration,
       price: pkg.price,
-      highlights: pkg.highlights?.map((h) => h.text) || [],
+      highlights: pkg.highlights?.map((h: any) => h.text) || [],
       itinerary: pkg.itinerary || '',
-      images: pkg.images?.map((img) => img.url) || [],
-      included: pkg.included?.map((i) => i.text) || [],
-      notIncluded: pkg.notIncluded?.map((i) => i.text) || [],
+      images: pkg.images?.map((img: any) => img.url) || [],
+      included: pkg.included?.map((i: any) => i.text) || [],
+      notIncluded: pkg.notIncluded?.map((i: any) => i.text) || [],
     }
 
     return NextResponse.json(

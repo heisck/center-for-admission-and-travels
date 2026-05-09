@@ -114,6 +114,7 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
               id="shared-full-name"
               type="text"
               name="fullName"
+              autoComplete="name"
               value={formData.fullName}
               onChange={handleChange}
               required
@@ -128,6 +129,7 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
               id="shared-email"
               type="email"
               name="email"
+              autoComplete="email"
               value={formData.email}
               onChange={handleChange}
               required
@@ -144,6 +146,7 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
               id="shared-phone"
               type="tel"
               name="phone"
+              autoComplete="tel"
               value={formData.phone}
               onChange={handleChange}
               required
@@ -157,6 +160,7 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
             <select
               id="shared-country"
               name="country"
+              autoComplete="country-name"
               value={formData.country}
               onChange={handleChange}
               required
@@ -177,6 +181,7 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
           <textarea
             id="shared-notes"
             name="notes"
+            autoComplete="off"
             value={formData.notes}
             onChange={handleChange}
             placeholder="Tell us about your goals and any specific requirements..."

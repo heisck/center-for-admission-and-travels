@@ -249,7 +249,10 @@ export function PublicContentProvider({ children }: { children: React.ReactNode 
   const [error, setError] = useState<string | null>(null)
   const contentRef = useRef<PublicContent | null>(null)
   const lastFetchedAtRef = useRef<number>(0)
-  contentRef.current = content
+
+  useEffect(() => {
+    contentRef.current = content
+  }, [content])
 
   const fetchContent = useCallback(async (force = false) => {
     const isInitialLoad = !contentRef.current
