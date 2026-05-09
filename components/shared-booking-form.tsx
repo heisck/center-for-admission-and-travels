@@ -91,8 +91,9 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-2">Service Type</label>
+          <label htmlFor="shared-service-type" className="block text-sm font-semibold text-foreground mb-2">Service Type</label>
           <select
+            id="shared-service-type"
             name="serviceType"
             value={formData.serviceType}
             onChange={handleChange}
@@ -108,8 +109,9 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
+            <label htmlFor="shared-full-name" className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
             <input
+              id="shared-full-name"
               type="text"
               name="fullName"
               value={formData.fullName}
@@ -121,8 +123,9 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
+            <label htmlFor="shared-email" className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
             <input
+              id="shared-email"
               type="email"
               name="email"
               value={formData.email}
@@ -136,8 +139,9 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Phone Number</label>
+            <label htmlFor="shared-phone" className="block text-sm font-semibold text-foreground mb-2">Phone Number</label>
             <input
+              id="shared-phone"
               type="tel"
               name="phone"
               value={formData.phone}
@@ -149,8 +153,9 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Country of Interest</label>
+            <label htmlFor="shared-country" className="block text-sm font-semibold text-foreground mb-2">Country of Interest</label>
             <select
+              id="shared-country"
               name="country"
               value={formData.country}
               onChange={handleChange}
@@ -168,8 +173,9 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-2">Additional Notes</label>
+          <label htmlFor="shared-notes" className="block text-sm font-semibold text-foreground mb-2">Additional Notes</label>
           <textarea
+            id="shared-notes"
             name="notes"
             value={formData.notes}
             onChange={handleChange}

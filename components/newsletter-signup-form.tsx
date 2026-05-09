@@ -36,9 +36,11 @@ export default function NewsletterSignupForm() {
 
   return (
     <form onSubmit={handleNewsletterSubmit} className="space-y-2">
-      <label className="text-sm font-semibold block">Stay updated</label>
+      <label htmlFor="newsletter-email" className="text-sm font-semibold block">Stay updated</label>
       <div className="flex gap-2">
         <input
+          id="newsletter-email"
+          name="email"
           type="email"
           placeholder="Your email"
           value={newsletterEmail}

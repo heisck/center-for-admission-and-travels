@@ -57,8 +57,9 @@ export default function BookingForm({ serviceType }: BookingFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-lg border border-border">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
+            <label htmlFor="booking-full-name" className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
             <input
+              id="booking-full-name"
               type="text"
               name="fullName"
               value={formData.fullName}
@@ -70,8 +71,9 @@ export default function BookingForm({ serviceType }: BookingFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
+            <label htmlFor="booking-email" className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
             <input
+              id="booking-email"
               type="email"
               name="email"
               value={formData.email}
@@ -85,8 +87,9 @@ export default function BookingForm({ serviceType }: BookingFormProps) {
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Phone Number</label>
+            <label htmlFor="booking-phone" className="block text-sm font-semibold text-foreground mb-2">Phone Number</label>
             <input
+              id="booking-phone"
               type="tel"
               name="phone"
               value={formData.phone}
@@ -98,8 +101,9 @@ export default function BookingForm({ serviceType }: BookingFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Country of Interest</label>
+            <label htmlFor="booking-country" className="block text-sm font-semibold text-foreground mb-2">Country of Interest</label>
             <select
+              id="booking-country"
               name="country"
               value={formData.country}
               onChange={handleChange}
@@ -117,8 +121,10 @@ export default function BookingForm({ serviceType }: BookingFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-2">Service Type</label>
+          <label htmlFor="booking-service-type" className="block text-sm font-semibold text-foreground mb-2">Service Type</label>
           <input
+            id="booking-service-type"
+            name="serviceType"
             type="text"
             value={serviceType}
             disabled
@@ -127,8 +133,9 @@ export default function BookingForm({ serviceType }: BookingFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-2">Additional Notes</label>
+          <label htmlFor="booking-notes" className="block text-sm font-semibold text-foreground mb-2">Additional Notes</label>
           <textarea
+            id="booking-notes"
             name="notes"
             value={formData.notes}
             onChange={handleChange}
