@@ -83,8 +83,9 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
               <h2 className="text-3xl font-bold mb-8 text-foreground">Send us a Message</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Name</label>
+                  <label htmlFor="contact-name" className="block text-sm font-semibold text-foreground mb-2">Name</label>
                   <input
+                    id="contact-name"
                     type="text"
                     name="name"
                     value={formData.name}
@@ -96,8 +97,9 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Email</label>
+                    <label htmlFor="contact-email" className="block text-sm font-semibold text-foreground mb-2">Email</label>
                     <input
+                      id="contact-email"
                       type="email"
                       name="email"
                       value={formData.email}
@@ -108,8 +110,9 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Phone</label>
+                    <label htmlFor="contact-phone" className="block text-sm font-semibold text-foreground mb-2">Phone</label>
                     <input
+                      id="contact-phone"
                       type="tel"
                       name="phone"
                       value={formData.phone}
@@ -120,8 +123,9 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Subject</label>
+                  <label htmlFor="contact-subject" className="block text-sm font-semibold text-foreground mb-2">Subject</label>
                   <select
+                    id="contact-subject"
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
@@ -136,8 +140,9 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Message</label>
+                  <label htmlFor="contact-message" className="block text-sm font-semibold text-foreground mb-2">Message</label>
                   <textarea
+                    id="contact-message"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
