@@ -123,27 +123,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-@media (min-width: 1800px) {
-  .max-w-7xl {
-    max-width: 96rem;
-  }
-
-  .max-w-6xl {
-    max-width: 88rem;
-  }
-
-  .max-w-4xl {
-    max-width: 64rem;
-  }
-}
-
-@media (min-width: 2200px) {
-  .max-w-7xl {
-    max-width: 112rem;
-  }
-
-  .max-w-6xl {
-    max-width: 100rem;
-  }
-}
