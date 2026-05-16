@@ -51,11 +51,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased overflow-x-hidden`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased overflow-x-hidden bg-background`}>
         <OrganizationStructuredData />
         <WebSiteStructuredData />
         <GoogleAnalytics />
-        {children}
+        <div className="mx-auto w-full max-w-[1920px]">
+          {children}
+        </div>
         <SiteWhatsAppButton />
         <Toaster />
         <CookieConsent />

@@ -18,7 +18,7 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
     <main className="min-h-screen bg-background">
       <PublicNavbar currentPath={service.route} />
 
-      <section className="relative min-h-[75vh] md:min-h-[80vh] flex items-end overflow-hidden">
+      <section className="relative min-h-[clamp(420px,75vh,640px)] md:min-h-[clamp(480px,80vh,720px)] flex items-end overflow-hidden">
         <Image
           src={service.heroImage}
           alt={service.bannerTitle}
