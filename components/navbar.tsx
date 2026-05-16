@@ -53,6 +53,8 @@ export default function Navbar({ navLinks }: NavbarProps = {}) {
               alt="Center for Admission and Travels"
               width={64}
               height={64}
+              priority
+              sizes="(min-width: 2560px) 64px, (min-width: 1920px) 48px, 40px"
               className="h-10 min-[1920px]:h-12 min-[2560px]:h-16 w-auto object-contain"
             />
           </Link>

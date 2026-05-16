@@ -21,10 +21,20 @@ const contentSecurityPolicy = [
 
 const nextConfig = {
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
+    ],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
   async headers() {
     return [
+      {
+        source: '/images/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
       {
         source: '/:path*',
         headers: [

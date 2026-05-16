@@ -152,6 +152,10 @@ export interface ServicePageContent {
   icon: string
   route: string
   heroImage: string
+  heroImagePosition: {
+    x: number
+    y: number
+  }
   bannerTitle: string
   bannerSubtitle: string
   overview?: string
@@ -299,6 +303,12 @@ function logPublicContentError(scope: string, error: unknown) {
   console.error(`[public-content] Failed to load ${scope}:`, error)
 }
 
+function clampImagePosition(value: unknown): number {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 50
+  return Math.min(100, Math.max(0, numeric))
+}
+
 function mapPackage(pkg: any): PackageCardContent {
   return {
     id: pkg.id,
@@ -410,6 +420,11 @@ function mapAbout(aboutPage: any): AboutContent {
 }
 
 function mapServicePage(page: any): ServicePageContent {
+  const heroImagePosition = {
+    x: clampImagePosition(page?.heroImagePositionX),
+    y: clampImagePosition(page?.heroImagePositionY),
+  }
+
   return {
     id: page?.serviceId || '',
     title: page?.title || '',
@@ -417,6 +432,7 @@ function mapServicePage(page: any): ServicePageContent {
     icon: page?.icon || '',
     route: page?.route || '',
     heroImage: page?.heroImageUrl || '',
+    heroImagePosition,
     bannerTitle: page?.bannerTitle || '',
     bannerSubtitle: page?.bannerSubtitle || '',
     overview: page?.overview || undefined,

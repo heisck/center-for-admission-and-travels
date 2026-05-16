@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { GoogleAuthLink } from "@/components/google-auth-link"
 import { primeCurrentUserCache } from "@/hooks/use-current-user"
 
 export default function SignUp() {
@@ -43,6 +44,11 @@ function SignUpContent() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
+
+  useEffect(() => {
+    const error = searchParams.get("error")
+    if (error) setServerError(error)
+  }, [searchParams])
 
   const getPasswordStrength = (password: string) => {
     if (!password) return ""
@@ -142,6 +148,15 @@ function SignUpContent() {
               <p className="text-sm text-red-700">{serverError}</p>
             </div>
           )}
+
+          <div className="mb-6 space-y-4">
+            <GoogleAuthLink label="Sign up with Google" redirectTo={redirectTo} errorPath="/signup" />
+            <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 mb-6">
             <div>

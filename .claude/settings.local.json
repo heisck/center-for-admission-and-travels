@@ -16,7 +16,8 @@
       "Bash(npx --no-install dotenv-cli -e .env -- prisma migrate deploy)",
       "Bash(npx --no-install next dev)",
       "Bash(curl -s http://localhost:3000/)",
-      "Bash(grep -oE '<h4[^>]*>Services</h4>[^<]*<ul[^>]*>\\(<li[^>]*><a[^>]*href=\"[^\"]*\"[^>]*>[^<]*</a></li>\\){1,5}</ul>' /tmp/home.html)"
+      "Bash(grep -oE '<h4[^>]*>Services</h4>[^<]*<ul[^>]*>\\(<li[^>]*><a[^>]*href=\"[^\"]*\"[^>]*>[^<]*</a></li>\\){1,5}</ul>' /tmp/home.html)",
+      "PowerShell(Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction Continue; Start-Sleep -Milliseconds 500; Write-Host \"Remaining:\" @\\(Get-Process -Name node -ErrorAction SilentlyContinue\\).Count)"
     ]
   }
 }

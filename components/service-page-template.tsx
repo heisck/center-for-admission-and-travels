@@ -14,6 +14,8 @@ interface ServicePageTemplateProps {
 }
 
 export default function ServicePageTemplate({ service, chrome }: ServicePageTemplateProps) {
+  const heroObjectPosition = `${service.heroImagePosition.x}% ${service.heroImagePosition.y}%`
+
   return (
     <main className="min-h-screen bg-background">
       <PublicNavbar currentPath={service.route} />
@@ -27,6 +29,7 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
           fill
           priority
           className="object-cover object-top service-hero-img"
+          style={{ objectPosition: heroObjectPosition }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/30 to-black/65" />
 
@@ -63,6 +66,7 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
                 priority
                 sizes="(min-width: 1280px) 50vw, 100vw"
                 className="object-cover object-top service-hero-img"
+                style={{ objectPosition: heroObjectPosition }}
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-transparent" />
             </div>

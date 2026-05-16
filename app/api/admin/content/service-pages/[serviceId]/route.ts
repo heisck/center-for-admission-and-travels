@@ -45,6 +45,8 @@ export async function PUT(
       icon: body.icon,
       route: body.route,
       heroImageUrl: body.heroImage,
+      heroImagePositionX: body.heroImagePosition?.x,
+      heroImagePositionY: body.heroImagePosition?.y,
       bannerTitle: body.bannerTitle,
       bannerSubtitle: body.bannerSubtitle,
       overview: body.overview,

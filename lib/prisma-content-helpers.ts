@@ -539,6 +539,8 @@ export async function updateServicePage(serviceId: string, data: {
   icon?: string
   route?: string
   heroImageUrl?: string
+  heroImagePositionX?: number
+  heroImagePositionY?: number
   bannerTitle?: string
   bannerSubtitle?: string
   overview?: string
@@ -558,6 +560,8 @@ export async function updateServicePage(serviceId: string, data: {
       icon: data.icon,
       route: data.route,
       heroImageUrl: data.heroImageUrl,
+      heroImagePositionX: data.heroImagePositionX,
+      heroImagePositionY: data.heroImagePositionY,
       bannerTitle: data.bannerTitle,
       bannerSubtitle: data.bannerSubtitle,
       overview: data.overview,
@@ -570,6 +574,8 @@ export async function updateServicePage(serviceId: string, data: {
       icon: data.icon || '',
       route: data.route || '',
       heroImageUrl: data.heroImageUrl || '',
+      heroImagePositionX: data.heroImagePositionX ?? 50,
+      heroImagePositionY: data.heroImagePositionY ?? 50,
       bannerTitle: data.bannerTitle || '',
       bannerSubtitle: data.bannerSubtitle || '',
       overview: data.overview,

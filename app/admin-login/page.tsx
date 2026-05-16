@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
+import { GoogleAuthLink } from '@/components/google-auth-link'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -13,6 +14,12 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const oauthError = params.get('error')
+    if (oauthError) setError(oauthError)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,6 +89,15 @@ export default function AdminLoginPage() {
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
+
+          <div className="space-y-4">
+            <GoogleAuthLink label="Sign in with Google" startPath="/api/admin/auth/google/start" />
+            <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </div>
 
           {/* Email / Username Field */}
           <div>

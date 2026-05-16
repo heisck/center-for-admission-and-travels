@@ -150,6 +150,10 @@ export interface AdminContent {
     icon: string
     route: string
     heroImage: string
+    heroImagePosition: {
+      x: number
+      y: number
+    }
     bannerTitle: string
     bannerSubtitle: string
     overview?: string
@@ -952,6 +956,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           icon: service.icon,
           route: service.route,
           heroImage: service.heroImage,
+          heroImagePosition: service.heroImagePosition || { x: 50, y: 50 },
           bannerTitle: service.bannerTitle,
           bannerSubtitle: service.bannerSubtitle,
           overview: service.overview,

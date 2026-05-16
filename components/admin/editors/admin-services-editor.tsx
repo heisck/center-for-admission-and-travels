@@ -1,6 +1,7 @@
 'use client'
 
 import { useAdmin } from '@/context/admin-context'
+import { ImageFocalPointEditor } from '../image-focal-point-editor'
 import { ImageEditor } from '../image-editor'
 
 export default function AdminServicesEditor() {
@@ -79,10 +80,31 @@ export default function AdminServicesEditor() {
 
             <ImageEditor
               images={service.heroImage ? [service.heroImage] : []}
-              onChange={(images) => updateServicePage(service.id, { heroImage: images[0] || '' })}
+              onChange={(images) =>
+                updateServicePage(service.id, {
+                  heroImage: images[0] || '',
+                  heroImagePosition: { x: 50, y: 50 },
+                })
+              }
               maxImages={1}
               label="Hero Image"
             />
+            <div className="grid gap-4 xl:grid-cols-2">
+              <ImageFocalPointEditor
+                image={service.heroImage}
+                value={service.heroImagePosition}
+                onChange={(heroImagePosition) => updateServicePage(service.id, { heroImagePosition })}
+                label="Full hero preview"
+                aspectClassName="aspect-[16/9]"
+              />
+              <ImageFocalPointEditor
+                image={service.heroImage}
+                value={service.heroImagePosition}
+                onChange={(heroImagePosition) => updateServicePage(service.id, { heroImagePosition })}
+                label="Split hero preview"
+                aspectClassName="aspect-[4/3]"
+              />
+            </div>
           </div>
 
           <label className="block mt-6">
