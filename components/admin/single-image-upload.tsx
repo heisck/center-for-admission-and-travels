@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Upload, X, Check, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 
@@ -109,15 +109,6 @@ export function SingleImageUpload({
     e.stopPropagation()
     setIsDragging(false)
     handleFileSelect(e.dataTransfer.files)
-  }
-
-  const handleSave = () => {
-    if (preview) {
-      onChange(preview)
-    } else {
-      // If no preview, clear the image
-      onChange('')
-    }
   }
 
   const handleRemove = async () => {

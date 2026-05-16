@@ -2,12 +2,14 @@ import type { SupportContact } from '@/lib/support-contact'
 
 const BRAND = 'Center for Admission & Travels'
 const BRAND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://catravels.com'
-const DEFAULT_SUPPORT_EMAIL = 'info@centerforadmissionandtravels.com'
-const DEFAULT_PHONE = '+233 248 422 663'
 
 function layout(title: string, body: string, contact?: Partial<SupportContact>) {
-  const supportEmail = contact?.email?.trim() || DEFAULT_SUPPORT_EMAIL
-  const phone = contact?.phone?.trim() || DEFAULT_PHONE
+  const supportEmail = contact?.email?.trim() || ''
+  const phone = contact?.phone?.trim() || ''
+  const contactFooter = [phone, supportEmail]
+    .filter(Boolean)
+    .map((item) => `<p>${item}</p>`)
+    .join('')
 
   return `
 <!DOCTYPE html>
@@ -23,8 +25,8 @@ function layout(title: string, body: string, contact?: Partial<SupportContact>) 
       ${body}
     </div>
     <div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8;">
-      <p>${BRAND} &bull; ${phone}</p>
-      <p>${supportEmail}</p>
+      <p>${BRAND}</p>
+      ${contactFooter}
     </div>
   </div>
 </body>

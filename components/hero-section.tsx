@@ -7,39 +7,6 @@ import HeroMasonryPanel from '@/components/hero-masonry-panel'
 import './hero-section.css'
 import type { HomeHeroContent } from "@/lib/public-content"
 
-const fallbackItems = [
-  {
-    id: "1",
-    img: "/images/thisshouldbeintegrated5.jpg",
-    url: "https://example.com/one",
-    height: 400,
-  },
-  {
-    id: "2",
-    img: "/images/integrate2.jpg",
-    url: "https://example.com/two",
-    height: 350,
-  },
-  {
-    id: "3",
-    img: "/images/integrate.jpg",
-    url: "https://example.com/three",
-    height: 400,
-  },
-  {
-    id: "4",
-    img: "/images/integrate1.jpg",
-    url: "https://example.com/four",
-    height: 600,
-  },
-  {
-    id: "5",
-    img: "/images/integrate3.jpg",
-    url: "https://example.com/five",
-    height: 300,
-  },
-]
-
 interface HeroSectionProps {
   hero: HomeHeroContent
 }
@@ -52,27 +19,23 @@ export default function HeroSection({ hero }: HeroSectionProps) {
     return () => clearTimeout(timer)
   }, [])
 
-  const heroTitle = hero.title || "Looking To Travel"
-  const heroDescription =
-    hero.description ||
-    "Welcome to Center for Admission and Travels, where your dreams of studying, working, and traveling abroad become reality. We guide you with honesty, professionalism, and care every step of the way."
-  const stats = hero.stats?.length
-    ? hero.stats
-    : [
-        { value: "50+", label: "Success Stories" },
-        { value: "15+", label: "Destinations" },
-        { value: "100%", label: "Satisfaction" },
-      ]
+  const heroTitle = hero.title?.trim() || ""
+  const heroDescription = hero.description?.trim() || ""
+  const stats = hero.stats || []
 
   const heroImages = hero.images || []
-  const items = heroImages.length > 0
-    ? heroImages.map((img, index) => ({
+  const items = heroImages
+    .filter((img) => img?.trim())
+    .map((img, index) => ({
         id: `db-${index}`,
         img,
         url: "#",
         height: [400, 350, 400, 600, 300][index % 5] || 400,
       }))
-    : fallbackItems
+
+  if (!heroTitle && !heroDescription && items.length === 0 && stats.length === 0) {
+    return null
+  }
 
   const titleParts = heroTitle.split(' ')
   const accentTitle = titleParts.length > 2 ? titleParts.slice(0, -2).join(' ') : heroTitle
@@ -106,20 +69,26 @@ export default function HeroSection({ hero }: HeroSectionProps) {
             </p>
           </div>
 
-          <div className="flex gap-4 flex-wrap px-4">
-            <a
-              href="#services"
-              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
-            >
-              {hero.cta1Text || "View Our Services"}
-            </a>
-            <Link
-              href="/contact"
-              className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
-            >
-              {hero.cta2Text || "Contact Us"}
-            </Link>
-          </div>
+          {(hero.cta1Text || hero.cta2Text) ? (
+            <div className="flex gap-4 flex-wrap px-4">
+              {hero.cta1Text ? (
+                <a
+                  href="#services"
+                  className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+                >
+                  {hero.cta1Text}
+                </a>
+              ) : null}
+              {hero.cta2Text ? (
+                <Link
+                  href="/contact"
+                  className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
+                >
+                  {hero.cta2Text}
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-3 gap-6 pt-8 px-4">
             {stats.map((stat, idx) => (
@@ -152,20 +121,26 @@ export default function HeroSection({ hero }: HeroSectionProps) {
               </p>
             </div>
 
-            <div className="relative z-20 flex gap-4 flex-wrap">
-              <a
-                href="#services"
-                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
-              >
-                {hero.cta1Text || "View Our Services"}
-              </a>
-              <Link
-                href="/contact"
-                className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
-              >
-                {hero.cta2Text || "Contact Us"}
-              </Link>
-            </div>
+            {(hero.cta1Text || hero.cta2Text) ? (
+              <div className="relative z-20 flex gap-4 flex-wrap">
+                {hero.cta1Text ? (
+                  <a
+                    href="#services"
+                    className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105"
+                  >
+                    {hero.cta1Text}
+                  </a>
+                ) : null}
+                {hero.cta2Text ? (
+                  <Link
+                    href="/contact"
+                    className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition"
+                  >
+                    {hero.cta2Text}
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="relative z-20 grid grid-cols-3 md:gap-6 pt-8">
               {stats.map((stat, idx) => (

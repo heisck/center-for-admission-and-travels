@@ -5,12 +5,6 @@ import { useEffect, useMemo, useState } from "react"
 
 type DomeImage = { src: string; alt?: string }
 
-const DEFAULT_TRAVEL_IMAGES: DomeImage[] = [
-  { src: "/dubai-burj-khalifa-city-skyline.jpg", alt: "Dubai skyline" },
-  { src: "/europe-paris-eiffel-tower-landmarks.jpg", alt: "European landmarks" },
-  { src: "/asia-tropical-beaches-thailand-temples.jpg", alt: "Asian travel destination" },
-]
-
 const DomeGallery = dynamic(() => import("./DomeGallery"), {
   ssr: false,
   loading: () => null,
@@ -104,11 +98,10 @@ export default function TravelDomeGalleryPanel({ images }: { images: DomeImage[]
   }, [])
 
   const galleryImages = useMemo(() => {
-    const validImages = images.filter((image) => image.src?.trim())
-    return validImages.length > 0 ? validImages : DEFAULT_TRAVEL_IMAGES
+    return images.filter((image) => image.src?.trim())
   }, [images])
 
-  if (!shouldAnimate) {
+  if (galleryImages.length === 0 || !shouldAnimate) {
     return <DomePlaceholder />
   }
 

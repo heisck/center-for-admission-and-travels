@@ -5,10 +5,11 @@ import { useState } from "react"
 import { CreditCard, Menu, User as UserIcon, X } from "lucide-react"
 
 import { useCurrentUser } from "@/hooks/use-current-user"
-import { NAV_LINKS } from "@/components/site-navigation"
+import { NAV_LINKS, type SiteNavLink } from "@/components/site-navigation"
 
 interface MobileNavbarMenuProps {
   currentPath?: string
+  navLinks?: SiteNavLink[]
 }
 
 function isLinkActive(href: string, currentPath?: string) {
@@ -17,19 +18,20 @@ function isLinkActive(href: string, currentPath?: string) {
   return currentPath === href || currentPath.startsWith(`${href}/`)
 }
 
-export default function MobileNavbarMenu({ currentPath }: MobileNavbarMenuProps) {
+export default function MobileNavbarMenu({ currentPath, navLinks }: MobileNavbarMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const { user, logout } = useCurrentUser()
+  const links = navLinks ?? NAV_LINKS
 
   return (
-    <div className="lg:hidden relative">
+    <div className="xl:hidden relative">
       <button onClick={() => setIsOpen((current) => !current)} className="p-2 hover:bg-muted rounded-lg">
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {isOpen ? (
         <div className="absolute right-0 top-full mt-2 w-[min(92vw,22rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-xl p-4 space-y-2">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}

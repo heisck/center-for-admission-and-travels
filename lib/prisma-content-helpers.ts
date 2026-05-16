@@ -69,7 +69,7 @@ export async function updateHomeStats(stats: Array<{ value: string; label: strin
   })
 }
 
-export async function updateHomeServices(services: Array<{ id?: string; icon: string; title: string; description: string }>) {
+export async function updateHomeServices(services: Array<{ id?: string; icon: string; title: string; description: string; route?: string | null }>) {
   const homePage = await prisma.homePage.findUnique({ where: { id: 'home' } })
   if (!homePage) {
     await prisma.homePage.create({ data: { id: 'home', heroTitle: '', heroCta1Text: '', heroCta2Text: '' } })
@@ -85,6 +85,7 @@ export async function updateHomeServices(services: Array<{ id?: string; icon: st
       icon: svc.icon,
       title: svc.title,
       description: svc.description,
+      route: svc.route ?? null,
       order: index,
     })),
   })

@@ -1,6 +1,6 @@
 'use client'
 
-import { HelpCircle, Save, Edit2, Trash2, Undo2, RotateCcw } from 'lucide-react'
+import { HelpCircle, Edit2, Trash2, Undo2, Database } from 'lucide-react'
 import { useState } from 'react'
 
 export function AdminHelp() {
@@ -67,16 +67,16 @@ export function AdminHelp() {
 
         <div>
           <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-            <RotateCcw size={16} /> Reset Changes
+            <Database size={16} /> Saved Content
           </h4>
           <p className="text-muted-foreground">
-            Click the Reset button to revert all changes back to the original default content. This cannot be undone, so use with caution.
+            The admin panel loads content from the database. Use Save when you want to persist a full-page edit set.
           </p>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded p-3">
           <p className="text-blue-900 text-xs font-medium">
-            All changes are stored locally in your browser. They do not affect your live website until you export or sync the data to your database.
+            Browser storage is no longer used as a content backup, so old local data cannot overwrite the live site.
           </p>
         </div>
 

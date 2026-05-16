@@ -6,22 +6,16 @@ import { useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { Menu, X, User as UserIcon, LogOut, CreditCard } from "lucide-react"
 import { useCurrentUser } from "@/hooks/use-current-user"
+import { getHeaderNavLinks, NAV_LINKS as DEFAULT_NAV_LINKS, type SiteNavLink } from "@/components/site-navigation"
 import './navbar.css'
 
-const NAV_LINKS = [
-  { href: '/', label: 'Home', mobileLabel: 'Home' },
-  { href: '/about', label: 'About', mobileLabel: 'About' },
-  { href: '/packages', label: 'Packages', mobileLabel: 'Packages' },
-  { href: '/study-abroad', label: 'Study', mobileLabel: 'Study Abroad' },
-  { href: '/work-abroad', label: 'Work', mobileLabel: 'Work Abroad' },
-  { href: '/travel-tours', label: 'Travel', mobileLabel: 'Travel & Tours' },
-  { href: '/global-network', label: 'Network', mobileLabel: 'Global Network' },
-  { href: '/blog', label: 'Blog', mobileLabel: 'Blog' },
-  { href: '/newsletter', label: 'Newsletter', mobileLabel: 'Newsletter' },
-  { href: '/contact', label: 'Contact', mobileLabel: 'Contact' },
-]
+interface NavbarProps {
+  navLinks?: SiteNavLink[]
+}
 
-export default function Navbar() {
+export default function Navbar({ navLinks }: NavbarProps = {}) {
+  const NAV_LINKS = navLinks ?? DEFAULT_NAV_LINKS
+  const HEADER_NAV_LINKS = getHeaderNavLinks(NAV_LINKS)
   const [isOpen, setIsOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const { user, isLoading, logout } = useCurrentUser()
@@ -52,24 +46,24 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 min-[1920px]:h-20 min-[2560px]:h-24">
           <Link href="/" className="flex items-center flex-shrink-0">
             <Image
               src="/images/ca-20logo.png"
               alt="Center for Admission and Travels"
-              width={40}
-              height={40}
-              className="h-10 w-auto object-contain"
+              width={64}
+              height={64}
+              className="h-10 min-[1920px]:h-12 min-[2560px]:h-16 w-auto object-contain"
             />
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-1">
-            {NAV_LINKS.map((link) => (
+          <div className="hidden xl:flex items-center justify-center gap-1 min-w-0">
+            {HEADER_NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 transition text-sm font-medium ${
+                className={`px-2.5 py-2 transition text-sm font-medium whitespace-nowrap ${
                   isActive(link.href)
                     ? 'text-orange-600 font-semibold'
                     : 'text-foreground hover:text-orange-600'
@@ -80,7 +74,7 @@ export default function Navbar() {
             ))}
           </div>
 
-          <div className="hidden md:flex min-w-[240px] justify-end gap-3 md:gap-2 items-center">
+          <div className="hidden xl:flex min-w-[188px] justify-end gap-2 items-center">
             {user ? (
               <div className="relative flex justify-end">
                 <button
@@ -127,7 +121,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : isLoading ? (
-              <div className="h-10 w-[220px] rounded-lg border border-border bg-slate-100 animate-pulse" />
+              <div className="h-10 w-[180px] rounded-lg border border-border bg-slate-100 animate-pulse" />
             ) : (
               <>
                 <Link
@@ -147,14 +141,14 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2 hover:bg-muted rounded-lg">
+          <button onClick={() => setIsOpen(!isOpen)} className="xl:hidden p-2 hover:bg-muted rounded-lg">
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden pb-4 space-y-2">
+          <div className="xl:hidden pb-4 space-y-2">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}

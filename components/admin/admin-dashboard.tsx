@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Undo2, Redo2, RotateCcw, Home, Info, Package, Settings, Eye, EyeOff, Plane, Save, CreditCard, ClipboardList } from 'lucide-react'
+import { Undo2, Redo2, Home, Info, Package, Settings, Eye, EyeOff, Plane, Save, CreditCard, ClipboardList } from 'lucide-react'
 import { useAdmin } from '@/context/admin-context'
 import AdminHomeEditor from './editors/admin-home-editor'
 import AdminAboutEditor from './editors/admin-about-editor'
@@ -21,7 +21,7 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [currentPage, setCurrentPage] = useState<AdminPage>('home')
   const [showPreview, setShowPreview] = useState(true)
-  const { canUndo, canRedo, undo, redo, resetToDefault, saveAll, isSaving } = useAdmin()
+  const { canUndo, canRedo, undo, redo, saveAll, isSaving } = useAdmin()
 
   const handleSave = async () => {
     await saveAll()
@@ -72,16 +72,6 @@ export default function AdminDashboard() {
               >
                 <Redo2 size={18} />
               </button>
-              <div className="w-px h-6 bg-border"></div>
-              <button
-                onClick={resetToDefault}
-                className="p-2 px-4 rounded-lg border border-border hover:bg-slate-50 text-sm font-medium transition flex items-center gap-2"
-                title="Reset to default"
-              >
-                <RotateCcw size={16} />
-                Reset
-              </button>
-              <div className="w-px h-6 bg-border"></div>
               <button
                 onClick={handleSave}
                 disabled={isSaving}

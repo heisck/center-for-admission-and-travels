@@ -122,7 +122,7 @@ export default function AdminHomeEditor() {
                       newStats[idx].value = e.target.value
                       updateHomeHero({ stats: newStats })
                     }}
-                    placeholder="Value (e.g., 50+)"
+                    placeholder="Value"
                     className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <input

@@ -15,38 +15,8 @@ interface ServicesGridProps {
 }
 
 export default function ServicesGrid({ services }: ServicesGridProps) {
-  const defaultServices: HomeServiceContent[] = [
-    {
-      id: "study-abroad",
-      icon: "GraduationCap",
-      title: "Study Abroad",
-      description: "Admission guidance, university selection, and visa processing for top institutions worldwide",
-      href: "/study-abroad",
-    },
-    {
-      id: "work-abroad",
-      icon: "Briefcase",
-      title: "Work Abroad",
-      description: "Job placement assistance and relocation support in verified international companies",
-      href: "/work-abroad",
-    },
-    {
-      id: "travel-tours",
-      icon: "Plane",
-      title: "Travel & Tours",
-      description: "Curated travel packages to Dubai, Europe, Asia, and more with full support",
-      href: "/travel-tours",
-    },
-    {
-      id: "global-network",
-      icon: "Globe",
-      title: "Global Network",
-      description: "Partnerships with accredited universities and verified employers worldwide",
-      href: "/global-network",
-    },
-  ]
-
-  const cards = services.length > 0 ? services : defaultServices
+  const cards = services.filter((service) => service.title?.trim())
+  if (cards.length === 0) return null
 
   return (
     <section id="services" className="py-12 md:py-24 bg-white">

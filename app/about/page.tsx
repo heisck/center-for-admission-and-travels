@@ -10,6 +10,7 @@ export const revalidate = 300
 
 export default async function About() {
   const [about, chrome] = await Promise.all([getAboutPageContent(), getSiteChromeContent()])
+  const hasHeroImage = Boolean(about.heroImage?.trim())
 
   return (
     <main className="min-h-screen bg-background">
@@ -18,24 +19,28 @@ export default async function About() {
       <section className="relative py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
-              <Image
-                src={about.heroImage || "/images/thisshouldbeintegrated4.jpg"}
-                alt="Team at conference"
-                fill
-                className="object-cover object-top"
-              />
-            </div>
+            {hasHeroImage ? (
+              <div className="relative h-80 rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
+                <Image
+                  src={about.heroImage}
+                  alt={about.heroTitle || "About"}
+                  fill
+                  className="object-cover object-top"
+                />
+              </div>
+            ) : null}
 
             <div className="order-1 md:order-2">
               <h1 className="text-5xl md:text-6xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  {about.heroTitle || "About Center for Admission and Travels"}
+                  {about.heroTitle || "About"}
                 </span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl">
-                {about.heroSubtitle || "Your trusted partner in global opportunities. We believe every journey is unique, and our team is dedicated to guiding you with honesty, professionalism, and care from start to finish."}
-              </p>
+              {about.heroSubtitle ? (
+                <p className="text-xl text-muted-foreground max-w-2xl">
+                  {about.heroSubtitle}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -46,9 +51,11 @@ export default async function About() {
           <div className="grid md:grid-cols-2 gap-12">
             <div>
               <h2 className="text-3xl font-bold mb-6 text-primary">Our Mission</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                {about.mission?.description || "To provide trusted, personalized, and professional services in international education, travel, and job placements."}
-              </p>
+              {about.mission?.description ? (
+                <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+                  {about.mission.description}
+                </p>
+              ) : null}
               <div className="space-y-3">
                 {about.mission?.points?.map((point, idx) => (
                   <div key={idx} className="flex items-start space-x-3">
@@ -61,9 +68,11 @@ export default async function About() {
 
             <div>
               <h2 className="text-3xl font-bold mb-6 text-primary">Our Vision</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                {about.vision?.description || "To be Ghana's leading gateway to global education, travel, and work opportunities."}
-              </p>
+              {about.vision?.description ? (
+                <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+                  {about.vision.description}
+                </p>
+              ) : null}
               <div className="space-y-3">
                 {about.vision?.points?.map((point, idx) => (
                   <div key={idx} className="flex items-start space-x-3">

@@ -52,11 +52,8 @@ DATABASE_URL="postgresql://user:password@host:port/database"
 ### 3. Install Dependencies
 
 ```bash
-# Install Prisma
-npm install prisma @prisma/client
-
-# Install TypeScript execution (for seed script)
-npm install -D tsx
+# Install project dependencies
+npm install
 ```
 
 ---
@@ -80,23 +77,6 @@ When you run `npm run db:migrate`, it will:
 
 ---
 
-### 5. Seed Initial Data (Optional)
-
-```bash
-# Populate database with default content
-npm run db:seed
-```
-
-This adds:
-- Default home page content
-- About page content
-- Contact info
-- Footer info
-- Service pages
-- Default admin user (username: `admin`, password: `password123`)
-
----
-
 ## Verification
 
 After setup, verify everything works:
@@ -111,7 +91,6 @@ npm run db:studio
 
 You should see:
 - ✅ Database tables created
-- ✅ Data seeded (if you ran seed)
 - ✅ No errors in console
 
 ---
@@ -120,7 +99,7 @@ You should see:
 
 Once you've completed the setup above, we'll:
 
-1. ✅ Update API routes to use Prisma (replace mockDataStore)
+1. ✅ API routes use Prisma-backed persistence
 2. ✅ Update AdminContext to write to API
 3. ✅ Add PublicContentProvider
 4. ✅ Update public pages to read from API
@@ -144,21 +123,13 @@ npm install prisma @prisma/client
 - Make sure database is empty (or drop existing tables)
 - Check database permissions
 
-### "Error: tsx not found"
-```bash
-npm install -D tsx
-```
-
----
-
 ## Summary Checklist
 
 - [ ] PostgreSQL database set up
 - [ ] `.env` file created with `DATABASE_URL`
-- [ ] Run `npm install prisma @prisma/client tsx`
+- [ ] Run `npm install`
 - [ ] Run `npm run db:generate`
 - [ ] Run `npm run db:migrate`
-- [ ] (Optional) Run `npm run db:seed`
 - [ ] Verify with `npm run db:studio`
 
 **Once all checked, let me know and we'll connect everything!** 🚀

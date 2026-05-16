@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 /* ---------- lazy-but-early GSAP loader ---------- */
 let gsapLoader: Promise<typeof import('gsap')> | null = null;
@@ -21,10 +21,10 @@ ensureGsapLoading();
 /* ---------- hooks ---------- */
 
 const useMedia = (queries: string[], values: number[], defaultValue: number): number => {
-  const get = () => {
+  const get = useCallback(() => {
     if (typeof window === 'undefined') return defaultValue;
     return values[queries.findIndex(q => window.matchMedia(q).matches)] ?? defaultValue;
-  };
+  }, [defaultValue, queries, values]);
 
   const [value, setValue] = useState<number>(get);
 
@@ -32,7 +32,7 @@ const useMedia = (queries: string[], values: number[], defaultValue: number): nu
     const handler = () => setValue(get);
     queries.forEach(q => window.matchMedia(q).addEventListener('change', handler));
     return () => queries.forEach(q => window.matchMedia(q).removeEventListener('change', handler));
-  }, [defaultValue, queries, values]);
+  }, [get, queries]);
 
   return value;
 };
@@ -122,7 +122,7 @@ const Masonry: React.FC<MasonryProps> = ({
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
 
-  const getStartOffset = (item: GridItem) => {
+  const getStartOffset = useCallback((item: GridItem) => {
     let direction = animateFrom;
     if (animateFrom === 'random') {
       const dirs = ['top', 'bottom', 'left', 'right'] as const;
@@ -154,7 +154,7 @@ const Masonry: React.FC<MasonryProps> = ({
       default:
         return { x: item.x, y: item.y + 80 };
     }
-  };
+  }, [animateFrom, containerRef]);
 
   // Preload images + GSAP in parallel, then mark ready
   useEffect(() => {
@@ -247,7 +247,7 @@ const Masonry: React.FC<MasonryProps> = ({
     }
 
     hasMounted.current = true;
-  }, [grid, ready, stagger, animateFrom, duration, ease, prefersReducedMotion]);
+  }, [grid, ready, stagger, duration, ease, prefersReducedMotion, getStartOffset]);
 
   const handleMouseEnter = (id: string, element: HTMLElement) => {
     if (!enableHoverEffects || prefersReducedMotion || !gsapInstance) return;

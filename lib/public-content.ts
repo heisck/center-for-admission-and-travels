@@ -458,21 +458,51 @@ const TITLE_TO_ROUTE_MAP: Record<string, string> = {
   'Global Network': '/global-network',
 }
 
+// Canonical service routes used when matching older home-page cards to service pages.
+// Used when a card has no explicit route (renamed before `route` column existed).
+const POSITION_FALLBACK_ROUTES = [
+  '/study-abroad',
+  '/work-abroad',
+  '/travel-tours',
+  '/global-network',
+]
+
 function buildServiceHref(
-  service: { title?: string | null },
+  service: { title?: string | null; route?: string | null; position?: number },
   servicePages: Array<{ title: string; route: string; serviceId: string }>
 ) {
+  const validRoutes = new Set(servicePages.map((p) => p.route))
+
+  // 1. Stable route stored directly on the home service (set via admin or
+  //    backfilled on migration). Renames of `title` no longer break the link.
+  if (service.route && validRoutes.has(service.route)) return service.route
+
+  // 2. Match the current title against an existing service page.
   const matchingPage = servicePages.find(
     (page) =>
       page.title?.toLowerCase() === service.title?.toLowerCase() ||
       page.serviceId?.toLowerCase() === service.title?.toLowerCase().replace(/\s+/g, '-')
   )
-
   if (matchingPage?.route) return matchingPage.route
-  if (service.title && TITLE_TO_ROUTE_MAP[service.title]) return TITLE_TO_ROUTE_MAP[service.title]
-  if (!service.title) return '/'
 
-  return `/${service.title.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')}`
+  // 3. Hardcoded legacy map (only when service pages aren't loaded).
+  if (service.title && TITLE_TO_ROUTE_MAP[service.title]) return TITLE_TO_ROUTE_MAP[service.title]
+
+  // 4. Slugify only if the resulting route actually exists.
+  if (service.title) {
+    const slug = `/${service.title.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')}`
+    if (validRoutes.has(slug)) return slug
+  }
+
+  // 5. Position fallback: a renamed card at one of the first four positions
+  //    is presumed to map to the canonical service route at that position.
+  if (service.position !== undefined && service.position < POSITION_FALLBACK_ROUTES.length) {
+    const fallback = POSITION_FALLBACK_ROUTES[service.position]
+    if (validRoutes.has(fallback)) return fallback
+  }
+
+  // 6. Never return a 404. Fall back to home.
+  return '/'
 }
 
 export const getSiteChromeContent = unstable_cache(
@@ -595,12 +625,12 @@ export const getHomePageContent = unstable_cache(
             })) || [],
         },
         services:
-          homePage?.services?.map((service) => ({
+          homePage?.services?.map((service, index) => ({
             id: service.id,
             icon: service.icon,
             title: service.title,
             description: service.description,
-            href: buildServiceHref(service, servicePages),
+            href: buildServiceHref({ title: service.title, route: (service as any).route, position: index }, servicePages),
           })) || [],
         featuredPackages:
           (homePage?.featuredPackages ?? [])

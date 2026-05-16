@@ -77,19 +77,22 @@ export default function AdminContactEditor() {
               value={contact.phone}
               onChange={(e) => updateContact({ phone: e.target.value })}
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="+233 248 422 663"
+              placeholder="Phone number"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">Public & Contact Form Email</label>
             <input
               type="email"
               value={contact.email}
               onChange={(e) => updateContact({ email: e.target.value })}
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="info@example.com"
+              placeholder="contact@centerforadmissionandtravels.com"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Shown on the website and used as the inbox for contact form notifications.
+            </p>
           </div>
 
           <div>
@@ -99,7 +102,7 @@ export default function AdminContactEditor() {
               value={contact.whatsappNumber}
               onChange={(e) => updateContact({ whatsappNumber: e.target.value })}
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="+233248422663"
+              placeholder="WhatsApp number"
             />
             <p className="text-xs text-muted-foreground mt-1">Used for WhatsApp contact links</p>
           </div>

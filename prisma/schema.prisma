@@ -177,6 +177,7 @@ model HomeService {
   icon        String
   title       String
   description String
+  route       String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -325,7 +326,7 @@ model AboutSuccessStory {
   id          String   @id @default(cuid())
   aboutPageId String
   name        String
-  program     String   // e.g., "Computer Science at Oxford University"
+  program     String
   quote       String
   order       Int      @default(0)
   createdAt   DateTime @default(now())

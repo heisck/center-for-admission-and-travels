@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Trash2, Plus, Upload, ImageIcon, X, Check, Loader2 } from 'lucide-react'
+import { Plus, Upload, ImageIcon, X, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 

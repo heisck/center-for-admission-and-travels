@@ -141,6 +141,7 @@ export default function Stack({
                 transformOrigin: !isHydrated ? '90% 90%' : undefined
               }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={card.img} alt={`card-${card.id}`} className="w-full h-full object-cover pointer-events-none" />
             </motion.div>
           </CardRotate>

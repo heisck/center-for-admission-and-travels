@@ -20,6 +20,8 @@
 
 .service-hero-img {
   animation: service-hero-ken-burns 20s ease-out forwards;
+  object-position: center top;
+  transform-origin: center top;
 }
 
 .service-hero-fade {

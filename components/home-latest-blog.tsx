@@ -32,14 +32,16 @@ export default function HomeLatestBlog({ posts }: HomeLatestBlogProps) {
               href={`/blog/${post.slug}`}
               className="group block bg-white rounded-2xl border border-border overflow-hidden hover:border-primary hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
             >
-              <div className="relative aspect-video overflow-hidden">
-                <Image
-                  src={post.imageUrl || '/images/thisshouldbeintegrated2.jpg'}
-                  alt={post.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
+              <div className="relative aspect-video overflow-hidden bg-slate-100">
+                {post.imageUrl ? (
+                  <Image
+                    src={post.imageUrl}
+                    alt={post.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                ) : null}
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition line-clamp-2">

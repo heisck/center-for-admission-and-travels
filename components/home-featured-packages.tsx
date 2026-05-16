@@ -27,21 +27,23 @@ export default function HomeFeaturedPackages({ featuredPackages }: HomeFeaturedP
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {featuredPackages.map((pkg) => {
-            const img = pkg.images?.[0] || '/images/thisshouldbeintegrated2.jpg'
+            const img = pkg.images?.[0]?.trim()
             return (
               <Link
                 key={pkg.id}
                 href={`/packages?highlight=${pkg.id}`}
                 className="group block bg-white rounded-2xl border border-border overflow-hidden hover:border-primary hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={img}
-                    alt={pkg.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
+                <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                  {img ? (
+                    <Image
+                      src={img}
+                      alt={pkg.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : null}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
                     <span className="inline-block px-3 py-1 bg-primary/90 text-white text-xs font-semibold rounded-full uppercase tracking-wide">

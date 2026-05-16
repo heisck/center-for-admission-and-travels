@@ -7,36 +7,42 @@ export interface SupportContact {
   whatsappNumber: string
 }
 
-const DEFAULT_SUPPORT_CONTACT: SupportContact = {
-  email: 'info@centerforadmissionandtravels.com',
-  phone: '+233 248 422 663',
-  whatsappNumber: '+233248422663',
+const EMPTY_SUPPORT_CONTACT: SupportContact = {
+  email: '',
+  phone: '',
+  whatsappNumber: '',
+}
+
+async function loadSupportContact(): Promise<SupportContact> {
+  try {
+    const contact = await prisma.contactInfo.findUnique({
+      where: { id: 'contact' },
+      select: { email: true, phone: true, whatsappNumber: true },
+    })
+
+    if (!contact) return EMPTY_SUPPORT_CONTACT
+
+    return {
+      email: contact.email?.trim() || '',
+      phone: contact.phone?.trim() || '',
+      whatsappNumber: contact.whatsappNumber?.trim() || '',
+    }
+  } catch (error) {
+    console.error('[support-contact] Failed to load support contact:', error)
+    return EMPTY_SUPPORT_CONTACT
+  }
 }
 
 const getCachedSupportContact = unstable_cache(
-  async (): Promise<SupportContact> => {
-    try {
-      const contact = await prisma.contactInfo.findUnique({
-        where: { id: 'contact' },
-        select: { email: true, phone: true, whatsappNumber: true },
-      })
-
-      if (!contact) return DEFAULT_SUPPORT_CONTACT
-
-      return {
-        email: contact.email?.trim() || DEFAULT_SUPPORT_CONTACT.email,
-        phone: contact.phone?.trim() || DEFAULT_SUPPORT_CONTACT.phone,
-        whatsappNumber: contact.whatsappNumber?.trim() || DEFAULT_SUPPORT_CONTACT.whatsappNumber,
-      }
-    } catch (error) {
-      console.error('[support-contact] Failed to load support contact:', error)
-      return DEFAULT_SUPPORT_CONTACT
-    }
-  },
+  loadSupportContact,
   ['support-contact'],
   { revalidate: 300, tags: ['public-content'] }
 )
 
 export async function getSupportContact(): Promise<SupportContact> {
   return getCachedSupportContact()
+}
+
+export async function getFreshSupportContact(): Promise<SupportContact> {
+  return loadSupportContact()
 }

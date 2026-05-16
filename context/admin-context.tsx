@@ -1,7 +1,6 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { services as servicesData } from '@/data/services'
 
 export interface AdminContent {
   home: {
@@ -19,6 +18,7 @@ export interface AdminContent {
       icon: string
       title: string
       description: string
+      route?: string | null
     }>
     featuredPackages?: Array<{
       id: string
@@ -186,7 +186,6 @@ interface HistoryState {
 interface AdminContextType {
   content: AdminContent
   isLoading: boolean
-  updateContent: (updates: Partial<AdminContent>) => void
   updateHomeHero: (updates: Partial<AdminContent['home']['hero']>) => void
   updateServices: (services: AdminContent['home']['services']) => void
   updateHomeFeaturedPackages: (packageIds: string[]) => void
@@ -208,361 +207,88 @@ interface AdminContextType {
   redo: () => void
   canUndo: boolean
   canRedo: boolean
-  resetToDefault: () => void
   saveAll: () => Promise<void>
   isSaving: boolean
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
-const defaultContent: AdminContent = {
+const createEmptyContent = (): AdminContent => ({
   home: {
     hero: {
-      title: 'Looking To Travel',
-      subtitle: '& Enrich Your Future',
-      description: 'Welcome to Center for Admission and Travels, where your dreams of studying, working, and traveling abroad become reality. We guide you with honesty, professionalism, and care every step of the way.',
-      cta1Text: 'View Our Services',
-      cta2Text: 'Contact Us',
-      stats: [
-        { value: '50+', label: 'Success Stories' },
-        { value: '15+', label: 'Destinations' },
-        { value: '100%', label: 'Satisfaction' },
-      ],
-      images: [
-        '/images/thisshouldbeintegrated5.jpg',
-        '/images/integrate.jpg',
-        '/images/integrate1.jpg',
-      ],
+      title: '',
+      subtitle: '',
+      description: '',
+      cta1Text: '',
+      cta2Text: '',
+      stats: [],
+      images: [],
     },
-    services: [
-      {
-        id: 'study',
-        icon: 'GraduationCap',
-        title: 'Study Abroad',
-        description: 'Admission guidance, university selection, and visa processing for top institutions worldwide',
-      },
-      {
-        id: 'work',
-        icon: 'Briefcase',
-        title: 'Work Abroad',
-        description: 'Job placement assistance and relocation support in verified international companies',
-      },
-      {
-        id: 'travel',
-        icon: 'Plane',
-        title: 'Travel & Tours',
-        description: 'Curated travel packages to Dubai, Europe, Asia, and more with full support',
-      },
-      {
-        id: 'network',
-        icon: 'Globe',
-        title: 'Global Network',
-        description: 'Partnerships with accredited universities and verified employers worldwide',
-      },
-    ],
+    services: [],
     featuredPackages: [],
   },
   about: {
-    heroTitle: 'About Center for Admission and Travels',
-    heroSubtitle: 'Your trusted partner in global opportunities. We believe every journey is unique, and our team is dedicated to guiding you with honesty, professionalism, and care from start to finish.',
-    heroImage: '/images/thisshouldbeintegrated4.jpg',
+    heroTitle: '',
+    heroSubtitle: '',
+    heroImage: '',
     mission: {
-      title: 'Our Mission',
-      description: 'To provide trusted, personalized, and professional services in international education, travel, and job placements. We are dedicated to guiding students to study abroad, facilitating smooth and affordable travel, and providing pathways for work opportunities.',
-      points: [
-        'Honest and transparent guidance',
-        'Professional expertise and care',
-        'Personalized attention for every client',
-      ],
+      title: '',
+      description: '',
+      points: [],
     },
     vision: {
-      title: 'Our Vision',
-      description: 'To be Ghana\'s leading gateway to global education, travel, and work opportunities; empowering individuals to explore the world, gain international experience, and unlock their full potential.',
-      points: [
-        'Global network of partners',
-        'Technology-driven solutions',
-        'Inspiring international success',
-      ],
+      title: '',
+      description: '',
+      points: [],
     },
-    coreValues: [
-      { id: '1', title: 'Integrity', description: 'Honesty and ethical practices in all dealings' },
-      { id: '2', title: 'Professionalism', description: 'Expert service with dedication and expertise' },
-      { id: '3', title: 'Customer First', description: 'Your needs drive everything we do' },
-      { id: '4', title: 'Transparency', description: 'Clear communication without hidden costs' },
-      { id: '5', title: 'Respect', description: 'Value every individual and their journey' },
-      { id: '6', title: 'Confidentiality', description: 'Your information is safe with us' },
-    ],
+    coreValues: [],
     founder: {
-      name: 'George Owusu Ntim',
-      title: 'Meet Our Founder',
-      description: 'George Owusu Ntim is the visionary Director of Center for Admission and Travels. With a strong background in international education, travel coordination, and client advisory services, he leads the company with excellence and integrity. George is committed to helping students, travellers, and professionals access global opportunities through reliable guidance, transparent processes, and personalized support.',
-      image: '/images/founder.jpg',
-      vision: "Ghana's leading gateway to global opportunities",
-      mission: 'Trusted, personalized, professional services',
-      values: 'Integrity, professionalism, transparency, and care',
+      name: '',
+      title: '',
+      description: '',
+      image: '',
+      vision: '',
+      mission: '',
+      values: '',
     },
-    team: [
-      {
-        id: '1',
-        name: 'George Owusu Ntim',
-        role: 'Founder, Managing Director & Chief Travel Consultant',
-        image: '/images/USETHIS IMAGE FOR THE TEAM MEMBER TO REPLACE THE ONE OF THE FOUNDER.jpg',
-        description: '',
-      },
-      {
-        id: '2',
-        name: 'Sadat Abdul Wahab',
-        role: 'Travel Consultant',
-        image: '/images/team2.jpg',
-        description: 'Sadat Abdul Wahab is a dedicated Travel Consultant with in-depth knowledge of visa procedures, ticketing, and travel planning. He works closely with clients to create tailored travel solutions that fit their goals and budgets.',
-      },
-      {
-        id: '3',
-        name: 'Drake Nana Adjei Afram',
-        role: 'Accountant',
-        image: '/images/team1.jpg',
-        description: 'Drake Nana Adjei Afram oversees all financial operations at Center for Admission and Travels. As the company\'s Accountant, he is responsible for budgeting, invoicing, reconciliation, and maintaining accurate financial records.',
-      },
-      {
-        id: '4',
-        name: 'Esther Adjei Konamah',
-        role: 'Administrative & Front Desk Officer',
-        image: '/images/team3.jpg',
-        description: 'Esther Adjei Konamah ensures the smooth daily operation of our office. As the Administrative and Front Desk Officer, she warmly welcomes clients, manages enquiries, organizes appointments, and maintains efficient office systems.',
-      },
-    ],
-    successStories: [
-      {
-        name: 'Ama Boateng',
-        program: 'Computer Science at Oxford University',
-        quote: 'CFAAT made my dream of studying at Oxford a reality. Their guidance was invaluable throughout the entire process.',
-      },
-      {
-        name: 'Kwame Mensah',
-        program: 'Medicine at Cambridge University',
-        quote: 'From application to visa approval, CFAAT was with me every step. I highly recommend their services to anyone serious about studying abroad.',
-      },
-      {
-        name: 'Abena Osei',
-        program: 'Business Administration at Harvard University',
-        quote: 'The team at CFAAT understood my goals and matched me with the perfect university. Life-changing experience!',
-      },
-    ],
+    team: [],
+    successStories: [],
   },
-  packages: [
-    {
-      id: '1',
-      name: 'Dubai Experience',
-      category: 'travel',
-      duration: '6 Days / 5 Nights',
-      price: 1299,
-      description: 'Discover the perfect blend of ultramodern luxury and Arabian heritage in the City of Gold.',
-      highlights: [
-        'Burj Khalifa - World\'s tallest building',
-        'Desert Safari - Thrilling dune adventure',
-        'Dhow Cruise Dinner - Traditional sailing experience',
-        'Dubai Mall & Gold Souk - Shopping and culture',
-        'Palm Jumeirah - Iconic island and beaches',
-        'Spice Market - Authentic Arabian culture',
-      ],
-      images: ['/dubai-burj-khalifa-city-skyline.jpg'],
-      itinerary: 'Day 1-6 itinerary...',
-      included: ['5 nights accommodation', 'Daily breakfast', 'Airport transfers'],
-      notIncluded: ['International flights', 'Visa', 'Personal expenses'],
-    },
-    {
-      id: '2',
-      name: 'Europe Multi-City',
-      category: 'travel',
-      duration: '10 Days / 9 Nights',
-      price: 1899,
-      description: 'Experience Paris, Amsterdam, and Rome in one unforgettable journey.',
-      highlights: [
-        'Paris - Eiffel Tower and Louvre',
-        'Amsterdam - Canal tours and culture',
-        'Rome - Colosseum and Vatican',
-        'Local cuisine experiences',
-        'Professional guided tours',
-        'Comfortable transportation',
-      ],
-      images: ['/europe-paris-eiffel-tower-landmarks.jpg'],
-      itinerary: 'Days 1-10 itinerary...',
-      included: ['9 nights accommodation', 'Daily breakfast', 'All major attractions'],
-      notIncluded: ['International flights', 'Visas', 'Personal expenses'],
-    },
-  ],
-  services: [
-    {
-      id: 'study-abroad',
-      title: 'Study Abroad',
-      description: 'Your pathway to global education',
-      icon: 'GraduationCap',
-      sections: [
-        {
-          title: 'University Selection',
-          content: 'We help you find the perfect university based on your academic goals and preferences.',
-          image: '/images/integrate.jpg',
-        },
-        {
-          title: 'Application Assistance',
-          content: 'Expert guidance through the entire application process.',
-          image: '/images/integrate1.jpg',
-        },
-        {
-          title: 'Visa Processing',
-          content: 'Complete visa support and documentation preparation.',
-          image: '/images/integrate2.jpg',
-        },
-      ],
-    },
-    {
-      id: 'work-abroad',
-      title: 'Work Abroad',
-      description: 'Career opportunities on the global stage',
-      icon: 'Briefcase',
-      sections: [
-        {
-          title: 'Job Placement',
-          content: 'Connect with verified international employers.',
-          image: '/images/integrate3.jpg',
-        },
-        {
-          title: 'Work Visa Support',
-          content: 'Navigate work visa requirements with expert help.',
-          image: '/images/integrate.jpg',
-        },
-      ],
-    },
-    {
-      id: 'travel-tours',
-      title: 'Travel & Tours',
-      description: 'Explore the world with confidence',
-      icon: 'Plane',
-      sections: [
-        {
-          title: 'Curated Packages',
-          content: 'Carefully selected travel packages for unforgettable experiences.',
-          image: '/images/integrate1.jpg',
-        },
-      ],
-    },
-  ],
+  packages: [],
+  services: [],
   travelTours: {
     hero: {
-      title: 'Travel & Tours',
-      description: 'Explore our carefully curated collection of travel experiences designed to create unforgettable memories. From exotic beaches to historic landmarks, cultural immersion to adventure activities, we offer comprehensive travel packages with full support.',
-      paragraph: 'Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication to ensure your journey is smooth, enjoyable, and hassle-free.',
-      image: '/images/integrate1.jpg',
+      title: '',
+      description: '',
+      paragraph: '',
+      image: '',
     },
-    featured: [
-      {
-        id: '1',
-        name: 'Dubai Experience',
-        description: 'Discover the perfect blend of ultramodern luxury and Arabian heritage in the City of Gold.',
-        duration: '6 Days',
-        price: 899,
-        image: '/dubai-burj-khalifa-city-skyline.jpg',
-        highlights: ['Burj Khalifa', 'Desert Safari', 'Dhow Cruise Dinner', 'Dubai Mall', 'Palm Jumeirah'],
-      },
-      {
-        id: '2',
-        name: 'European Tour',
-        description: 'Experience the charm of Europe this summer.',
-        duration: '7 Days',
-        price: 1299,
-        image: '/europe-paris-eiffel-tower-landmarks.jpg',
-        highlights: ['Paris', 'Amsterdam', 'Rome', 'Guided Tours', 'Museum Visits'],
-      },
-      {
-        id: '3',
-        name: 'Asia Explorer',
-        description: 'Immerse yourself in the colors and cultures of Asia.',
-        duration: '5 Days',
-        price: 799,
-        image: '/asia-tropical-beaches-thailand-temples.jpg',
-        highlights: ['Thailand', 'Singapore', 'Malaysia', 'City Tours', 'Tropical Islands'],
-      },
-    ],
-    benefits: [
-      {
-        id: '1',
-        title: 'Expert Planning',
-        description: 'Our travel specialists design itineraries tailored to your preferences and budget',
-      },
-      {
-        id: '2',
-        title: '24/7 Support',
-        description: 'Round-the-clock customer service ensures help is always available during your journey',
-      },
-      {
-        id: '3',
-        title: 'Best Price Guarantee',
-        description: 'Competitive pricing with exclusive partnerships for exclusive travel deals',
-      },
-      {
-        id: '4',
-        title: 'Visa Assistance',
-        description: 'Complete visa documentation support and guidance for all destinations',
-      },
-      {
-        id: '5',
-        title: 'Travel Insurance',
-        description: 'Comprehensive travel insurance included to protect your investment',
-      },
-      {
-        id: '6',
-        title: 'Flexible Booking',
-        description: 'Easy modification and cancellation policies for your peace of mind',
-      },
-    ],
-    galleryImages: [], // Images for DomeGallery animation
+    featured: [],
+    benefits: [],
+    galleryImages: [],
   },
   contact: {
-    phone: '+233 248 422 663',
-    email: 'info@centerforadmissionandtravels.com',
+    phone: '',
+    email: '',
     address: {
-      street: 'BA14 Chinkara Street, Gumani',
-      city: 'Tamale',
-      region: 'Northern Region',
-      country: 'Ghana',
+      street: '',
+      city: '',
+      region: '',
+      country: '',
     },
-    whatsappNumber: '+233248422663',
+    whatsappNumber: '',
     location: {
       latitude: null,
       longitude: null,
     },
   },
   footer: {
-    companyDescription: 'Unlocking global opportunities for education, work, and travel.',
-    socialLinks: [
-      { platform: 'Facebook', url: 'https://facebook.com' },
-      { platform: 'LinkedIn', url: 'https://linkedin.com' },
-      { platform: 'Twitter', url: 'https://twitter.com' },
-    ],
+    companyDescription: '',
+    socialLinks: [],
   },
-  servicePages: servicesData.map((service) => ({
-    id: service.id,
-    title: service.title,
-    description: service.description,
-    icon: service.icon,
-    route: service.route,
-    heroImage: service.heroImage,
-    bannerTitle: service.bannerTitle,
-    bannerSubtitle: service.bannerSubtitle,
-    overview: service.overview,
-    whyStudyOutsideThisCountry: service.whyStudyOutsideThisCountry,
-    benefits: service.benefits || [],
-    requirements: service.requirements || [],
-    countries: service.countries || [],
-    visaGuidance: service.visaGuidance || '',
-    successStories: service.successStories,
-    scholarships: service.scholarships,
-  })),
-}
+  servicePages: [],
+})
 
-const STORAGE_KEY = 'admin_content'
-const HISTORY_STORAGE_KEY = 'admin_history'
-const HISTORY_INDEX_STORAGE_KEY = 'admin_history_index'
 const PUBLIC_CONTENT_VERSION_KEY = 'public_content_version'
 
 // Helper function to check if value is an object
@@ -570,8 +296,7 @@ const isObject = (item: any): boolean => {
   return item && typeof item === 'object' && !Array.isArray(item)
 }
 
-// Deep merge helper function - merges API data with defaults
-// Preserves defaults when API values are empty/missing
+// Deep merge helper function - keeps object shape intact without introducing seeded content.
 const deepMerge = (target: any, source: any): any => {
   if (!source || typeof source !== 'object') {
     return target
@@ -625,123 +350,30 @@ const deepMerge = (target: any, source: any): any => {
   return output
 }
 
-// Helper function to load from localStorage
-const loadFromStorage = (): AdminContent | null => {
-  if (typeof window === 'undefined') return null
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      return JSON.parse(stored) as AdminContent
-    }
-  } catch (error) {
-    console.error('Error loading from localStorage:', error)
-  }
-  return null
-}
-
-// Helper function to save to localStorage with quota handling
-const saveToStorage = (content: AdminContent): boolean => {
-  if (typeof window === 'undefined') return false
-  try {
-    const contentStr = JSON.stringify(content)
-    localStorage.setItem(STORAGE_KEY, contentStr)
-    return true
-  } catch (error: any) {
-    // Handle quota exceeded error
-    if (error.name === 'QuotaExceededError' || error.code === 22) {
-      console.warn('localStorage quota exceeded. Attempting cleanup...')
-      
-      // Try to clear old history and retry
-      try {
-        localStorage.removeItem(HISTORY_STORAGE_KEY)
-        localStorage.removeItem(HISTORY_INDEX_STORAGE_KEY)
-        const contentStr = JSON.stringify(content)
-        localStorage.setItem(STORAGE_KEY, contentStr)
-        console.warn('Cleared history to save current content. History has been reset.')
-        return true
-      } catch (retryError) {
-        console.error('Failed to save even after cleanup:', retryError)
-        // Show user-friendly warning
-        if (typeof window !== 'undefined') {
-          setTimeout(() => {
-            alert('Storage limit reached. Your changes are saved in memory but may be lost on page refresh. Please export your content to save it permanently.')
-          }, 100)
-        }
-        return false
-      }
-    }
-    console.error('Error saving to localStorage:', error)
-    return false
-  }
-}
-
-// Helper function to load history from localStorage
-const loadHistoryFromStorage = (): HistoryState[] | null => {
-  if (typeof window === 'undefined') return null
-  try {
-    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
-    if (stored) {
-      return JSON.parse(stored) as HistoryState[]
-    }
-  } catch (error) {
-    console.error('Error loading history from localStorage:', error)
-  }
-  return null
-}
+const normalizeAdminContent = (data: Partial<AdminContent> | null | undefined): AdminContent =>
+  deepMerge(createEmptyContent(), data || {}) as AdminContent
 
 // Maximum history entries to keep (to prevent storage bloat)
 const MAX_HISTORY_ENTRIES = 10
 
-// Helper function to save history to localStorage (limited size)
-const saveHistoryToStorage = (history: HistoryState[]): boolean => {
-  if (typeof window === 'undefined') return false
-  
-  // Limit history size to prevent storage bloat
-  const limitedHistory = history.slice(-MAX_HISTORY_ENTRIES)
-  
-  try {
-    const historyStr = JSON.stringify(limitedHistory)
-    // Check size before saving (rough estimate: 5MB limit)
-    if (historyStr.length > 4 * 1024 * 1024) {
-      console.warn('History too large, keeping only most recent entries')
-      // Keep only last 5 entries if still too large
-      const minimalHistory = history.slice(-5)
-      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(minimalHistory))
-      return true
-    }
-    localStorage.setItem(HISTORY_STORAGE_KEY, historyStr)
-    return true
-  } catch (error: any) {
-    // Silently fail for history - it's less critical than current content
-    if (error.name === 'QuotaExceededError' || error.code === 22) {
-      console.warn('History storage quota exceeded. History will not be persisted.')
-      // Try to save minimal history
-      try {
-        const minimalHistory = history.slice(-3)
-        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(minimalHistory))
-      } catch {
-        // If even minimal history fails, just don't save it
-        localStorage.removeItem(HISTORY_STORAGE_KEY)
-      }
-    }
-    return false
-  }
-}
-
 export function AdminProvider({ children }: { children: React.ReactNode }) {
-  // Initialize from localStorage or use default
-  // Will be updated from API on mount
-  const [content, setContent] = useState<AdminContent>(() => {
-    const stored = loadFromStorage()
-    return stored || defaultContent
-  })
+  // Database content is loaded on mount. The empty shape only prevents editor crashes while loading.
+  const [content, setContent] = useState<AdminContent>(() => createEmptyContent())
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [history, setHistory] = useState<HistoryState[]>(() => [
+    { content: createEmptyContent(), timestamp: Date.now() },
+  ])
+  const [historyIndex, setHistoryIndex] = useState(0)
 
   const notifyPublicContentUpdated = useCallback(() => {
     if (typeof window === 'undefined') return
     const version = String(Date.now())
-    window.localStorage.setItem(PUBLIC_CONTENT_VERSION_KEY, version)
+    try {
+      window.localStorage.setItem(PUBLIC_CONTENT_VERSION_KEY, version)
+    } catch {
+      // Cross-tab notification is best effort; the current tab still receives the event below.
+    }
     window.dispatchEvent(new CustomEvent('content-updated'))
   }, [])
 
@@ -757,44 +389,33 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         }
         
         const result = await response.json()
-        console.log('API response:', result)
         
         if (!isMounted) return // Don't update state if component unmounted
         
         if (result.success && result.data) {
-          // Deep merge API data with defaults to ensure all fields are present
-          const mergedContent = deepMerge(defaultContent, result.data)
-          console.log('Merged content:', mergedContent)
+          const mergedContent = normalizeAdminContent(result.data)
           
           if (isMounted) {
             setContent(mergedContent)
-            // Save merged content to localStorage as backup
-            saveToStorage(mergedContent)
+            setHistory([{ content: mergedContent, timestamp: Date.now() }])
+            setHistoryIndex(0)
           }
         } else {
-          console.warn('API returned unsuccessful response, using defaults:', result)
-          // Fallback to localStorage or defaults
+          console.warn('API returned unsuccessful response:', result)
           if (isMounted) {
-            const stored = loadFromStorage()
-            if (stored) {
-              setContent(stored)
-            } else {
-              // Use defaults if no stored content
-              setContent(defaultContent)
-            }
+            const emptyContent = createEmptyContent()
+            setContent(emptyContent)
+            setHistory([{ content: emptyContent, timestamp: Date.now() }])
+            setHistoryIndex(0)
           }
         }
       } catch (error) {
         console.error('Error loading content from API:', error)
-        // Fallback to localStorage or defaults
         if (isMounted) {
-          const stored = loadFromStorage()
-          if (stored) {
-            setContent(stored)
-          } else {
-            // Use defaults if no stored content
-            setContent(defaultContent)
-          }
+          const emptyContent = createEmptyContent()
+          setContent(emptyContent)
+          setHistory([{ content: emptyContent, timestamp: Date.now() }])
+          setHistoryIndex(0)
         }
       } finally {
         if (isMounted) {
@@ -810,37 +431,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       isMounted = false
     }
   }, []) // Empty deps - only run once on mount
-  
-  const [history, setHistory] = useState<HistoryState[]>(() => {
-    const stored = loadHistoryFromStorage()
-    if (stored && stored.length > 0) {
-      // Limit loaded history to MAX_HISTORY_ENTRIES
-      return stored.slice(-MAX_HISTORY_ENTRIES)
-    }
-    const initialContent = loadFromStorage() || defaultContent
-    return [{ content: initialContent, timestamp: Date.now() }]
-  })
-  
-  const [historyIndex, setHistoryIndex] = useState(() => {
-    if (typeof window === 'undefined') return 0
-    try {
-      const stored = localStorage.getItem(HISTORY_INDEX_STORAGE_KEY)
-      if (stored !== null) {
-        const index = parseInt(stored, 10)
-        if (!isNaN(index)) {
-          return index
-        }
-      }
-    } catch (error) {
-      console.error('Error loading history index from localStorage:', error)
-    }
-    const storedHistory = loadHistoryFromStorage()
-    if (storedHistory && storedHistory.length > 0) {
-      return storedHistory.length - 1
-    }
-    return 0
-  })
-
   const updateHistory = useCallback((newContent: AdminContent) => {
     const newHistory = history.slice(0, historyIndex + 1)
     newHistory.push({ content: newContent, timestamp: Date.now() })
@@ -858,11 +448,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     // History is kept in memory only - database is the source of truth for content
     // No localStorage needed since all content is saved to database via API
   }, [history, historyIndex])
-
-  const updateContent = useCallback((updates: Partial<AdminContent>) => {
-    const newContent = { ...content, ...updates }
-    updateHistory(newContent)
-  }, [content, updateHistory])
 
   const updateHomeHero = useCallback(async (updates: Partial<AdminContent['home']['hero']>) => {
     // Optimistic update (update UI immediately)
@@ -1198,9 +783,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const newIndex = historyIndex - 1
       setHistoryIndex(newIndex)
       setContent(history[newIndex].content)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, newIndex.toString())
-      }
     }
   }, [history, historyIndex])
 
@@ -1209,9 +791,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const newIndex = historyIndex + 1
       setHistoryIndex(newIndex)
       setContent(history[newIndex].content)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(HISTORY_INDEX_STORAGE_KEY, newIndex.toString())
-      }
     }
   }, [history, historyIndex])
 
@@ -1293,14 +872,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       console.error('Error syncing service page:', error)
     }
   }, [content, updateHistory])
-
-  const resetToDefault = useCallback(() => {
-    const newHistory = [{ content: defaultContent, timestamp: Date.now() }]
-    setHistory(newHistory)
-    setHistoryIndex(0)
-    setContent(defaultContent)
-    // Database is the source of truth - no localStorage needed
-  }, [])
 
   const saveAll = useCallback(async () => {
     setIsSaving(true)
@@ -1466,7 +1037,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       value={{
         content,
         isLoading,
-        updateContent,
         updateHomeHero,
         updateServices,
         updateHomeFeaturedPackages,
@@ -1488,7 +1058,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         redo,
         canUndo: historyIndex > 0,
         canRedo: historyIndex < history.length - 1,
-        resetToDefault,
         saveAll,
         isSaving,
       }}

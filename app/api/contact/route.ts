@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { contactNotificationEmail } from '@/lib/email-templates'
-import { getSupportContact } from '@/lib/support-contact'
+import { getFreshSupportContact } from '@/lib/support-contact'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 
@@ -50,14 +50,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const supportContact = await getFreshSupportContact()
+    const recipientEmail = supportContact.email
+    if (!isValidEmail(recipientEmail)) {
+      console.error('[Contact] Contact recipient email is not configured')
+      return NextResponse.json(
+        { error: 'Contact email is not configured. Please try again later.' },
+        { status: 503 }
+      )
+    }
+
     const contactMessage = await prisma.contactMessage.create({
       data: { name, email, phone: phone || null, subject, message },
     })
 
-    const adminEmail = process.env.SMTP_FROM || 'info@catravels.com'
-    const supportContact = await getSupportContact()
     const notification = contactNotificationEmail({ name, email, phone, subject, message }, supportContact)
-    sendEmail({ to: adminEmail, ...notification }).catch((err) =>
+    sendEmail({ to: recipientEmail, replyTo: email, ...notification }).catch((err) =>
       console.error('[Contact] Failed to send notification email:', err)
     )
 

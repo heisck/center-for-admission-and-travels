@@ -25,11 +25,12 @@ function getTransporter() {
 
 interface EmailOptions {
   to: string
+  replyTo?: string
   subject: string
   html: string
 }
 
-export async function sendEmail({ to, subject, html }: EmailOptions): Promise<boolean> {
+export async function sendEmail({ to, replyTo, subject, html }: EmailOptions): Promise<boolean> {
   const transport = getTransporter()
 
   if (!transport) {
@@ -43,6 +44,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<bo
     await transport.sendMail({
       from: `"Center for Admission & Travels" <${SMTP_FROM}>`,
       to,
+      replyTo,
       subject,
       html,
     })

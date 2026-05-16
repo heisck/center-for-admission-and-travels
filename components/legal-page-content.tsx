@@ -47,7 +47,7 @@ export default async function LegalPageContent({
               />
             ) : (
               <p className="text-muted-foreground">
-                Content is being updated. Please check back later.
+                {defaultDescription || 'Content is being updated. Please check back later.'}
               </p>
             )}
           </div>

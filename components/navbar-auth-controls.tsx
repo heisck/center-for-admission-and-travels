@@ -28,7 +28,7 @@ export default function NavbarAuthControls() {
   }, [showUserMenu])
 
   return (
-    <div className="hidden lg:flex min-w-[240px] justify-end gap-2 items-center">
+    <div className="hidden xl:flex min-w-[188px] justify-end gap-2 items-center">
       {user ? (
         <div className="relative flex justify-end">
           <button
@@ -78,7 +78,7 @@ export default function NavbarAuthControls() {
           ) : null}
         </div>
       ) : isLoading ? (
-        <div className="h-10 w-[220px] rounded-lg border border-border bg-slate-100 animate-pulse" />
+        <div className="h-10 w-[180px] rounded-lg border border-border bg-slate-100 animate-pulse" />
       ) : (
         <>
           <Link

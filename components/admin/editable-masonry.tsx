@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Edit2, X, Check } from 'lucide-react'
+import { Plus, Edit2, Check } from 'lucide-react'
 import { ImageEditor } from './image-editor'
 import Masonry from '../Masonry'
 
@@ -13,7 +13,6 @@ interface EditableMasonryProps {
 
 export function EditableMasonry({ images, onChange, className = '' }: EditableMasonryProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const items = images.map((img, idx) => ({
     id: idx.toString(),
@@ -21,21 +20,6 @@ export function EditableMasonry({ images, onChange, className = '' }: EditableMa
     url: '#',
     height: 300 + (idx % 3) * 100, // Vary heights
   }))
-
-  const handleImageUpdate = (index: number, newUrl: string) => {
-    const newImages = [...images]
-    newImages[index] = newUrl
-    onChange(newImages)
-    setEditingIndex(null)
-  }
-
-  const handleImageDelete = (index: number) => {
-    onChange(images.filter((_, i) => i !== index))
-  }
-
-  const handleAddImage = (newUrl: string) => {
-    onChange([...images, newUrl])
-  }
 
   if (isEditing) {
     return (

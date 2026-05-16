@@ -18,13 +18,15 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
     <main className="min-h-screen bg-background">
       <PublicNavbar currentPath={service.route} />
 
-      <section className="relative min-h-[clamp(420px,75vh,640px)] md:min-h-[clamp(480px,80vh,720px)] flex items-end overflow-hidden">
+      {/* Full-bleed hero below 1280px. Section follows the sticky nav in flow,
+          so the image's top edge sits flush against the navbar's bottom. */}
+      <section className="relative xl:hidden min-h-[clamp(420px,75vh,640px)] md:min-h-[clamp(480px,80vh,720px)] flex items-end overflow-hidden">
         <Image
           src={service.heroImage}
           alt={service.bannerTitle}
           fill
           priority
-          className="object-cover object-center service-hero-img"
+          className="object-cover object-top service-hero-img"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/30 to-black/65" />
 
@@ -35,6 +37,43 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
                 {service.bannerTitle}
               </h1>
               <p className="text-lg md:text-xl text-white/85 mb-6 leading-relaxed service-hero-fade service-hero-fade-2">
+                {service.bannerSubtitle}
+              </p>
+              <Link
+                href={`/apply?service=${encodeURIComponent(service.title)}`}
+                className="inline-flex items-center justify-center whitespace-nowrap gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105 service-hero-fade service-hero-fade-3"
+              >
+                Click to Apply <ArrowRight className="w-5 h-5 flex-shrink-0" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Split hero (≥1600px). Contained image card + text panel so the image
+          stays a fixed visual size on huge screens instead of stretching. */}
+      <section className="hidden xl:block bg-gradient-to-br from-orange-50 to-red-50 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 gap-16 items-center">
+            <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
+              <Image
+                src={service.heroImage}
+                alt={service.bannerTitle}
+                fill
+                priority
+                sizes="(min-width: 1280px) 50vw, 100vw"
+                className="object-cover object-top service-hero-img"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-transparent" />
+            </div>
+
+            <div>
+              <h1 className="text-5xl xl:text-6xl font-bold mb-6 service-hero-fade service-hero-fade-1">
+                <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  {service.bannerTitle}
+                </span>
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 leading-relaxed service-hero-fade service-hero-fade-2">
                 {service.bannerSubtitle}
               </p>
               <Link

@@ -83,12 +83,26 @@ function getUniqueSocialLinks(links: FooterContent["socialLinks"]) {
   })
 }
 
+interface FooterServiceLink {
+  href: string
+  label: string
+}
+
+const DEFAULT_FOOTER_SERVICE_LINKS: FooterServiceLink[] = [
+  { href: "/study-abroad", label: "Study Abroad" },
+  { href: "/work-abroad", label: "Work Abroad" },
+  { href: "/travel-tours", label: "Travel & Tours" },
+  { href: "/global-network", label: "Global Network" },
+]
+
 interface FooterContentViewProps {
   contact: ContactContent
   footer: FooterContent
+  serviceLinks?: FooterServiceLink[]
 }
 
-export default function FooterContentView({ contact, footer }: FooterContentViewProps) {
+export default function FooterContentView({ contact, footer, serviceLinks }: FooterContentViewProps) {
+  const resolvedServiceLinks = serviceLinks ?? DEFAULT_FOOTER_SERVICE_LINKS
   const phone = contact.phone?.trim() || ""
   const email = contact.email?.trim() || ""
   const phoneHref = normalizePhoneForTel(phone)
@@ -116,11 +130,11 @@ export default function FooterContentView({ contact, footer }: FooterContentView
               <Image
                 src="/images/ca-20logo.png"
                 alt="Center for Admission and Travels"
-                width={40}
-                height={40}
-                className="h-10 w-auto"
+                width={64}
+                height={64}
+                className="h-10 min-[1920px]:h-12 min-[2560px]:h-16 w-auto"
               />
-              <span className="text-sm font-bold">Center for Admission & Travels</span>
+              <span className="text-sm font-bold min-[1920px]:text-base min-[2560px]:text-lg">Center for Admission & Travels</span>
             </div>
             <p className="text-slate-400 text-sm mb-6">
               {footer.companyDescription?.trim() || "Company description not set"}
@@ -141,10 +155,11 @@ export default function FooterContentView({ contact, footer }: FooterContentView
           <div>
             <h4 className="font-bold mb-4">Services</h4>
             <ul className="space-y-2 text-sm text-slate-400">
-              <li><Link href="/study-abroad" className="hover:text-primary transition">Study Abroad</Link></li>
-              <li><Link href="/work-abroad" className="hover:text-primary transition">Work Abroad</Link></li>
-              <li><Link href="/travel-tours" className="hover:text-primary transition">Travel & Tours</Link></li>
-              <li><Link href="/global-network" className="hover:text-primary transition">Global Network</Link></li>
+              {resolvedServiceLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="hover:text-primary transition">{link.label}</Link>
+                </li>
+              ))}
             </ul>
           </div>
 

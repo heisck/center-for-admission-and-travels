@@ -4,94 +4,96 @@ import { useAdmin } from '@/context/admin-context'
 import { ImageEditor } from '../image-editor'
 
 export default function AdminServicesEditor() {
-  const { content, updateContent } = useAdmin()
+  const { content, updateServicePage } = useAdmin()
 
-  const handleUpdateService = (id: string, field: string, value: any) => {
-    const updatedServices = content.services.map((svc) =>
-      svc.id === id ? { ...svc, [field]: value } : svc
+  if (content.servicePages.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-muted-foreground">
+        No service pages found in the database yet.
+      </div>
     )
-    updateContent({ services: updatedServices })
-  }
-
-  const handleUpdateSection = (serviceId: string, sectionIdx: number, field: string, value: string) => {
-    const updatedServices = content.services.map((svc) => {
-      if (svc.id === serviceId) {
-        const newSections = [...svc.sections]
-        newSections[sectionIdx] = { ...newSections[sectionIdx], [field]: value }
-        return { ...svc, sections: newSections }
-      }
-      return svc
-    })
-    updateContent({ services: updatedServices })
   }
 
   return (
     <div className="space-y-8">
-      {content.services.map((service) => (
+      {content.servicePages.map((service) => (
         <div key={service.id} className="bg-white rounded-xl shadow-sm border border-border p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-4 text-foreground">
-              {service.title}
+              {service.title || service.id}
             </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Title</label>
+            <div className="grid md:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="block text-sm font-semibold text-foreground mb-2">Title</span>
                 <input
                   type="text"
                   value={service.title}
-                  onChange={(e) => handleUpdateService(service.id, 'title', e.target.value)}
+                  onChange={(e) => updateServicePage(service.id, { title: e.target.value })}
                   className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Description</label>
-                <textarea
-                  value={service.description}
-                  onChange={(e) => handleUpdateService(service.id, 'description', e.target.value)}
+              <label className="block">
+                <span className="block text-sm font-semibold text-foreground mb-2">Route</span>
+                <input
+                  type="text"
+                  value={service.route}
+                  onChange={(e) => updateServicePage(service.id, { route: e.target.value })}
                   className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  rows={3}
                 />
-              </div>
+              </label>
             </div>
+
+            <label className="block mt-4">
+              <span className="block text-sm font-semibold text-foreground mb-2">Description</span>
+              <textarea
+                value={service.description}
+                onChange={(e) => updateServicePage(service.id, { description: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={3}
+              />
+            </label>
           </div>
 
-          {/* Sections */}
-          <div>
-            <h3 className="text-xl font-bold mb-4 text-foreground">Content Sections</h3>
-            <div className="space-y-4">
-              {service.sections.map((section, idx) => (
-                <div key={idx} className="bg-slate-50 rounded-lg border border-border p-4">
-                  <input
-                    type="text"
-                    value={section.title}
-                    onChange={(e) => handleUpdateSection(service.id, idx, 'title', e.target.value)}
-                    placeholder="Section title"
-                    className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary font-semibold"
-                  />
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-foreground">Hero</h3>
+            <label className="block">
+              <span className="block text-sm font-semibold text-foreground mb-2">Banner Title</span>
+              <input
+                type="text"
+                value={service.bannerTitle}
+                onChange={(e) => updateServicePage(service.id, { bannerTitle: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </label>
 
-                  <textarea
-                    value={section.content}
-                    onChange={(e) => handleUpdateSection(service.id, idx, 'content', e.target.value)}
-                    placeholder="Section content"
-                    className="w-full px-3 py-2 border border-border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-primary"
-                    rows={3}
-                  />
+            <label className="block">
+              <span className="block text-sm font-semibold text-foreground mb-2">Banner Subtitle</span>
+              <textarea
+                value={service.bannerSubtitle}
+                onChange={(e) => updateServicePage(service.id, { bannerSubtitle: e.target.value })}
+                className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={3}
+              />
+            </label>
 
-                  {section.image && (
-                    <div className="mt-3">
-                      <ImageEditor
-                        images={[section.image]}
-                        onChange={(images) => handleUpdateSection(service.id, idx, 'image', images[0] || '')}
-                        maxImages={1}
-                        label="Section Image"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <ImageEditor
+              images={service.heroImage ? [service.heroImage] : []}
+              onChange={(images) => updateServicePage(service.id, { heroImage: images[0] || '' })}
+              maxImages={1}
+              label="Hero Image"
+            />
           </div>
+
+          <label className="block mt-6">
+            <span className="block text-sm font-semibold text-foreground mb-2">Overview</span>
+            <textarea
+              value={service.overview || ''}
+              onChange={(e) => updateServicePage(service.id, { overview: e.target.value })}
+              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              rows={4}
+            />
+          </label>
         </div>
       ))}
     </div>

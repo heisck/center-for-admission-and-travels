@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useAdmin } from '@/context/admin-context'
-import { AdminToolbar } from '@/components/admin/admin-toolbar'
 import {
   EditableTextWrapper,
   EditableTextareaWrapper,

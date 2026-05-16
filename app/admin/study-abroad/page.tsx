@@ -8,7 +8,6 @@ import { EditableImage } from '@/components/admin/editable-image'
 import {
   EditableTextWrapper,
   EditableTextareaWrapper,
-  EditableListWrapper,
 } from '@/components/admin/editable-content'
 
 export default function AdminStudyAbroadPage() {

@@ -14,6 +14,7 @@ interface EditableTextProps {
   inputClassName?: string
   fontSize?: 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl'
   variant?: 'title' | 'subtitle' | 'body' | 'large'
+  placeholder?: string
 }
 
 export function EditableText({
@@ -27,6 +28,7 @@ export function EditableText({
   inputClassName = '',
   fontSize = 'base',
   variant = 'body',
+  placeholder = 'Click to edit...',
 }: EditableTextProps) {
   const [internalIsEditing, setInternalIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value)
@@ -99,6 +101,7 @@ export function EditableText({
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             className={`flex-1 px-3 py-2 border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${inputClassName}`}
+            placeholder={placeholder}
             rows={4}
           />
         ) : (
@@ -110,6 +113,7 @@ export function EditableText({
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             className={`flex-1 px-3 py-2 border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${inputClassName}`}
+            placeholder={placeholder}
           />
         )}
         <button
@@ -135,7 +139,7 @@ export function EditableText({
       onClick={handleStart}
       className={`group relative cursor-pointer inline-block ${fontSizeMap[fontSize]} ${variantClasses[variant]} ${className} hover:bg-orange-50 rounded px-2 py-1 transition`}
     >
-      {value || 'Click to edit...'}
+      {value || placeholder}
       <Edit2 size={16} className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition text-orange-600" />
     </div>
   )

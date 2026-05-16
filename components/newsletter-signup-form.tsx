@@ -37,7 +37,7 @@ export default function NewsletterSignupForm() {
   return (
     <form onSubmit={handleNewsletterSubmit} className="space-y-2">
       <label htmlFor="newsletter-email" className="text-sm font-semibold block">Stay updated</label>
-      <div className="flex gap-2">
+      <div className="flex w-full max-w-full flex-col gap-2 sm:flex-row">
         <input
           id="newsletter-email"
           name="email"
@@ -47,12 +47,12 @@ export default function NewsletterSignupForm() {
           value={newsletterEmail}
           onChange={(event) => setNewsletterEmail(event.target.value)}
           disabled={newsletterLoading}
-          className="flex-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+          className="w-full min-w-0 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:flex-1"
         />
         <button
           type="submit"
           disabled={newsletterLoading}
-          className="px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2"
+          className="flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 sm:w-auto"
         >
           {newsletterLoading ? <Loader2 size={16} className="animate-spin" /> : "Subscribe"}
         </button>

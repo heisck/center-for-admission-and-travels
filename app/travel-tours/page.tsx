@@ -31,12 +31,16 @@ export default async function TravelTours() {
                   {travelTours.hero.title || "Travel & Tours"}
                 </span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                {travelTours.hero.description || "Explore our carefully curated collection of travel experiences designed to create unforgettable memories."}
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {travelTours.hero.paragraph || "Center for Admission and Travels delivers end-to-end travel solutions with transparency, expertise, and dedication."}
-              </p>
+              {travelTours.hero.description ? (
+                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                  {travelTours.hero.description}
+                </p>
+              ) : null}
+              {travelTours.hero.paragraph ? (
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  {travelTours.hero.paragraph}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -61,14 +65,16 @@ export default async function TravelTours() {
                 key={pkg.id}
                 className="group bg-white border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
               >
-                <div className="h-64 relative overflow-hidden bg-gray-200">
-                  <Image
-                    src={pkg.image || "/placeholder.svg"}
-                    alt={pkg.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                  />
+                <div className="h-64 relative overflow-hidden bg-slate-100">
+                  {pkg.image ? (
+                    <Image
+                      src={pkg.image}
+                      alt={pkg.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : null}
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition"></div>
                 </div>
 

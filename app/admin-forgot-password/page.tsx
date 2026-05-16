@@ -90,7 +90,7 @@ export default function AdminForgotPasswordPage() {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
                     <input
                       type="email"
-                      placeholder="admin@example.com"
+                      placeholder="Admin email address"
                       autoComplete="email"
                       className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition"
                       value={email}

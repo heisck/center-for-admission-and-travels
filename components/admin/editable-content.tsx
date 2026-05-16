@@ -23,7 +23,7 @@ export function EditableTextWrapper({
   onChange,
   variant,
   className = '',
-  placeholder = '',
+  placeholder = 'Click to edit...',
 }: EditableTextWrapperProps) {
   const variantMap = {
     title: '4xl font-bold',
@@ -39,6 +39,7 @@ export function EditableTextWrapper({
       variant={variant === 'title' ? 'title' : variant === 'subtitle' ? 'subtitle' : variant === 'heading' ? 'large' : 'body'}
       fontSize={variant === 'title' ? '4xl' : variant === 'subtitle' ? '2xl' : variant === 'heading' ? 'xl' : 'base'}
       className={`${variantMap[variant]} ${className}`}
+      placeholder={placeholder}
     />
   )
 }
@@ -56,7 +57,7 @@ export function EditableTextareaWrapper({
   onChange,
   rows = 4,
   className = '',
-  placeholder = '',
+  placeholder = 'Click to edit...',
 }: EditableTextareaWrapperProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value)
@@ -81,6 +82,7 @@ export function EditableTextareaWrapper({
           }}
           className={`w-full px-3 py-2 border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${className}`}
           rows={rows}
+          placeholder={placeholder}
           autoFocus
         />
         <div className="flex gap-2">
@@ -111,7 +113,7 @@ export function EditableTextareaWrapper({
       }}
       className={`group relative cursor-pointer p-3 rounded-lg hover:bg-orange-50 transition border border-transparent hover:border-orange-200 ${className}`}
     >
-      <p className="whitespace-pre-wrap text-foreground leading-relaxed">{value || 'Click to edit...'}</p>
+      <p className="whitespace-pre-wrap text-foreground leading-relaxed">{value || placeholder}</p>
       <Edit2 size={16} className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition text-orange-600" />
     </div>
   )

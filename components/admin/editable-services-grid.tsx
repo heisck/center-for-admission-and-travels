@@ -15,6 +15,13 @@ const iconMap: Record<string, any> = {
   Globe,
 }
 
+const ROUTE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '/study-abroad', label: 'Study Abroad' },
+  { value: '/work-abroad', label: 'Work Abroad' },
+  { value: '/travel-tours', label: 'Travel & Tours' },
+  { value: '/global-network', label: 'Global Network' },
+]
+
 // Map service title to admin route (avoids 404 when service.id is a cuid)
 const titleToAdminRoute: Record<string, string> = {
   'Study Abroad': '/admin/study-abroad',
@@ -116,6 +123,21 @@ export function EditableServicesGrid() {
                   rows={3}
                   className="text-muted-foreground leading-relaxed mb-4"
                 />
+                <div className="flex items-center gap-2 mb-4 text-xs">
+                  <label className="text-muted-foreground font-medium">Links to:</label>
+                  <select
+                    value={service.route ?? ''}
+                    onChange={(e) => handleServiceUpdate(idx, 'route', e.target.value)}
+                    className="px-2 py-1 border border-border rounded bg-white text-foreground font-mono"
+                  >
+                    <option value="">(unset — falls back to home)</option>
+                    {ROUTE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.value} ({opt.label})
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <Link
                   href={getAdminRouteForService(service)}
                   className="inline-block text-primary font-semibold text-sm group-hover:translate-x-1 transition-transform"

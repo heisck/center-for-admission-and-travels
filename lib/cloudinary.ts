@@ -11,14 +11,15 @@ function validateCloudinaryConfig() {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME
   const apiKey = process.env.CLOUDINARY_API_KEY
   const apiSecret = process.env.CLOUDINARY_API_SECRET
+  const shouldWarn = process.env.CLOUDINARY_WARN_ON_IMPORT === 'true'
 
-  if (!cloudName || cloudName === 'your_cloud_name') {
+  if (shouldWarn && (!cloudName || cloudName === 'your_cloud_name')) {
     console.warn('⚠️ CLOUDINARY_CLOUD_NAME is not set or is using default value')
   }
-  if (!apiKey) {
+  if (shouldWarn && !apiKey) {
     console.warn('⚠️ CLOUDINARY_API_KEY is not set')
   }
-  if (!apiSecret) {
+  if (shouldWarn && !apiSecret) {
     console.warn('⚠️ CLOUDINARY_API_SECRET is not set')
   }
 

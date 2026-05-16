@@ -9,7 +9,6 @@ export type AdminPermission =
   | 'media.manage'
   | 'settings.manage'
   | 'security.manage'
-  | 'system.seed'
 
 const ROLE_PERMISSIONS: Record<AdminRole, Set<AdminPermission>> = {
   SUPER_ADMIN: new Set<AdminPermission>([
@@ -21,7 +20,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, Set<AdminPermission>> = {
     'media.manage',
     'settings.manage',
     'security.manage',
-    'system.seed',
   ]),
   ADMIN: new Set<AdminPermission>([
     'dashboard.read',

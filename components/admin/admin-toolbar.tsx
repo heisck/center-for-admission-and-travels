@@ -1,21 +1,15 @@
 'use client'
 
 import { useAdmin } from '@/context/admin-context'
-import { Undo2, Redo2, RotateCcw, Save, Eye, LogOut } from 'lucide-react'
+import { Undo2, Redo2, Save, Eye, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export function AdminToolbar() {
-  const { undo, redo, canUndo, canRedo, resetToDefault, saveAll, isSaving } = useAdmin()
+  const { undo, redo, canUndo, canRedo, saveAll, isSaving } = useAdmin()
   const router = useRouter()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset all changes to default? This cannot be undone.')) {
-      resetToDefault()
-    }
-  }
 
   const handleSave = async () => {
     await saveAll()
@@ -71,15 +65,6 @@ export function AdminToolbar() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          <button
-            onClick={handleReset}
-            className="p-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition flex items-center gap-1 sm:gap-2 flex-shrink-0"
-            title="Reset all changes"
-          >
-            <RotateCcw size={16} />
-            <span className="hidden sm:inline">Reset</span>
-          </button>
-
           <button
             onClick={handleSave}
             disabled={isSaving}

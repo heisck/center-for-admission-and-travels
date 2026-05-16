@@ -4,6 +4,8 @@ export interface SiteNavLink {
   mobileLabel: string
 }
 
+const HEADER_HIDDEN_HREFS = new Set(['/blog', '/newsletter', '/contact'])
+
 export const NAV_LINKS: SiteNavLink[] = [
   { href: '/', label: 'Home', mobileLabel: 'Home' },
   { href: '/about', label: 'About', mobileLabel: 'About' },
@@ -16,3 +18,7 @@ export const NAV_LINKS: SiteNavLink[] = [
   { href: '/newsletter', label: 'Newsletter', mobileLabel: 'Newsletter' },
   { href: '/contact', label: 'Contact', mobileLabel: 'Contact' },
 ]
+
+export function getHeaderNavLinks(links: SiteNavLink[]) {
+  return links.filter((link) => !HEADER_HIDDEN_HREFS.has(link.href))
+}

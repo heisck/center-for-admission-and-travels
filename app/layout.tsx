@@ -8,6 +8,7 @@ import SiteWhatsAppButton from "@/components/site-whatsapp-button"
 import { Toaster } from "@/components/ui/sonner"
 import { OrganizationStructuredData, WebSiteStructuredData } from "@/components/structured-data"
 import { GoogleAnalytics } from "@/components/google-analytics"
+import { getSiteChromeContent } from "@/lib/public-content"
 import "./globals.css"
 
 let AnalyticsComponent: React.ComponentType | null = null
@@ -44,20 +45,20 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const chrome = await getSiteChromeContent()
+
   return (
-    <html lang="en">
-      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased overflow-x-hidden bg-background`}>
-        <OrganizationStructuredData />
+    <html lang="en" className="overflow-x-clip">
+      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased w-full overflow-x-clip`}>
+        <OrganizationStructuredData contact={chrome.contact} footer={chrome.footer} />
         <WebSiteStructuredData />
         <GoogleAnalytics />
-        <div className="mx-auto w-full max-w-[1920px]">
-          {children}
-        </div>
+        {children}
         <SiteWhatsAppButton />
         <Toaster />
         <CookieConsent />

@@ -129,8 +129,41 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    width: 100%;
+    margin: 0;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Slim scrollbar so the page edge doesn't visibly retreat from the
+     viewport edge on Windows browsers. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.7 0 0) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.7 0 0);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.55 0 0);
+  }
+}
+
+/* Keep main page containers fluid through normal desktop widths.
+   At 1440px this preserves the same 32px side padding as 1140px screens. */
+@media (min-width: 1280px) {
+  .max-w-7xl {
+    max-width: min(100%, 112rem);
   }
 }
 

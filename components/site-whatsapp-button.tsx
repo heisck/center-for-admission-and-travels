@@ -5,10 +5,8 @@ import { useEffect, useState } from "react"
 import { getClientWhatsAppNumber } from "@/lib/client-site-chrome"
 import WhatsAppButton from "@/components/whatsapp-button"
 
-const FALLBACK_WHATSAPP_NUMBER = "+233248422663"
-
 export default function SiteWhatsAppButton() {
-  const [whatsappNumber, setWhatsappNumber] = useState(FALLBACK_WHATSAPP_NUMBER)
+  const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
