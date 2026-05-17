@@ -55,3 +55,10 @@ export async function sendEmail({ to, replyTo, subject, html }: EmailOptions): P
     return false
   }
 }
+
+export async function sendEmailOrThrow(options: EmailOptions): Promise<void> {
+  const sent = await sendEmail(options)
+  if (!sent) {
+    throw new Error(`Email delivery failed: ${options.subject} -> ${options.to}`)
+  }
+}

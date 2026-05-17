@@ -7,7 +7,9 @@ export async function POST(request: NextRequest) {
     const token = request.cookies.get(getUserSessionCookieName())?.value
 
     if (token) {
-      await prisma.userSession.delete({ where: { token } }).catch(() => null)
+      await prisma.userSession.delete({ where: { token } }).catch((error) => {
+        console.error('[Auth] Failed to delete user session during logout:', error)
+      })
     }
 
     const response = NextResponse.json({ success: true })

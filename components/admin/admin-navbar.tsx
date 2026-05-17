@@ -53,7 +53,9 @@ export function AdminNavbar() {
           })
         }
       })
-      .catch(() => {})
+      .catch((error) => {
+        console.error('[Admin Navbar] Failed to fetch notification badges:', error)
+      })
   }
 
   useEffect(() => {

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const body = await request.json()
-    const { packageId, amount, email, name, phone, paymentMethod, metadata } = body
+    const { packageId, amount, email, name, phone, paymentMethod, metadata, idempotencyKey } = body
 
     // Validate required fields
     if (!email || !name) {
@@ -97,55 +97,77 @@ export async function POST(request: NextRequest) {
       ? paymentMethod
       : 'card'
 
+    const normalizedPackageId = String(packageId || '').trim().slice(0, 128)
+    if (!normalizedPackageId) {
+      return NextResponse.json(
+        { success: false, error: 'Package is required for payment' },
+        { status: 400 }
+      )
+    }
+    if (!/^[A-Za-z0-9_\-]+$/.test(normalizedPackageId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid package reference' },
+        { status: 400 }
+      )
+    }
+
+    const normalizedIdempotencyKey = String(idempotencyKey || '').trim()
+    if (
+      normalizedIdempotencyKey &&
+      !/^[A-Za-z0-9_\-.]{16,100}$/.test(normalizedIdempotencyKey)
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payment attempt key' },
+        { status: 400 }
+      )
+    }
+
     let finalAmount = amount
     let packageData = null
 
-    // If packageId is provided, fetch package and use its price
-    if (packageId) {
-      // Try Package table first
-      packageData = await prisma.package.findUnique({
-        where: { id: packageId },
+    // Try Package table first
+    packageData = await prisma.package.findUnique({
+      where: { id: normalizedPackageId },
+      select: { id: true, name: true, price: true },
+    })
+
+    // If not found, try TravelToursFeaturedPackage
+    if (!packageData) {
+      const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
+        where: { id: normalizedPackageId },
         select: { id: true, name: true, price: true },
       })
 
-      // If not found, try TravelToursFeaturedPackage
-      if (!packageData) {
-        const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
-          where: { id: packageId },
-          select: { id: true, name: true, price: true },
-        })
-
-        if (featuredPkg) {
-          packageData = {
-            id: featuredPkg.id,
-            name: featuredPkg.name,
-            price: featuredPkg.price,
-          }
+      if (featuredPkg) {
+        packageData = {
+          id: featuredPkg.id,
+          name: featuredPkg.name,
+          price: featuredPkg.price,
         }
       }
+    }
 
-      if (!packageData) {
+    if (!packageData) {
+      return NextResponse.json(
+        { success: false, error: 'Package not found' },
+        { status: 404 }
+      )
+    }
+
+    // Never trust client amount for package payments.
+    const packageAmount = packageData.price
+    if (amount !== undefined && amount !== null && Number(amount) > 0) {
+      const sentAmountMinor = Math.round(Number(amount) * 100)
+      const packageAmountMinor = Math.round(packageAmount * 100)
+      if (sentAmountMinor !== packageAmountMinor) {
         return NextResponse.json(
-          { success: false, error: 'Package not found' },
-          { status: 404 }
+          { success: false, error: 'Amount mismatch for selected package' },
+          { status: 400 }
         )
       }
-
-      // Never trust client amount for package payments.
-      const packageAmount = packageData.price
-      if (amount !== undefined && amount !== null && Number(amount) > 0) {
-        const sentAmountMinor = Math.round(Number(amount) * 100)
-        const packageAmountMinor = Math.round(packageAmount * 100)
-        if (sentAmountMinor !== packageAmountMinor) {
-          return NextResponse.json(
-            { success: false, error: 'Amount mismatch for selected package' },
-            { status: 400 }
-          )
-        }
-      }
-
-      finalAmount = packageAmount
     }
+
+    finalAmount = packageAmount
 
     const parsedAmount = Number(finalAmount)
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
@@ -167,17 +189,117 @@ export async function POST(request: NextRequest) {
     // For GHS, 1 GHS = 100 pesewas, so multiply by 100
     const amountInKobo = Math.round(finalAmount * 100)
 
+    const completedPayment = await prisma.payment.findFirst({
+      where: {
+        userId: user.id,
+        packageId: packageData.id,
+        status: 'success',
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { reference: true },
+    })
+
+    if (completedPayment) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You already have a successful payment for this package. Contact support if you need another booking.',
+          reference: completedPayment.reference,
+        },
+        { status: 409 }
+      )
+    }
+
+    const reusablePendingPayment = await prisma.payment.findFirst({
+      where: {
+        userId: user.id,
+        packageId: packageData.id,
+        status: { in: ['pending', 'processing'] },
+        createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60 * 24) },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        reference: true,
+        amount: true,
+        amountMinor: true,
+        currency: true,
+        paystackData: true,
+      },
+    })
+
+    const reusablePaystackData = reusablePendingPayment?.paystackData as any
+    if (
+      reusablePendingPayment &&
+      (reusablePendingPayment.amountMinor || Math.round(Number(reusablePendingPayment.amount) * 100)) === amountInKobo &&
+      reusablePendingPayment.currency === 'GHS' &&
+      reusablePaystackData?.authorization_url &&
+      reusablePaystackData?.access_code
+    ) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          authorizationUrl: reusablePaystackData.authorization_url,
+          accessCode: reusablePaystackData.access_code,
+          reference: reusablePendingPayment.reference,
+          reused: true,
+        },
+      })
+    }
+
+    if (normalizedIdempotencyKey) {
+      const existingPayment = await prisma.payment.findFirst({
+        where: {
+          userId: user.id,
+          packageId: packageData.id,
+          paymentMethod: normalizedPaymentMethod,
+          status: { in: ['pending', 'processing'] },
+          metadata: {
+            path: ['checkoutId'],
+            equals: normalizedIdempotencyKey,
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          reference: true,
+          amount: true,
+          amountMinor: true,
+          currency: true,
+          paystackData: true,
+        },
+      })
+
+      const existingPaystackData = existingPayment?.paystackData as any
+      if (
+        existingPayment &&
+        (existingPayment.amountMinor || Math.round(Number(existingPayment.amount) * 100)) === amountInKobo &&
+        existingPayment.currency === 'GHS' &&
+        existingPaystackData?.authorization_url &&
+        existingPaystackData?.access_code
+      ) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            authorizationUrl: existingPaystackData.authorization_url,
+            accessCode: existingPaystackData.access_code,
+            reference: existingPayment.reference,
+            reused: true,
+          },
+        })
+      }
+    }
+
     // Generate unique reference
     const reference = `CAT_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`
 
     // Prepare metadata for Paystack
     const paystackMetadata: any = {
-      packageId: packageId || null,
+      packageId: packageData.id,
       packageName: packageData?.name || null,
       customerName,
       customerPhone: normalizedPhone,
       paymentMethod: normalizedPaymentMethod,
       expectedAmountKobo: amountInKobo,
+      checkoutId: normalizedIdempotencyKey || null,
     }
 
     // Add billing address if provided (for card payments)
@@ -215,13 +337,14 @@ export async function POST(request: NextRequest) {
       data: {
         reference,
         amount: finalAmount,
+        amountMinor: amountInKobo,
         currency: 'GHS',
         status: 'pending',
         paymentMethod: normalizedPaymentMethod,
         customerEmail,
         customerName,
         customerPhone: normalizedPhone,
-        packageId: packageId || null,
+        packageId: packageData.id,
         userId: user.id,
         metadata: {
           packageName: packageData?.name || null,
@@ -230,6 +353,8 @@ export async function POST(request: NextRequest) {
           billingCountry: metadata?.country || null,
           momoPhone: metadata?.momoPhone || null,
           momoNetwork: metadata?.momoNetwork || null,
+          expectedAmountKobo: amountInKobo,
+          checkoutId: normalizedIdempotencyKey || null,
         },
         paystackData: response.data as any,
       },

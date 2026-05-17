@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         where: { id: user.id },
         data: {
           passwordHash,
+          emailVerifiedAt: user.emailVerifiedAt || new Date(),
           resetToken: null,
           resetTokenExpiry: null,
         },
@@ -60,7 +61,9 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
-    await pruneUserSessions(user.id).catch(() => {})
+    await pruneUserSessions(user.id).catch((error) => {
+      console.error('[Reset Password] Failed to prune user sessions:', error)
+    })
 
     const response = NextResponse.json({
       success: true,

@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs'
+
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === 'production'
 const scriptSrc = isProduction
@@ -71,4 +73,13 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+const sentryOptions = {
+  silent: true,
+  disableLogger: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+}
+
+export default process.env.SENTRY_DSN
+  ? withSentryConfig(nextConfig, sentryOptions)
+  : nextConfig

@@ -25,6 +25,14 @@ export function proxy(request: NextRequest) {
   const requestId = ensureRequestId(request)
   const isMutation = MUTATING_METHODS.has(request.method.toUpperCase())
   const hasSession = hasAuthSessionCookie(request)
+  const pathname = request.nextUrl.pathname
+
+  if ((pathname === '/admin' || pathname.startsWith('/admin/')) && !request.cookies.get('admin_session')?.value) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/admin-login'
+    loginUrl.search = ''
+    return addSecurityHeaders(NextResponse.redirect(loginUrl), requestId)
+  }
 
   if (isMutation && hasSession && !isSameOriginRequest(request)) {
     return addSecurityHeaders(
@@ -46,5 +54,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: ['/api/:path*', '/admin/:path*', '/admin'],
 }

@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       data: {
         reference: `BOOK_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`,
         amount: packagePrice,
+        amountMinor: Math.round(packagePrice * 100),
         currency: 'GHS',
         status: 'pending',
         paymentMethod: method,

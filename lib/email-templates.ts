@@ -52,6 +52,21 @@ export function welcomeEmail(name: string, contact?: Partial<SupportContact>) {
   }
 }
 
+export function emailVerificationEmail(name: string, verificationUrl: string, contact?: Partial<SupportContact>) {
+  return {
+    subject: `Verify your ${BRAND} email`,
+    html: layout('Verify Your Email', `
+      <p style="color:#475569;line-height:1.6;">Hi ${name},</p>
+      <p style="color:#475569;line-height:1.6;">Please verify your email address before signing in. This protects your account and keeps bookings tied to the right person.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${verificationUrl}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Verify Email</a>
+      </div>
+      <p style="color:#475569;line-height:1.6;">This link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.</p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${verificationUrl}</p>
+    `, contact),
+  }
+}
+
 export function adminPasswordResetEmail(username: string, resetUrl: string, contact?: Partial<SupportContact>) {
   return {
     subject: `Reset your ${BRAND} Admin password`,

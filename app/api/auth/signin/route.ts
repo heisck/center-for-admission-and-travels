@@ -35,6 +35,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }
 
+    if (!user.emailVerifiedAt) {
+      return NextResponse.json(
+        { success: false, error: 'Please verify your email before signing in. Check your inbox for the verification link.' },
+        { status: 403 }
+      )
+    }
+
     step = 'verify-password'
     const ok = await verifyPassword(passwordTrimmed, user.passwordHash)
     if (!ok) {
@@ -54,7 +61,9 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
-    await pruneUserSessions(user.id).catch(() => {})
+    await pruneUserSessions(user.id).catch((error) => {
+      console.error('[Signin] Failed to prune user sessions:', error)
+    })
 
     step = 'build-response'
     const response = NextResponse.json({

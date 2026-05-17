@@ -59,7 +59,9 @@ export async function POST(request: NextRequest) {
         expiresAt,
       },
     })
-    await pruneAdminSessions(adminUser.id).catch(() => {})
+    await pruneAdminSessions(adminUser.id).catch((error) => {
+      console.error('[Admin Auth] Failed to prune admin sessions:', error)
+    })
 
     const response = NextResponse.json({
       success: true,

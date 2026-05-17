@@ -12,6 +12,7 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { paymentConfirmationEmail } from '@/lib/email-templates'
 import { getSupportContact } from '@/lib/support-contact'
+import { getClientIp } from '@/lib/security'
 import crypto from 'crypto'
 
 function isValidSignature(rawBody: string, signature: string, secret: string) {
@@ -31,6 +32,27 @@ function isValidSignature(rawBody: string, signature: string, secret: string) {
   )
 }
 
+function getWebhookIpAllowlist() {
+  return String(process.env.PAYSTACK_WEBHOOK_IP_ALLOWLIST || '')
+    .split(/[,\s]+/)
+    .map((ip) => ip.trim())
+    .filter(Boolean)
+}
+
+function isWebhookIpAllowed(request: NextRequest) {
+  const allowlist = getWebhookIpAllowlist()
+  if (allowlist.length === 0) return true
+
+  const forwardedFor = request.headers.get('x-forwarded-for') || ''
+  const forwardedIps = forwardedFor
+    .split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean)
+  const clientIp = forwardedIps[0] || getClientIp(request)
+
+  return allowlist.includes(clientIp)
+}
+
 export async function POST(request: NextRequest) {
   try {
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY
@@ -38,6 +60,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Webhook secret is not configured' },
         { status: 503 }
+      )
+    }
+
+    if (!isWebhookIpAllowed(request)) {
+      return NextResponse.json(
+        { success: false, error: 'Webhook IP is not allowed' },
+        { status: 403 }
       )
     }
 
@@ -76,6 +105,7 @@ export async function POST(request: NextRequest) {
         id: true,
         reference: true,
         amount: true,
+        amountMinor: true,
         currency: true,
         status: true,
         customerEmail: true,
@@ -94,7 +124,7 @@ export async function POST(request: NextRequest) {
     switch (event) {
       case 'charge.success': {
         const paidAmountKobo = Number(data?.amount || 0)
-        const expectedAmountKobo = Math.round(payment.amount * 100)
+        const expectedAmountKobo = payment.amountMinor || Math.round(Number(payment.amount) * 100)
         const paidCurrency = String(data?.currency || '').toUpperCase()
         const expectedCurrency = payment.currency.toUpperCase()
         const amountAndCurrencyMatch =
@@ -128,14 +158,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'Payment already marked successful' })
     }
 
-    const previousStatus = payment.status
-    const updatedPayment = await prisma.payment.update({
-      where: { id: payment.id },
+    const updateResult = await prisma.payment.updateMany({
+      where: {
+        id: payment.id,
+        status: { not: 'success' },
+      },
       data: {
         status: nextStatus,
         paystackData: data as any,
         updatedAt: new Date(),
       },
+    })
+
+    if (updateResult.count === 0) {
+      return NextResponse.json({ success: true, message: 'Payment already processed' })
+    }
+
+    const updatedPayment = await prisma.payment.findUnique({
+      where: { id: payment.id },
       select: {
         reference: true,
         amount: true,
@@ -146,9 +186,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    if (!updatedPayment) {
+      return NextResponse.json({ success: true, message: 'Payment disappeared after update; ignored' })
+    }
+
     if (
       nextStatus === 'success' &&
-      previousStatus !== 'success' &&
       updatedPayment.customerEmail
     ) {
       const supportContact = await getSupportContact()
@@ -156,7 +199,7 @@ export async function POST(request: NextRequest) {
         {
           name: updatedPayment.customerName || 'Customer',
           reference: updatedPayment.reference,
-          amount: updatedPayment.amount,
+          amount: Number(updatedPayment.amount),
           currency: updatedPayment.currency,
           packageName: (updatedPayment.metadata as any)?.packageName || 'Booking',
         },

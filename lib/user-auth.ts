@@ -9,7 +9,7 @@ export function createSessionToken(): string {
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  return hash(password, 10)
+  return hash(password, 12)
 }
 
 export async function verifyPassword(password: string, passwordHash: string): Promise<boolean> {

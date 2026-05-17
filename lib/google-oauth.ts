@@ -194,12 +194,30 @@ export async function findOrCreateGoogleUser(profile: GoogleProfile) {
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, username: true, email: true, displayName: true },
+    select: { id: true, username: true, email: true, displayName: true, emailVerifiedAt: true },
   })
 
   if (existingUser) {
+    if (!existingUser.emailVerifiedAt) {
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          emailVerifiedAt: new Date(),
+          emailVerificationToken: null,
+          emailVerificationTokenExpiry: null,
+        },
+      })
+    }
     await attachGoogleAccount(existingUser.id, profile)
-    return { user: existingUser, isNewUser: false }
+    return {
+      user: {
+        id: existingUser.id,
+        username: existingUser.username,
+        email: existingUser.email,
+        displayName: existingUser.displayName,
+      },
+      isNewUser: false,
+    }
   }
 
   const username = await createUniqueUsername(profile)
@@ -212,6 +230,7 @@ export async function findOrCreateGoogleUser(profile: GoogleProfile) {
       email,
       passwordHash,
       displayName,
+      emailVerifiedAt: new Date(),
       oauthAccounts: {
         create: {
           provider: GOOGLE_OAUTH_PROVIDER,
@@ -225,7 +244,9 @@ export async function findOrCreateGoogleUser(profile: GoogleProfile) {
 
   const supportContact = await getSupportContact()
   const template = welcomeEmail(user.displayName || user.username, supportContact)
-  sendEmail({ to: user.email, ...template }).catch(() => {})
+  sendEmail({ to: user.email, ...template }).catch((error) => {
+    console.error('[Google OAuth] Failed to send welcome email:', error)
+  })
 
   return { user, isNewUser: true }
 }
@@ -241,7 +262,9 @@ export async function createSignedInUserResponse(request: NextRequest, user: Pub
       expiresAt,
     },
   })
-  await pruneUserSessions(user.id).catch(() => {})
+  await pruneUserSessions(user.id).catch((error) => {
+    console.error('[Google OAuth] Failed to prune user sessions:', error)
+  })
 
   const response = NextResponse.redirect(new URL(redirectPath, getBaseUrl(request)))
   response.cookies.set(getUserSessionCookieName(), token, {

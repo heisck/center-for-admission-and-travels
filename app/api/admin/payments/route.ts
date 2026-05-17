@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
       const email = p.user?.email || p.customerEmail
       return {
         ...p,
+        amount: Number(p.amount),
         newsletterSubscribed: email ? newsletterSet.has(email.toLowerCase()) : null,
       }
     })

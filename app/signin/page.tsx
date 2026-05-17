@@ -33,6 +33,7 @@ function SignInContent() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState("")
+  const [notice, setNotice] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -42,6 +43,12 @@ function SignInContent() {
   useEffect(() => {
     const error = searchParams.get("error")
     if (error) setServerError(error)
+    const nextNotice = searchParams.get("notice")
+    if (nextNotice === "verify-email") {
+      setNotice("Check your email and click the verification link before signing in.")
+    } else if (nextNotice === "email-verified") {
+      setNotice("Email verified. You can sign in now.")
+    }
   }, [searchParams])
 
   const validateForm = () => {
@@ -118,6 +125,12 @@ function SignInContent() {
           {serverError && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-700">{serverError}</p>
+            </div>
+          )}
+
+          {notice && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-700">{notice}</p>
             </div>
           )}
 

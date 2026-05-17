@@ -6,10 +6,17 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import DOMPurify from 'isomorphic-dompurify'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
+
+function sanitizeBlogContent(value: unknown): string {
+  return DOMPurify.sanitize(String(value || '').trim().slice(0, 50_000), {
+    USE_PROFILES: { html: true },
+  })
+}
 
 export async function PUT(
   request: NextRequest,
@@ -31,7 +38,7 @@ export async function PUT(
     const updateData: Record<string, unknown> = {}
     if (title !== undefined) updateData.title = title.trim()
     if (excerpt !== undefined) updateData.excerpt = excerpt?.trim() || ''
-    if (content !== undefined) updateData.content = content?.trim() || ''
+    if (content !== undefined) updateData.content = sanitizeBlogContent(content)
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null
     if (packageId !== undefined) updateData.packageId = packageId || null
     if (published !== undefined) {

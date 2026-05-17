@@ -99,6 +99,25 @@ function SignUpContent() {
           return
         }
 
+        if (data.needsEmailVerification) {
+          toast.success("Check your email", {
+            description: "We sent you a verification link. Verify your email before signing in.",
+          })
+          if (formData.subscribeNewsletter) {
+            try {
+              await fetch("/api/newsletter", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: formData.email }),
+              })
+            } catch (error) {
+              console.error("[Signup] Newsletter subscription failed:", error)
+            }
+          }
+          router.push("/signin?notice=verify-email")
+          return
+        }
+
         toast.success("Account created successfully!", {
           description: `Welcome, ${data.user?.displayName || data.user?.username}!`,
         })
@@ -110,7 +129,9 @@ function SignUpContent() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email: formData.email }),
             })
-          } catch {}
+          } catch (error) {
+            console.error("[Signup] Newsletter subscription failed:", error)
+          }
         }
         router.push(redirectTo)
         router.refresh()

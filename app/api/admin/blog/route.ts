@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import DOMPurify from 'isomorphic-dompurify'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
@@ -18,6 +19,12 @@ function slugify(text: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim()
+}
+
+function sanitizeBlogContent(value: unknown): string {
+  return DOMPurify.sanitize(String(value || '').trim().slice(0, 50_000), {
+    USE_PROFILES: { html: true },
+  })
 }
 
 export async function GET(request: NextRequest) {
@@ -95,7 +102,7 @@ export async function POST(request: NextRequest) {
         slug: finalSlug,
         title: title.trim(),
         excerpt: (excerpt || '').trim(),
-        content: (content || '').trim(),
+        content: sanitizeBlogContent(content),
         imageUrl: imageUrl || null,
         packageId: packageId || null,
         published: !!published,

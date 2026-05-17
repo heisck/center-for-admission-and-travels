@@ -6,6 +6,10 @@ import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import { CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import {
+  clearPendingPaymentByReference,
+  readLatestPendingPayment,
+} from '@/lib/pending-payment-storage'
 
 export default function PaymentCallbackPage() {
   return (
@@ -31,12 +35,22 @@ export default function PaymentCallbackPage() {
 function PaymentCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const reference = searchParams.get('reference')
+  const referenceFromUrl = searchParams.get('reference')
+  const [reference, setReference] = useState<string | null>(null)
+  const [referenceLoaded, setReferenceLoaded] = useState(false)
   const [status, setStatus] = useState<'loading' | 'success' | 'failed' | 'pending'>('loading')
   const [paymentData, setPaymentData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const storedReference = readLatestPendingPayment()?.reference || null
+    setReference(referenceFromUrl || storedReference)
+    setReferenceLoaded(true)
+  }, [referenceFromUrl])
+
+  useEffect(() => {
+    if (!referenceLoaded) return
+
     if (!reference) {
       setStatus('failed')
       setError('Payment reference is missing')
@@ -58,6 +72,9 @@ function PaymentCallbackContent() {
           } else {
             setStatus('pending')
           }
+          if (['success', 'failed', 'cancelled'].includes(result.data.status)) {
+            clearPendingPaymentByReference(reference)
+          }
         } else {
           setStatus('failed')
           setError(result.error || 'Failed to verify payment')
@@ -69,7 +86,7 @@ function PaymentCallbackContent() {
     }
 
     verifyPayment()
-  }, [reference])
+  }, [reference, referenceLoaded])
 
   return (
     <main className="min-h-screen bg-background">

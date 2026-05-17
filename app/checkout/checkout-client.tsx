@@ -9,6 +9,12 @@ import { CreditCard, Smartphone, MessageCircle, Loader2, AlertCircle, Shield, Cl
 
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { buildWhatsAppUrl } from "@/lib/contact-utils"
+import {
+  clearPendingPayment,
+  readPendingPayment,
+  savePendingPayment,
+  type PendingPaymentRecord,
+} from "@/lib/pending-payment-storage"
 
 interface PackageData {
   id: string
@@ -44,6 +50,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
   const [paymentMethod, setPaymentMethod] = useState<"card" | "momo" | "whatsapp">("card")
   const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [bookingSuccess, setBookingSuccess] = useState(false)
+  const [pendingPayment, setPendingPayment] = useState<PendingPaymentRecord | null>(null)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -88,6 +95,15 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
 
     fetchPackage()
   }, [packageId])
+
+  useEffect(() => {
+    if (!user?.id || !packageId) {
+      setPendingPayment(null)
+      return
+    }
+
+    setPendingPayment(readPendingPayment(user.id, packageId))
+  }, [user?.id, packageId])
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target
@@ -179,6 +195,11 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
         return
       }
 
+      const checkoutId =
+        pendingPayment?.checkoutId ||
+        (crypto.randomUUID
+          ? crypto.randomUUID()
+          : `checkout_${Date.now()}_${Math.random().toString(36).slice(2)}`)
       const response = await fetch("/api/payment/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -188,6 +209,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
           name: formData.fullName,
           phone: formData.phone,
           paymentMethod: paymentMethod === "momo" ? "mobile_money" : "card",
+          idempotencyKey: checkoutId,
           metadata: {
             momoPhone: paymentMethod === "momo" ? formData.momoPhone : undefined,
             momoNetwork: paymentMethod === "momo" ? formData.momoNetwork : undefined,
@@ -198,6 +220,19 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
       const result = await response.json()
 
       if (result.success && result.data.authorizationUrl) {
+        if (user?.id) {
+          const nextPendingPayment = {
+            checkoutId,
+            packageId: packageData.id,
+            reference: result.data.reference,
+            authorizationUrl: result.data.authorizationUrl,
+            amount: packageData.price,
+            currency: "GHS",
+            createdAt: Date.now(),
+          }
+          savePendingPayment(user.id, nextPendingPayment)
+          setPendingPayment(nextPendingPayment)
+        }
         window.location.href = result.data.authorizationUrl
       } else {
         setError(result.error || "Payment could not be started. Please check your Paystack keys are configured.")
@@ -319,6 +354,43 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
             <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        ) : null}
+
+        {pendingPayment && paymentMethod !== "whatsapp" ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="font-semibold text-yellow-900">You have an unfinished Paystack checkout</p>
+                <p className="text-sm text-yellow-800 break-all">
+                  Reference: {pendingPayment.reference}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={pendingPayment.authorizationUrl}
+                  className="inline-flex items-center justify-center rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-yellow-700"
+                >
+                  Continue Payment
+                </a>
+                <Link
+                  href={`/payment/callback?reference=${encodeURIComponent(pendingPayment.reference)}`}
+                  className="inline-flex items-center justify-center rounded-lg border border-yellow-300 bg-white px-4 py-2 text-sm font-semibold text-yellow-900 transition hover:bg-yellow-100"
+                >
+                  Check Status
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (user?.id && packageId) clearPendingPayment(user.id, packageId)
+                    setPendingPayment(null)
+                  }}
+                  className="inline-flex items-center justify-center rounded-lg border border-yellow-300 bg-white px-4 py-2 text-sm font-semibold text-yellow-900 transition hover:bg-yellow-100"
+                >
+                  Start Fresh
+                </button>
+              </div>
+            </div>
           </div>
         ) : null}
 

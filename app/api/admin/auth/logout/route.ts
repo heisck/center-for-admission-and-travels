@@ -8,7 +8,9 @@ export async function POST(request: NextRequest) {
     const session = await verifyAdminSession(request)
 
     if (session) {
-      await prisma.adminSession.deleteMany({ where: { token: session.token } }).catch(() => {})
+      await prisma.adminSession.deleteMany({ where: { token: session.token } }).catch((error) => {
+        console.error('[Admin Auth] Failed to delete admin session during logout:', error)
+      })
       await logAdminAudit({
         request,
         session,

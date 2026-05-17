@@ -26,7 +26,9 @@ export async function verifyAdminSession(request: NextRequest): Promise<AdminSes
 
     if (!session || session.expiresAt < new Date()) {
       if (session) {
-        await prisma.adminSession.delete({ where: { id: session.id } }).catch(() => {})
+        await prisma.adminSession.delete({ where: { id: session.id } }).catch((error) => {
+          console.error('[Admin Auth] Failed to delete expired admin session:', error)
+        })
       }
       return null
     }

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createSessionToken, hashPassword, pruneUserSessions } from '@/lib/user-auth'
+import { hashPassword } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
-import { sendEmail } from '@/lib/email'
-import { welcomeEmail } from '@/lib/email-templates'
+import { sendEmailOrThrow } from '@/lib/email'
+import { emailVerificationEmail } from '@/lib/email-templates'
 import { getSupportContact } from '@/lib/support-contact'
 import { getClientIp } from '@/lib/security'
-import { getUserSessionCookieName, getUserSessionHintCookieName } from '@/lib/user-session-cookies'
+import { createResetTokenPair } from '@/lib/reset-token'
+import { getBaseUrl } from '@/lib/url'
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
@@ -48,6 +49,8 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await hashPassword(String(password))
+    const { token: verificationToken, tokenHash: verificationTokenHash } = createResetTokenPair()
+    const verificationTokenExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24)
 
     const user = await prisma.user.create({
       data: {
@@ -55,43 +58,30 @@ export async function POST(request: NextRequest) {
         email: normalizedEmail,
         passwordHash,
         displayName: displayName ? String(displayName).trim().slice(0, 120) : null,
+        emailVerificationToken: verificationTokenHash,
+        emailVerificationTokenExpiry: verificationTokenExpiry,
       },
       select: { id: true, username: true, email: true, displayName: true, createdAt: true },
     })
 
-    // Auto sign-in after signup
-    const token = createSessionToken()
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) // 30 days
-    await prisma.userSession.create({
-      data: {
-        userId: user.id,
-        token,
-        expiresAt,
-      },
-    })
-    await pruneUserSessions(user.id).catch(() => {})
-
-    // Send welcome email (non-blocking)
     const supportContact = await getSupportContact()
-    const template = welcomeEmail(user.displayName || user.username, supportContact)
-    sendEmail({ to: user.email, ...template }).catch(() => {})
+    const verificationUrl = `${getBaseUrl(request)}/api/auth/verify-email?token=${verificationToken}`
+    const template = emailVerificationEmail(user.displayName || user.username, verificationUrl, supportContact)
+    try {
+      await sendEmailOrThrow({ to: user.email, ...template })
+    } catch (error) {
+      await prisma.user.delete({ where: { id: user.id } }).catch((deleteError) => {
+        console.error('[Signup] Failed to roll back unverified user after email failure:', deleteError)
+      })
+      throw error
+    }
 
-    const response = NextResponse.json({ success: true, user })
-    response.cookies.set(getUserSessionCookieName(), token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
-      expires: expiresAt,
+    return NextResponse.json({
+      success: true,
+      needsEmailVerification: true,
+      message: 'Account created. Please check your email to verify your account before signing in.',
+      user,
     })
-    response.cookies.set(getUserSessionHintCookieName(), '1', {
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
-      expires: expiresAt,
-    })
-
-    return response
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })

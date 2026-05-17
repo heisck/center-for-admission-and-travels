@@ -76,6 +76,8 @@ export default function AdminPaymentsPage() {
   const [adminNote, setAdminNote] = useState('')
   const [savingNote, setSavingNote] = useState(false)
   const [noteSaved, setNoteSaved] = useState(false)
+  const [recheckingPayment, setRecheckingPayment] = useState(false)
+  const [recheckMessage, setRecheckMessage] = useState('')
 
   const fetchPayments = useCallback(async (page = 1) => {
     setLoading(true)
@@ -115,6 +117,7 @@ export default function AdminPaymentsPage() {
     setSelectedPayment(p)
     setAdminNote(p.adminNote || '')
     setNoteSaved(false)
+    setRecheckMessage('')
 
     if (!p.adminViewedAt) {
       try {
@@ -160,6 +163,34 @@ export default function AdminPaymentsPage() {
       console.error('Failed to save note:', err)
     } finally {
       setSavingNote(false)
+    }
+  }
+
+  const recheckSelectedPayment = async () => {
+    if (!selectedPayment) return
+    setRecheckingPayment(true)
+    setRecheckMessage('')
+
+    try {
+      const res = await fetch(`/api/admin/payments/${selectedPayment.id}/recheck`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSelectedPayment(data.data)
+        setPayments((prev) =>
+          prev.map((item) => (item.id === selectedPayment.id ? data.data : item))
+        )
+        setRecheckMessage(data.message || 'Payment status refreshed.')
+        window.dispatchEvent(new Event('admin-notifications-update'))
+      } else {
+        setRecheckMessage(data.error || 'Could not re-check payment.')
+      }
+    } catch (err) {
+      console.error('Failed to re-check payment:', err)
+      setRecheckMessage('Could not re-check payment.')
+    } finally {
+      setRecheckingPayment(false)
     }
   }
 
@@ -299,7 +330,7 @@ export default function AdminPaymentsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <div className={`font-medium text-foreground ${isUnviewed ? 'font-bold' : ''}`}>{p.customerName || '—'}</div>
+                        <div className={`font-medium text-foreground ${isUnviewed ? 'font-bold' : ''}`}>{p.customerName || '-'}</div>
                         <div className="text-xs text-muted-foreground">{p.customerEmail}</div>
                         {p.user && (
                           <div className="text-xs text-primary mt-0.5">@{p.user.username}</div>
@@ -391,6 +422,20 @@ export default function AdminPaymentsPage() {
                 )
               })()}
 
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <button
+                  onClick={recheckSelectedPayment}
+                  disabled={recheckingPayment}
+                  className="inline-flex items-center justify-center gap-2 px-3 py-2 border border-border rounded-lg text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${recheckingPayment ? 'animate-spin' : ''}`} />
+                  Re-check Paystack
+                </button>
+                {recheckMessage && (
+                  <span className="text-xs text-muted-foreground">{recheckMessage}</span>
+                )}
+              </div>
+
               {/* Viewed indicator */}
               {selectedPayment.adminViewedAt && (
                 <div className="flex items-center gap-2 text-xs text-green-600">
@@ -417,7 +462,7 @@ export default function AdminPaymentsPage() {
               <div className="border-t border-border pt-4">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Customer</h3>
                 <div className="space-y-3">
-                  <DetailRow icon={<User className="w-4 h-4" />} label="Name" value={selectedPayment.customerName || '—'} />
+                  <DetailRow icon={<User className="w-4 h-4" />} label="Name" value={selectedPayment.customerName || '-'} />
                   <DetailRow icon={<Mail className="w-4 h-4" />} label="Email" value={selectedPayment.customerEmail} />
                   {selectedPayment.customerPhone && (
                     <DetailRow icon={<Phone className="w-4 h-4" />} label="Phone" value={selectedPayment.customerPhone} />

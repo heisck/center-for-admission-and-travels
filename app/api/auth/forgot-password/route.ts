@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendEmail } from '@/lib/email'
+import { sendEmailOrThrow } from '@/lib/email'
 import { passwordResetEmail } from '@/lib/email-templates'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getSupportContact } from '@/lib/support-contact'
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const supportContact = await getSupportContact()
     const template = passwordResetEmail(user.displayName || user.username, resetUrl, supportContact)
 
-    await sendEmail({ to: user.email, ...template })
+    await sendEmailOrThrow({ to: user.email, ...template })
 
     return NextResponse.json({ success: true, message: 'If an account with that email exists, a reset link has been sent.' })
   } catch (error) {

@@ -170,64 +170,59 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Package ID required' }, { status: 400 })
     }
 
-    // Update package
-    await prisma.package.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        category,
-        duration,
-        price,
-        itinerary: itinerary || '',
-      },
-    })
+    await prisma.$transaction(async (tx) => {
+      await tx.package.update({
+        where: { id },
+        data: {
+          name,
+          description,
+          category,
+          duration,
+          price,
+          itinerary: itinerary || '',
+        },
+      })
 
-    // Update highlights
-    if (highlights) {
-      await prisma.packageHighlight.deleteMany({ where: { packageId: id } })
-      await prisma.packageHighlight.createMany({
-        data: highlights.map((text: string, index: number) => ({
+      if (highlights) {
+        await tx.packageHighlight.deleteMany({ where: { packageId: id } })
+        const data = highlights.map((text: string, index: number) => ({
           packageId: id,
           text,
           order: index,
-        })),
-      })
-    }
+        }))
+        if (data.length > 0) await tx.packageHighlight.createMany({ data })
+      }
 
-    // Update images
-    if (images) {
-      await prisma.packageImage.deleteMany({ where: { packageId: id } })
-      await prisma.packageImage.createMany({
-        data: images.map((url: string, index: number) => ({
+      if (images) {
+        await tx.packageImage.deleteMany({ where: { packageId: id } })
+        const data = images.map((url: string, index: number) => ({
           packageId: id,
           url,
           order: index,
-        })),
-      })
-    }
+        }))
+        if (data.length > 0) await tx.packageImage.createMany({ data })
+      }
 
-    if (included) {
-      await prisma.packageIncluded.deleteMany({ where: { packageId: id } })
-      await prisma.packageIncluded.createMany({
-        data: included.map((text: string, index: number) => ({
+      if (included) {
+        await tx.packageIncluded.deleteMany({ where: { packageId: id } })
+        const data = included.map((text: string, index: number) => ({
           packageId: id,
           text,
           order: index,
-        })),
-      })
-    }
+        }))
+        if (data.length > 0) await tx.packageIncluded.createMany({ data })
+      }
 
-    if (notIncluded) {
-      await prisma.packageNotIncluded.deleteMany({ where: { packageId: id } })
-      await prisma.packageNotIncluded.createMany({
-        data: notIncluded.map((text: string, index: number) => ({
+      if (notIncluded) {
+        await tx.packageNotIncluded.deleteMany({ where: { packageId: id } })
+        const data = notIncluded.map((text: string, index: number) => ({
           packageId: id,
           text,
           order: index,
-        })),
-      })
-    }
+        }))
+        if (data.length > 0) await tx.packageNotIncluded.createMany({ data })
+      }
+    })
 
     revalidatePath('/api/content')
     revalidatePath(`/api/packages/${id}`)

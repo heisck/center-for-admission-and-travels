@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        bookings,
+        bookings: bookings.map((booking) => ({ ...booking, amount: Number(booking.amount) })),
         pagination: {
           page,
           limit,
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest) {
       metadata: { status },
     })
 
-    return NextResponse.json({ success: true, data: updated })
+    return NextResponse.json({ success: true, data: { ...updated, amount: Number(updated.amount) } })
   } catch (error: any) {
     console.error('Error updating booking:', error)
     return NextResponse.json(

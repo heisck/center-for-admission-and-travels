@@ -60,7 +60,9 @@ export async function createSignedInAdminResponse(
       expiresAt,
     },
   })
-  await pruneAdminSessions(adminUser.id).catch(() => {})
+  await pruneAdminSessions(adminUser.id).catch((error) => {
+    console.error('[Admin Google OAuth] Failed to prune admin sessions:', error)
+  })
 
   const response = NextResponse.redirect(new URL(redirectPath, getBaseUrl(request)))
   response.cookies.set('admin_session', token, {

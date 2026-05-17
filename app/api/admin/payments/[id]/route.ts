@@ -70,7 +70,7 @@ export async function PATCH(
       metadata: auditMetadata,
     })
 
-    return NextResponse.json({ success: true, data: payment })
+    return NextResponse.json({ success: true, data: { ...payment, amount: Number(payment.amount) } })
   } catch (error: unknown) {
     console.error('Error updating payment:', error)
     if (typeof error === 'object' && error && 'code' in error && (error as { code?: string }).code === 'P2025') {

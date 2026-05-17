@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
         id: true,
         reference: true,
         amount: true,
+        amountMinor: true,
         currency: true,
         status: true,
         customerEmail: true,
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
     }
 
     const paidAmountKobo = Number(paymentData.amount || 0)
-    const expectedAmountKobo = Math.round(payment.amount * 100)
+    const expectedAmountKobo = payment.amountMinor || Math.round(Number(payment.amount) * 100)
     const verifiedCurrency = String(paymentData.currency || '').toUpperCase()
     const expectedCurrency = payment.currency.toUpperCase()
     const amountAndCurrencyMatch = paidAmountKobo === expectedAmountKobo && verifiedCurrency === expectedCurrency
@@ -119,18 +120,24 @@ export async function GET(request: NextRequest) {
       status = 'failed'
     }
 
-    const previousStatus = payment.status
-    if (previousStatus === 'success' && status !== 'success') {
+    if (payment.status === 'success' && status !== 'success') {
       status = 'success'
     }
 
-    const updatedPayment = await prisma.payment.update({
-      where: { id: payment.id },
+    const updateResult = await prisma.payment.updateMany({
+      where: {
+        id: payment.id,
+        status: { not: 'success' },
+      },
       data: {
         status,
         paystackData: paymentData as any,
         updatedAt: new Date(),
       },
+    })
+
+    const updatedPayment = await prisma.payment.findUnique({
+      where: { id: payment.id },
       select: {
         reference: true,
         amount: true,
@@ -141,17 +148,26 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    if (!updatedPayment) {
+      return NextResponse.json(
+        { success: false, error: 'Payment not found after verification' },
+        { status: 404 }
+      )
+    }
+
     // Send payment confirmation email on success (non-blocking)
-    if (status === 'success' && previousStatus !== 'success' && updatedPayment.customerEmail) {
+    if (status === 'success' && updateResult.count === 1 && updatedPayment.customerEmail) {
       const supportContact = await getSupportContact()
       const template = paymentConfirmationEmail({
         name: updatedPayment.customerName || 'Customer',
         reference: updatedPayment.reference,
-        amount: updatedPayment.amount,
+        amount: Number(updatedPayment.amount),
         currency: updatedPayment.currency,
         packageName: (updatedPayment.metadata as any)?.packageName || 'Booking',
       }, supportContact)
-      sendEmail({ to: updatedPayment.customerEmail, ...template }).catch(() => {})
+      sendEmail({ to: updatedPayment.customerEmail, ...template }).catch((error) => {
+        console.error('[Payment Verify] Failed to send payment confirmation email:', error)
+      })
     }
 
     const responseMessage = !amountAndCurrencyMatch && status === 'failed'
@@ -163,7 +179,7 @@ export async function GET(request: NextRequest) {
       data: {
         status,
         reference: updatedPayment.reference,
-        amount: updatedPayment.amount,
+        amount: Number(updatedPayment.amount),
         currency: updatedPayment.currency,
         paidAt: paymentData.paid_at,
         message: responseMessage,

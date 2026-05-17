@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { sendEmail } from '@/lib/email'
+import { sendEmailOrThrow } from '@/lib/email'
 import { adminPasswordResetEmail } from '@/lib/email-templates'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getSupportContact } from '@/lib/support-contact'
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     const supportContact = await getSupportContact()
     const template = adminPasswordResetEmail(adminUser.username, resetUrl, supportContact)
 
-    await sendEmail({ to: targetEmail, ...template })
+    await sendEmailOrThrow({ to: targetEmail, ...template })
 
     return NextResponse.json({
       success: true,

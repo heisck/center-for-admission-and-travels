@@ -45,7 +45,10 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, data: payments })
+    return NextResponse.json({
+      success: true,
+      data: payments.map((payment) => ({ ...payment, amount: Number(payment.amount) })),
+    })
   } catch (error: any) {
     console.error('Error fetching user payments:', error)
     return NextResponse.json(
