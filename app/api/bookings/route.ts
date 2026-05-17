@@ -5,7 +5,7 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const ALLOWED_METHODS = new Set(['whatsapp', 'email', 'phone', 'call'])
+const ALLOWED_METHODS = new Set(['whatsapp', 'email', 'phone', 'call', 'form'])
 
 function normalizeText(value: unknown, maxLength: number) {
   return String(value || '').trim().slice(0, maxLength)
@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
     }
 
     const packageId = normalizeText(body?.packageId, 64)
+    const serviceType = normalizeText(body?.serviceType, 120)
+    const country = normalizeText(body?.country, 120)
     const fullName = normalizeText(body?.fullName, 120)
     const email = normalizeText(body?.email, 254).toLowerCase()
     const phone = normalizeText(body?.phone, 40)
@@ -38,9 +40,11 @@ export async function POST(request: NextRequest) {
     const rawMethod = normalizeText(body?.method, 32).toLowerCase()
     const method = ALLOWED_METHODS.has(rawMethod) ? rawMethod : 'whatsapp'
 
-    if (!fullName || !email || !phone || !packageId) {
+    const isGeneralInquiry = !packageId || packageId === 'general-inquiry'
+
+    if (!fullName || !email || !phone || (!packageId && !serviceType)) {
       return NextResponse.json(
-        { success: false, error: 'Full name, email, phone, and package are required' },
+        { success: false, error: 'Full name, email, phone, and service/package are required' },
         { status: 400 }
       )
     }
@@ -52,33 +56,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let packageName = 'Unknown Package'
+    let packageName = serviceType || 'General inquiry'
     let packagePrice = 0
 
-    const pkg = await prisma.package.findUnique({
-      where: { id: packageId },
-      select: { name: true, price: true },
-    })
-
-    if (pkg) {
-      packageName = pkg.name
-      packagePrice = pkg.price
-    } else {
-      const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
+    if (!isGeneralInquiry) {
+      const pkg = await prisma.package.findUnique({
         where: { id: packageId },
         select: { name: true, price: true },
       })
-      if (featuredPkg) {
-        packageName = featuredPkg.name
-        packagePrice = featuredPkg.price
-      }
-    }
 
-    if (!packagePrice || packagePrice <= 0) {
-      return NextResponse.json(
-        { success: false, error: 'Package not found' },
-        { status: 404 }
-      )
+      if (pkg) {
+        packageName = pkg.name
+        packagePrice = pkg.price
+      } else {
+        const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
+          where: { id: packageId },
+          select: { name: true, price: true },
+        })
+        if (featuredPkg) {
+          packageName = featuredPkg.name
+          packagePrice = featuredPkg.price
+        }
+      }
+
+      if (!packagePrice || packagePrice <= 0) {
+        return NextResponse.json(
+          { success: false, error: 'Package not found' },
+          { status: 404 }
+        )
+      }
     }
 
     await prisma.payment.create({
@@ -91,10 +97,13 @@ export async function POST(request: NextRequest) {
         customerEmail: email,
         customerName: fullName,
         customerPhone: phone,
-        packageId,
+        packageId: isGeneralInquiry ? null : packageId,
         metadata: {
           type: 'booking_request',
+          inquiryType: isGeneralInquiry ? 'general_inquiry' : 'package_booking',
           packageName,
+          serviceType: serviceType || null,
+          country: country || null,
           notes: notes || null,
           contactMethod: method,
         },

@@ -47,16 +47,20 @@ export default function MobileNavbarMenu({ currentPath, navLinks }: MobileNavbar
           ))}
           {user ? (
             <div className="border-t pt-4 space-y-2 mt-4">
-              <div className="px-4 py-2">
-                <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+              <div className="min-w-0 px-4 py-2">
+                <p className="truncate text-sm font-semibold text-foreground" title={user.displayName || user.username}>
+                  {user.displayName || user.username}
+                </p>
+                <p className="break-all text-xs leading-snug text-muted-foreground" title={user.email}>
+                  {user.email}
+                </p>
               </div>
               <Link
                 href="/profile"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
               >
-                <UserIcon className="w-4 h-4" />
+                <UserIcon className="w-4 h-4 flex-shrink-0" />
                 My Profile
               </Link>
               <Link
@@ -64,7 +68,7 @@ export default function MobileNavbarMenu({ currentPath, navLinks }: MobileNavbar
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
               >
-                <CreditCard className="w-4 h-4" />
+                <CreditCard className="w-4 h-4 flex-shrink-0" />
                 My Payments
               </Link>
               <button

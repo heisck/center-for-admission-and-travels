@@ -33,26 +33,30 @@ export default function NavbarAuthControls() {
         <div className="relative flex justify-end">
           <button
             onClick={() => setShowUserMenu((current) => !current)}
-            className="flex items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold whitespace-nowrap"
+            className="flex max-w-[12rem] items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold whitespace-nowrap"
           >
-            <UserIcon className="w-4 h-4" />
-            <span>{user.displayName || user.username}</span>
+            <UserIcon className="w-4 h-4 flex-shrink-0" />
+            <span className="min-w-0 truncate">{user.displayName || user.username}</span>
           </button>
           {showUserMenu ? (
             <div
               ref={userMenuRef}
-              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-border py-2 z-50"
+              className="absolute right-0 mt-2 w-[min(92vw,20rem)] bg-white rounded-lg shadow-lg border border-border py-2 z-50"
             >
-              <div className="px-4 py-2 border-b border-border">
-                <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+              <div className="min-w-0 px-4 py-2 border-b border-border">
+                <p className="truncate text-sm font-semibold text-foreground" title={user.displayName || user.username}>
+                  {user.displayName || user.username}
+                </p>
+                <p className="break-all text-xs leading-snug text-muted-foreground" title={user.email}>
+                  {user.email}
+                </p>
               </div>
               <Link
                 href="/profile"
                 onClick={() => setShowUserMenu(false)}
                 className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
               >
-                <UserIcon className="w-4 h-4" />
+                <UserIcon className="w-4 h-4 flex-shrink-0" />
                 My Profile
               </Link>
               <Link
@@ -60,7 +64,7 @@ export default function NavbarAuthControls() {
                 onClick={() => setShowUserMenu(false)}
                 className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
               >
-                <CreditCard className="w-4 h-4" />
+                <CreditCard className="w-4 h-4 flex-shrink-0" />
                 My Payments
               </Link>
               <button
@@ -71,7 +75,7 @@ export default function NavbarAuthControls() {
                 }}
                 className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 flex-shrink-0" />
                 Sign Out
               </button>
             </div>

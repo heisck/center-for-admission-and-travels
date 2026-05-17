@@ -81,23 +81,27 @@ export default function Navbar({ navLinks }: NavbarProps = {}) {
               <div className="relative flex justify-end">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold whitespace-nowrap"
+                  className="flex max-w-[12rem] items-center gap-2 px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-semibold whitespace-nowrap"
                 >
-                  <UserIcon className="w-4 h-4" />
-                  <span>{user.displayName || user.username}</span>
+                  <UserIcon className="w-4 h-4 flex-shrink-0" />
+                  <span className="min-w-0 truncate">{user.displayName || user.username}</span>
                 </button>
                 {showUserMenu && (
-                  <div ref={userMenuRef} className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-border py-2 z-50">
-                    <div className="px-4 py-2 border-b border-border">
-                      <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <div ref={userMenuRef} className="absolute right-0 mt-2 w-[min(92vw,20rem)] bg-white rounded-lg shadow-lg border border-border py-2 z-50">
+                    <div className="min-w-0 px-4 py-2 border-b border-border">
+                      <p className="truncate text-sm font-semibold text-foreground" title={user.displayName || user.username}>
+                        {user.displayName || user.username}
+                      </p>
+                      <p className="break-all text-xs leading-snug text-muted-foreground" title={user.email}>
+                        {user.email}
+                      </p>
                     </div>
                     <Link
                       href="/profile"
                       onClick={() => setShowUserMenu(false)}
                       className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
                     >
-                      <UserIcon className="w-4 h-4" />
+                      <UserIcon className="w-4 h-4 flex-shrink-0" />
                       My Profile
                     </Link>
                     <Link
@@ -105,7 +109,7 @@ export default function Navbar({ navLinks }: NavbarProps = {}) {
                       onClick={() => setShowUserMenu(false)}
                       className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
                     >
-                      <CreditCard className="w-4 h-4" />
+                      <CreditCard className="w-4 h-4 flex-shrink-0" />
                       My Payments
                     </Link>
                     <button
@@ -116,7 +120,7 @@ export default function Navbar({ navLinks }: NavbarProps = {}) {
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-muted flex items-center gap-2"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-4 h-4 flex-shrink-0" />
                       Sign Out
                     </button>
                   </div>
@@ -167,16 +171,20 @@ export default function Navbar({ navLinks }: NavbarProps = {}) {
             ))}
             {user ? (
               <div className="border-t pt-4 space-y-2 mt-4">
-                <div className="px-4 py-2">
-                  <p className="text-sm font-semibold text-foreground">{user.displayName || user.username}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                <div className="min-w-0 px-4 py-2">
+                  <p className="truncate text-sm font-semibold text-foreground" title={user.displayName || user.username}>
+                    {user.displayName || user.username}
+                  </p>
+                  <p className="break-all text-xs leading-snug text-muted-foreground" title={user.email}>
+                    {user.email}
+                  </p>
                 </div>
                 <Link
                   href="/profile"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
                 >
-                  <UserIcon className="w-4 h-4" />
+                  <UserIcon className="w-4 h-4 flex-shrink-0" />
                   My Profile
                 </Link>
                 <Link
@@ -184,7 +192,7 @@ export default function Navbar({ navLinks }: NavbarProps = {}) {
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-foreground hover:text-orange-600 text-sm font-medium"
                 >
-                  <CreditCard className="w-4 h-4" />
+                  <CreditCard className="w-4 h-4 flex-shrink-0" />
                   My Payments
                 </Link>
                 <button

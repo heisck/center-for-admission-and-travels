@@ -13,8 +13,14 @@ interface ServicePageTemplateProps {
   chrome: SiteChromeContent
 }
 
+function clampImagePosition(value: unknown) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 50
+  return Math.min(100, Math.max(0, numeric))
+}
+
 export default function ServicePageTemplate({ service, chrome }: ServicePageTemplateProps) {
-  const heroObjectPosition = `${service.heroImagePosition.x}% ${service.heroImagePosition.y}%`
+  const heroObjectPosition = `${clampImagePosition(service.heroImagePosition?.x)}% ${clampImagePosition(service.heroImagePosition?.y)}%`
 
   return (
     <main className="min-h-screen bg-background">
@@ -28,6 +34,7 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
           alt={service.bannerTitle}
           fill
           priority
+          sizes="100vw"
           className="object-cover object-top service-hero-img"
           style={{ objectPosition: heroObjectPosition }}
         />
@@ -207,6 +214,7 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
                       src={country.image}
                       alt={country.name}
                       fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                       className="object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>

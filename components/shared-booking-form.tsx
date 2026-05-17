@@ -42,6 +42,8 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           packageId: "general-inquiry",
+          serviceType: formData.serviceType,
+          country: formData.country,
           fullName: formData.fullName,
           email: formData.email,
           phone: formData.phone,
