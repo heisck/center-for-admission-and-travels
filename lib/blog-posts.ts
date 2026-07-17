@@ -45,15 +45,20 @@ export async function findBlogPostByParam(param: string) {
       if (post) return post
     }
 
-    // 4) Case-insensitive slug (Postgres)
-    const rows = await prisma.blogPost.findMany({
-      where: {
-        slug: { equals: raw, mode: 'insensitive' },
-      },
-      include: { package: { select: { id: true, name: true } } },
-      take: 1,
-    })
-    if (rows[0]) return rows[0]
+    // 4) Case-insensitive slug — only if the provider supports it.
+    // Failures here must not 500 the page (exact match already tried).
+    try {
+      const rows = await prisma.blogPost.findMany({
+        where: {
+          slug: { equals: raw, mode: 'insensitive' },
+        },
+        include: { package: { select: { id: true, name: true } } },
+        take: 1,
+      })
+      if (rows[0]) return rows[0]
+    } catch (insensitiveError) {
+      console.warn('[blog-posts] insensitive slug lookup skipped:', insensitiveError)
+    }
 
     return null
   } catch (error) {

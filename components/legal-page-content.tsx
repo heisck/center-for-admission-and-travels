@@ -1,6 +1,5 @@
-import DOMPurify from 'isomorphic-dompurify'
 import { getLegalPage } from '@/lib/legal'
-import { plainTextToHtml, looksLikeHtml } from '@/lib/plain-text-to-html'
+import { contentToSafeHtml } from '@/lib/safe-html'
 import PublicNavbar from '@/components/public-navbar'
 import Footer from '@/components/footer'
 
@@ -16,12 +15,7 @@ export default async function LegalPageContent({
   defaultDescription,
 }: LegalPageContentProps) {
   const page = await getLegalPage(slug)
-  const htmlContent =
-    page?.content && looksLikeHtml(page.content)
-      ? page.content
-      : page?.content
-        ? plainTextToHtml(page.content)
-        : null
+  const htmlContent = page?.content ? contentToSafeHtml(page.content) : null
 
   return (
     <>
@@ -33,16 +27,21 @@ export default async function LegalPageContent({
               {page?.title || defaultTitle}
             </h1>
             <p className="text-sm text-muted-foreground mb-10">
-              Last updated: {page?.updatedAt ? new Date(page.updatedAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : 'February 2026'}
+              Last updated:{' '}
+              {page?.updatedAt
+                ? new Intl.DateTimeFormat('en-GB', {
+                    month: 'long',
+                    year: 'numeric',
+                    timeZone: 'UTC',
+                  }).format(new Date(page.updatedAt))
+                : 'February 2026'}
             </p>
 
             {htmlContent ? (
               <div
                 className="space-y-8 text-muted-foreground leading-relaxed prose prose-slate max-w-none prose-headings:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(htmlContent, {
-                    USE_PROFILES: { html: true },
-                  }),
+                  __html: htmlContent,
                 }}
               />
             ) : (
