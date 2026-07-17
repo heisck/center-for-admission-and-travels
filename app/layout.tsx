@@ -117,12 +117,15 @@ export default async function RootLayout({
   const chrome = await getSiteChromeContent()
 
   return (
-    <html lang="en-GH" className="overflow-x-clip">
+    <html lang="en-GH" className="overflow-x-clip" suppressHydrationWarning>
       <head>
         <link rel="llms-txt" href="/llms.txt" />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
       </head>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased w-full overflow-x-clip`}>
+      <body
+        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased w-full overflow-x-clip`}
+        suppressHydrationWarning
+      >
         <OrganizationStructuredData contact={chrome.contact} footer={chrome.footer} />
         <WebSiteStructuredData />
         <GoogleAnalytics />

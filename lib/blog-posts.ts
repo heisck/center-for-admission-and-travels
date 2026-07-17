@@ -10,6 +10,21 @@ export type BlogPostWithPackage = NonNullable<Awaited<ReturnType<typeof findBlog
  * Real public URLs are always: /blog/{slug}
  * where slug is the stored BlogPost.slug (e.g. student-loans-for-international-students).
  */
+async function loadPostBySlugOrId(raw: string) {
+  // Prefer include; if relation fails for any reason, fall back to bare post
+  // so a package join never 404s a published article.
+  try {
+    return await prisma.blogPost.findUnique({
+      where: { slug: raw },
+      include: { package: packageSelect },
+    })
+  } catch (error) {
+    console.error('[blog-posts] findUnique with package failed, retrying bare:', error)
+    const bare = await prisma.blogPost.findUnique({ where: { slug: raw } })
+    return bare ? { ...bare, package: null } : null
+  }
+}
+
 export async function findBlogPostByParam(param: string) {
   let raw = String(param || '').trim()
   try {
@@ -19,32 +34,33 @@ export async function findBlogPostByParam(param: string) {
   }
   // Strip accidental leading/trailing slashes or query noise
   raw = raw.replace(/^\/+|\/+$/g, '').trim()
+  // Drop accidental query/hash fragments if a full path was pasted
+  raw = raw.split('?')[0].split('#')[0].trim()
   if (!raw) return null
 
   try {
     // 1) Exact slug (canonical path)
-    const bySlug = await prisma.blogPost.findUnique({
-      where: { slug: raw },
-      include: { package: packageSelect },
-    })
+    const bySlug = await loadPostBySlugOrId(raw)
     if (bySlug) return bySlug
 
     // 2) Post id (cuid) — e.g. admin preview links
     if (/^[a-z0-9]{20,}$/i.test(raw)) {
-      const byId = await prisma.blogPost.findUnique({
-        where: { id: raw },
-        include: { package: packageSelect },
-      })
-      if (byId) return byId
+      try {
+        const byId = await prisma.blogPost.findUnique({
+          where: { id: raw },
+          include: { package: packageSelect },
+        })
+        if (byId) return byId
+      } catch {
+        const bare = await prisma.blogPost.findUnique({ where: { id: raw } })
+        if (bare) return { ...bare, package: null }
+      }
     }
 
     // 3) Title-like URL → slugify
     const fromTitle = slugifyBlogTitle(raw)
     if (fromTitle && fromTitle !== raw) {
-      const byTitleSlug = await prisma.blogPost.findUnique({
-        where: { slug: fromTitle },
-        include: { package: packageSelect },
-      })
+      const byTitleSlug = await loadPostBySlugOrId(fromTitle)
       if (byTitleSlug) return byTitleSlug
     }
 

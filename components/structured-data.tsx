@@ -32,7 +32,18 @@ interface OrganizationStructuredDataProps {
 
 export function OrganizationStructuredData({ contact, footer }: OrganizationStructuredDataProps) {
   const phone = normalizePhoneForTel(contact.phone)
-  const social = footer.socialLinks.map((link) => link.url).filter(Boolean)
+  const social = footer.socialLinks
+    .map((link) => {
+      // Collapse "https://https://..." and bare hosts so sameAs stays valid for Google
+      let url = String(link.url || '').trim()
+      if (!url) return ''
+      url = url.replace(/^(https?:\/\/)+/i, (match) =>
+        /https/i.test(match) ? 'https://' : 'http://'
+      )
+      if (!/^https?:\/\//i.test(url)) url = `https://${url.replace(/^\/\//, '')}`
+      return url
+    })
+    .filter(Boolean)
   const areaServed = buildAreaServedSchema()
   const openingHours = buildOpeningHoursSpec()
 

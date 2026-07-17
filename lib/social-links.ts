@@ -60,8 +60,15 @@ const PLATFORM_ALIASES: Record<string, SocialPlatformKey> = {
 }
 
 export function normalizeSocialUrl(rawUrl: string): string {
-  const value = String(rawUrl || '').trim()
+  let value = String(rawUrl || '').trim()
   if (!value) return ''
+
+  // Fix common admin mistakes: "https://https://facebook.com/..." or "http://https://..."
+  value = value.replace(/^(https?:\/\/)+/i, (match) => {
+    // Keep a single scheme (prefer https if any https appeared)
+    return /https/i.test(match) ? 'https://' : 'http://'
+  })
+
   if (/^https?:\/\//i.test(value)) return value
   // bare "facebook.com/page" or "www.facebook.com/..."
   return `https://${value.replace(/^\/\//, '')}`

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound, permanentRedirect } from 'next/navigation'
+import { connection } from 'next/server'
 
 import PublicNavbar from '@/components/public-navbar'
 import Footer from '@/components/footer-server'
@@ -14,17 +15,27 @@ import { findBlogPostByParam, listPublishedBlogSlugs } from '@/lib/blog-posts'
 import { getSiteChromeContent } from '@/lib/public-content'
 import { contentToSafeHtml } from '@/lib/safe-html'
 
-export const revalidate = 60
+/**
+ * Always resolve posts from the live DB (same path as /api/blog/[slug]).
+ * Static ISR previously cached notFound() shells when build/revalidate
+ * briefly failed, leaving permanent 404s while the API still worked.
+ */
+export const dynamic = 'force-dynamic'
 export const dynamicParams = true
+export const revalidate = 0
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
-/** Prebuild known published posts so /blog/{slug} always resolves. */
+/** Still used by some hosts for path discovery; empty is fine with dynamicParams. */
 export async function generateStaticParams() {
-  const slugs = await listPublishedBlogSlugs()
-  return slugs.map((slug) => ({ slug }))
+  try {
+    const slugs = await listPublishedBlogSlugs()
+    return slugs.map((slug) => ({ slug }))
+  } catch {
+    return []
+  }
 }
 
 function formatPublishedDate(iso: string): string {
@@ -40,6 +51,27 @@ function formatPublishedDate(iso: string): string {
   } catch {
     return ''
   }
+}
+
+function toIso(value: unknown): string | null {
+  if (!value) return null
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString()
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? null : d.toISOString()
+  }
+  // Prisma-like object with toISOString
+  if (typeof value === 'object' && value !== null && 'toISOString' in value) {
+    try {
+      const iso = (value as { toISOString: () => string }).toISOString()
+      return typeof iso === 'string' ? iso : null
+    } catch {
+      return null
+    }
+  }
+  return null
 }
 
 function isAllowedNextImageHost(src: string): boolean {
@@ -59,6 +91,7 @@ function isAllowedNextImageHost(src: string): boolean {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   try {
+    await connection()
     const { slug } = await params
     const post = await findBlogPostByParam(slug)
 
@@ -86,12 +119,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
-  const { slug: param } = await params
+  // Opt into request-time rendering so we never serve a stale static 404 shell.
+  await connection()
 
+  const { slug: param } = await params
   const post = await findBlogPostByParam(param)
 
   if (!post) {
-    // True unknown URL
     notFound()
   }
 
@@ -143,12 +177,21 @@ export default async function BlogPostPage({ params }: PageProps) {
     )
   }
 
-  const publishedIso =
-    post.publishedAt?.toISOString?.() || post.createdAt?.toISOString?.() || null
-  const modifiedIso = post.updatedAt?.toISOString?.() || publishedIso
-  const safeHtml = contentToSafeHtml(post.content)
+  const publishedIso = toIso(post.publishedAt) || toIso(post.createdAt)
+  const modifiedIso = toIso(post.updatedAt) || publishedIso
+  let safeHtml = ''
+  try {
+    safeHtml = contentToSafeHtml(post.content)
+  } catch (error) {
+    console.error('[blog/[slug]] contentToSafeHtml failed:', error)
+    safeHtml = `<p>${String(post.excerpt || post.title || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')}</p>`
+  }
   const publishedLabel = publishedIso ? formatPublishedDate(publishedIso) : ''
   const imageUrl = post.imageUrl || null
+  // Prefer plain <img> when host is unknown so Image config never 500s the page
   const useNextImage = imageUrl ? isAllowedNextImageHost(imageUrl) : false
 
   return (
@@ -202,7 +245,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 <img
                   src={imageUrl}
                   alt={post.title}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               )}
             </div>
@@ -219,6 +262,8 @@ export default async function BlogPostPage({ params }: PageProps) {
 
           <div
             className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground"
+            // suppressHydrationWarning: browser may normalize rare HTML entities in prose
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{ __html: safeHtml }}
           />
 

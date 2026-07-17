@@ -73,13 +73,26 @@ export function primeCurrentUserCache(user: CurrentUser | null) {
   updateCurrentUserStore(user, true)
 }
 
+/**
+ * SSR-safe session hook.
+ *
+ * First paint (server + initial client) ALWAYS returns signed-out chrome
+ * (`user: null`, `isLoading: false`) so auth UI cannot hydrate-mismatch
+ * when a session cookie exists (React error #418).
+ * Session is resolved only after mount in useEffect.
+ */
 export function useCurrentUser() {
-  const [snapshot, setSnapshot] = useState(() => readCurrentUserSnapshot())
+  // Match SSR: never read document.cookie during useState initializer.
+  const [snapshot, setSnapshot] = useState<{
+    user: CurrentUser | null
+    isLoading: boolean
+  }>({ user: null, isLoading: false })
 
   const refreshUser = useCallback(async () => {
     if (!hasUserSessionHint()) {
       clearUserSessionHint()
       updateCurrentUserStore(null, true)
+      setSnapshot({ user: null, isLoading: false })
       return null
     }
 
@@ -88,6 +101,10 @@ export function useCurrentUser() {
     }
 
     updateCurrentUserStore(currentUserStore.user, false)
+    setSnapshot({
+      user: currentUserStore.user,
+      isLoading: true,
+    })
 
     currentUserStore.promise = (async () => {
       const res = await fetch("/api/auth/me", { cache: "no-store" })
@@ -125,6 +142,7 @@ export function useCurrentUser() {
     } finally {
       clearUserSessionHint()
       updateCurrentUserStore(null, true)
+      setSnapshot({ user: null, isLoading: false })
     }
   }, [])
 
@@ -133,8 +151,10 @@ export function useCurrentUser() {
       setSnapshot(readCurrentUserSnapshot())
     })
 
+    // After hydration only — safe to read cookies / fetch session
     if (!hasUserSessionHint()) {
       updateCurrentUserStore(null, true)
+      setSnapshot({ user: null, isLoading: false })
       return unsubscribe
     }
 
