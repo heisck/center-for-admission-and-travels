@@ -4,6 +4,7 @@ import Image from "next/image"
 import { CheckCircle, ArrowRight } from "lucide-react"
 import TestimonialsCustom from "@/components/smoothui/blocks/testimonials-custom"
 import Link from "next/link"
+import FramerMoveableThumbnails from "@/components/ui/framer-moveable-thumbnails"
 
 import type { ServicePageContent, SiteChromeContent } from "@/lib/public-content"
 import "./service-hero.css"
@@ -191,53 +192,38 @@ export default function ServicePageTemplate({ service, chrome }: ServicePageTemp
         </div>
       </section>
 
-      <section className="py-12 sm:py-16 md:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
-            <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              Featured Destinations
-            </span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Explore opportunities across the globe with our trusted partners
-          </p>
+      {service.countries.length > 0 ? (
+        <section className="py-12 sm:py-16 md:py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
+              <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Featured Destinations
+              </span>
+            </h2>
+            <p className="text-center text-muted-foreground mb-10 sm:mb-12 max-w-2xl mx-auto">
+              Explore opportunities across the globe with our trusted partners
+            </p>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {service.countries.map((country, idx) => (
-              <div
-                key={idx}
-                className="group bg-white border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary transition-all duration-300 transform hover:-translate-y-2"
-              >
-                {country.image && (
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={country.image}
-                      alt={country.name}
-                      fill
-                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h3 className="text-2xl font-bold text-white">{country.name}</h3>
-                    </div>
-                  </div>
-                )}
-                {!country.image && (
-                  <div className="p-6 pb-3">
-                    <h3 className="text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition">
-                      {country.name}
-                    </h3>
-                  </div>
-                )}
-                <div className="p-6 pt-4">
-                  <p className="text-muted-foreground leading-relaxed">{country.description}</p>
-                </div>
-              </div>
-            ))}
+            <div className="w-full md:w-[60%] mx-auto">
+              <FramerMoveableThumbnails
+                // Key by content fingerprint so admin image/name edits remount cleanly
+                key={service.countries
+                  .map((c) => `${c.name}|${c.image}|${(c.description || '').slice(0, 40)}`)
+                  .join('||')}
+                items={service.countries
+                  .filter((country) => Boolean(country.name?.trim() || country.image?.trim()))
+                  .map((country, idx) => ({
+                    id: `${country.name || 'destination'}-${idx}`,
+                    url: country.image?.trim() || '/placeholder.jpg',
+                    title: country.name?.trim() || 'Destination',
+                    description: country.description?.trim() || '',
+                  }))}
+                showCaption
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="py-12 sm:py-16 md:py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

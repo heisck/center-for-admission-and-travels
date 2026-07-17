@@ -67,6 +67,11 @@ export async function PUT(
 
     revalidatePath('/api/content')
     revalidatePath('/', 'layout')
+    // Public service pages that use destinations carousel
+    revalidatePath('/study-abroad')
+    revalidatePath('/work-abroad')
+    revalidatePath('/global-network')
+    if (body.route) revalidatePath(String(body.route))
     revalidateTag('public-content', 'max')
 
     await logAdminAudit({

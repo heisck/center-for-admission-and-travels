@@ -873,11 +873,14 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json()
       if (!result.success) {
         console.error('Failed to save service page:', result.error)
+      } else {
+        // Refresh public site cache so destination carousel picks up new images/text
+        notifyPublicContentUpdated()
       }
     } catch (error) {
       console.error('Error syncing service page:', error)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const saveAll = useCallback(async () => {
     setIsSaving(true)

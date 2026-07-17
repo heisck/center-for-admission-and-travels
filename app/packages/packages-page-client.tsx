@@ -71,15 +71,15 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
             <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              CA Travels Packages
+              Packages Built For
             </span>
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
-              Study, Work & Travel Abroad from Ghana
+              Serious Global Goals
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl">
-            Explore CFAAT packages for study abroad, work abroad, and international tours — clear pricing,
-            verified pathways, and full support from Center for Admission and Travels.
+            Explore study, work, and travel options prepared with clear planning, verified pathways, and full support.
+            Find your best fit and move from interest to action quickly.
           </p>
 
           {/* Mobile: full-width search always visible */}

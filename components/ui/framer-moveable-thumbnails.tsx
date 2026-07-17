@@ -3,13 +3,9 @@
 /**
  * Framer Moveable Thumbnails
  * Source: UI Layouts (ui-layouts.com) / 21st.dev
- * https://ui-layouts.com/components/framer-carousel
- * https://21st.dev/@uilayout.contact/components/framer-moveable-thumbnails
  *
- * A draggable image carousel with an animated filmstrip of thumbnails
- * where the active thumbnail expands to a wide aspect ratio.
- *
- * Dependency: `motion` (already in this project)
+ * Draggable carousel + animated thumbnail filmstrip.
+ * Active slide shows title (country) + description, center-aligned below the image.
  */
 
 import {
@@ -24,74 +20,70 @@ import React, { useEffect, useRef, useState } from 'react'
 export type FramerThumbnailItem = {
   id: string | number
   url: string
+  /** Country / destination name */
   title: string
+  /** Optional body copy under the title */
+  description?: string
 }
 
-/** Demo images from the original UI Layouts component */
+/** Demo images (used only if no items prop is passed) */
 export const defaultFramerMoveableItems: FramerThumbnailItem[] = [
   {
     id: 1,
-    url: 'https://images.unsplash.com/photo-1761882835101-02ab45ac0726?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=690',
-    title: 'MAXX PHAM',
+    url: '/united-kingdom-big-ben-london-university.jpg',
+    title: 'United Kingdom',
+    description: 'World-class universities and vibrant cities for study and career growth.',
   },
   {
     id: 2,
-    url: 'https://images.unsplash.com/photo-1661980494567-40a5e01b699b?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=685',
-    title: 'BOXIEN BAY',
+    url: '/canada-niagara-falls-toronto-city.jpg',
+    title: 'Canada',
+    description: 'Quality education, welcoming communities, and strong pathways for students.',
   },
   {
     id: 3,
-    url: 'https://images.unsplash.com/photo-1761882725885-d3d8bd2032d1?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=687',
-    title: 'AUSIZE MAM',
+    url: '/statue-of-liberty-nyc.png',
+    title: 'United States',
+    description: 'Diverse campuses and global opportunities across leading institutions.',
   },
   {
     id: 4,
-    url: 'https://images.unsplash.com/photo-1761775915848-467e41c1c4db?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=689',
-    title: 'RECLKTIKA',
+    url: '/europe-paris-eiffel-tower-landmarks.jpg',
+    title: 'Europe',
+    description: 'Historic cities, culture, and international programmes across the continent.',
   },
   {
     id: 5,
-    url: 'https://images.unsplash.com/photo-1761078980679-e89e25fe279b?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=687',
-    title: 'SONYPOO',
+    url: '/dubai-burj-khalifa-city-skyline.jpg',
+    title: 'Dubai / UAE',
+    description: 'Modern skyline, business hubs, and popular travel packages from Ghana.',
   },
   {
     id: 6,
-    url: 'https://images.unsplash.com/photo-1760389005000-bf02bf24f463?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=1123',
-    title: 'DONM FLY',
+    url: '/asia-tropical-beaches-thailand-temples.jpg',
+    title: 'Asia',
+    description: 'Beaches, culture, and growing education destinations across the region.',
   },
   {
     id: 7,
-    url: 'https://images.unsplash.com/photo-1761165307495-56bd564d322f?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=663',
-    title: 'Snowy Mountain Highway',
+    url: '/germany.jpg',
+    title: 'Germany',
+    description: 'Strong academic programmes and engineering excellence in the heart of Europe.',
   },
   {
     id: 8,
-    url: 'https://images.unsplash.com/photo-1756299792672-157811bf1005?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=1074',
-    title: 'FOGGY FOLS',
+    url: '/austrailia.png',
+    title: 'Australia',
+    description: 'High-quality universities and a dynamic lifestyle for international students.',
   },
   {
     id: 9,
-    url: 'https://images.unsplash.com/photo-1572851899646-a1f69c664e1e?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=1170',
-    title: 'DIM DARKO',
-  },
-  {
-    id: 10,
-    url: 'https://images.unsplash.com/photo-1759247178379-0e8eba83a4a6?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=687',
-    title: 'BEALIVE',
-  },
-  {
-    id: 11,
-    url: 'https://images.unsplash.com/photo-1754968230523-052635c98f99?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=736',
-    title: 'DOMEDOM ROME',
-  },
-  {
-    id: 12,
-    url: 'https://images.unsplash.com/photo-1643037508102-46fb319979c5?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=764',
-    title: 'IKEIMON POVE',
+    url: '/netherlands.jpg',
+    title: 'Netherlands',
+    description: 'English-taught degrees and innovative cities ideal for global learners.',
   },
 ]
 
-// Back-compat with upstream export name
 export const items = defaultFramerMoveableItems
 
 const FULL_ASPECT_RATIO = 16 / 9
@@ -100,17 +92,19 @@ const MARGIN = 2
 const GAP = 2
 
 export type FramerMoveableThumbnailsProps = {
-  /** Gallery items. Defaults to demo Unsplash images from UI Layouts. */
   items?: FramerThumbnailItem[]
-  /** Main slide height (Tailwind-friendly or raw CSS). Default: 400px */
+  /** Main slide height classes. Default tuned for destination cards. */
   heightClassName?: string
   className?: string
+  /** Show title + description under the main image (default true) */
+  showCaption?: boolean
 }
 
 function FramerMoveableThumbnails({
   items: itemsProp,
-  heightClassName = 'h-[400px]',
+  heightClassName = 'h-[280px] sm:h-[360px] md:h-[420px]',
   className = '',
+  showCaption = true,
 }: FramerMoveableThumbnailsProps) {
   const gallery = itemsProp?.length ? itemsProp : defaultFramerMoveableItems
   const [index, setIndex] = useState(0)
@@ -118,7 +112,6 @@ function FramerMoveableThumbnails({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const x = useMotionValue(0)
 
-  // Keep index in range if items change
   useEffect(() => {
     setIndex((i) => Math.min(i, Math.max(0, gallery.length - 1)))
   }, [gallery.length])
@@ -137,10 +130,13 @@ function FramerMoveableThumbnails({
 
   if (gallery.length === 0) return null
 
+  const active = gallery[index] ?? gallery[0]
+
   return (
-    <div className={`w-full lg:p-10 sm:p-4 p-2 ${className}`.trim()}>
-      <div className="flex flex-col gap-3">
-        <div className="relative overflow-hidden rounded-lg" ref={containerRef}>
+    <div className={`w-full ${className}`.trim()}>
+      <div className="flex flex-col gap-4">
+        {/* Main carousel */}
+        <div className="relative overflow-hidden rounded-2xl shadow-lg" ref={containerRef}>
           <motion.div
             className="flex"
             drag="x"
@@ -169,9 +165,9 @@ function FramerMoveableThumbnails({
               <div key={item.id} className={`shrink-0 w-full ${heightClassName}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={item.url}
+                  src={item.url || '/placeholder.jpg'}
                   alt={item.title}
-                  className="w-full h-full object-cover rounded-lg select-none pointer-events-none"
+                  className="w-full h-full object-cover select-none pointer-events-none"
                   draggable={false}
                 />
               </div>
@@ -181,16 +177,16 @@ function FramerMoveableThumbnails({
           <motion.button
             type="button"
             disabled={index === 0}
-            aria-label="Previous image"
+            aria-label="Previous destination"
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
-            className={`absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform z-10
+            className={`absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform z-10
               ${
                 index === 0
                   ? 'opacity-40 cursor-not-allowed bg-white'
-                  : 'bg-white hover:scale-110 hover:opacity-100 opacity-70'
+                  : 'bg-white hover:scale-110 hover:opacity-100 opacity-80'
               }`}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </motion.button>
@@ -198,20 +194,46 @@ function FramerMoveableThumbnails({
           <motion.button
             type="button"
             disabled={index === gallery.length - 1}
-            aria-label="Next image"
+            aria-label="Next destination"
             onClick={() => setIndex((i) => Math.min(gallery.length - 1, i + 1))}
-            className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform z-10
+            className={`absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform z-10
               ${
                 index === gallery.length - 1
                   ? 'opacity-40 cursor-not-allowed bg-white'
-                  : 'bg-white hover:scale-110 hover:opacity-100 opacity-70'
+                  : 'bg-white hover:scale-110 hover:opacity-100 opacity-80'
               }`}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </motion.button>
         </div>
+
+        {/* Country name + description — center aligned under the image */}
+        {showCaption ? (
+          <div className="text-center px-4 sm:px-8 max-w-2xl mx-auto min-h-[5.5rem]">
+            <motion.h3
+              key={`title-${active.id}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="text-2xl sm:text-3xl font-bold text-foreground"
+            >
+              {active.title}
+            </motion.h3>
+            {active.description ? (
+              <motion.p
+                key={`desc-${active.id}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.28, delay: 0.05 }}
+                className="mt-2 text-sm sm:text-base text-muted-foreground leading-relaxed"
+              >
+                {active.description}
+              </motion.p>
+            ) : null}
+          </div>
+        ) : null}
 
         <Thumbnails items={gallery} index={index} setIndex={setIndex} />
       </div>
@@ -237,7 +259,7 @@ function Thumbnails({
   }, [x, xSpring])
 
   return (
-    <div className="flex h-16 justify-center overflow-hidden">
+    <div className="flex h-14 sm:h-16 justify-center overflow-hidden mt-1">
       <motion.div
         style={{
           aspectRatio: FULL_ASPECT_RATIO,
@@ -265,13 +287,13 @@ function Thumbnails({
                 marginRight: 0,
               },
             }}
-            className="h-full shrink-0"
+            className="h-full shrink-0 overflow-hidden rounded-md ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
             aria-label={`Show ${item.title}`}
             aria-current={i === index ? 'true' : undefined}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={item.url}
+              src={item.url || '/placeholder.jpg'}
               alt={item.title}
               className="h-full w-full object-cover pointer-events-none select-none"
             />

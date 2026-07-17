@@ -573,9 +573,7 @@ const getSiteChromeEnvelopeJson = unstable_cache(
 export const getBlogPosts = unstable_cache(
   async (): Promise<BlogPostSummary[]> => {
     try {
-      if (!(prisma as any).blogPost) return []
-
-      const posts = await (prisma as any).blogPost.findMany({
+      const posts = await prisma.blogPost.findMany({
         where: { published: true },
         orderBy: [{ publishedAt: 'desc' }, { order: 'asc' }],
         take: 24,

@@ -152,8 +152,11 @@ export default function AdminGlobalNetworkPage() {
               Featured Destinations
             </span>
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
             Explore opportunities across the globe with our trusted partners
+          </p>
+          <p className="text-center text-xs text-muted-foreground mb-10 max-w-2xl mx-auto">
+            Edit destination images, names, and descriptions here. The public page shows them as a carousel — changes save automatically.
           </p>
 
           <div className="grid md:grid-cols-3 gap-8">
