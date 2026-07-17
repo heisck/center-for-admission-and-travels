@@ -354,9 +354,16 @@ export default function AdminPackagesEditor() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      deletePackage(pkg.id)
+                      if (
+                        window.confirm(
+                          `Delete package “${pkg.name}”? This removes it from the site and deletes its Cloudinary images. Featured home checkboxes that use it will clear automatically.`
+                        )
+                      ) {
+                        deletePackage(pkg.id)
+                      }
                     }}
                     className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
+                    title="Delete package"
                   >
                     <Trash2 size={18} />
                   </button>

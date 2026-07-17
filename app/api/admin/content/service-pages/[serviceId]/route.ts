@@ -67,10 +67,12 @@ export async function PUT(
 
     revalidatePath('/api/content')
     revalidatePath('/', 'layout')
+    revalidatePath('/') // home service cards use service-page hero images
     // Public service pages that use destinations carousel
     revalidatePath('/study-abroad')
     revalidatePath('/work-abroad')
     revalidatePath('/global-network')
+    revalidatePath('/travel-tours')
     if (body.route) revalidatePath(String(body.route))
     revalidateTag('public-content', 'max')
 

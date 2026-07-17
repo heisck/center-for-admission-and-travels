@@ -51,9 +51,20 @@ function resolveMedia(service: HomeServiceContent, index: number) {
   const slot = INDEX_MEDIA[index] || INDEX_MEDIA[INDEX_MEDIA.length - 1]
   const href = safeHref(service.href, index)
   const byRoute = ROUTE_MEDIA[href]
+  // Prefer CMS service-page hero only when it looks like a real remote/admin asset.
+  // Empty/broken/legacy junk never overrides static brand fallbacks in production.
+  const rawCms = typeof service.image === 'string' ? service.image.trim() : ''
+  const cmsImage =
+    rawCms &&
+    (rawCms.includes('cloudinary.com') ||
+      rawCms.startsWith('https://') ||
+      rawCms.startsWith('http://') ||
+      rawCms.startsWith('/images/'))
+      ? rawCms
+      : ''
 
   return {
-    src: byRoute?.src || slot.src || FALLBACK_SRC,
+    src: cmsImage || byRoute?.src || slot.src || FALLBACK_SRC,
     href,
     // Doc stack layout: stable by route, soft match if admin kept "document" in title
     isDocLayout:

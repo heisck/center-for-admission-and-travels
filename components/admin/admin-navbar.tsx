@@ -28,6 +28,7 @@ const ADMIN_NAV_LINKS: NavLink[] = [
   { href: '/admin/legal', label: 'Legal', mobileLabel: 'Legal Pages' },
   { href: '/admin/newsletter', label: 'Newsletter', mobileLabel: 'Newsletter' },
   { href: '/admin/blog', label: 'Blog', mobileLabel: 'Blog' },
+  { href: '/admin/media', label: 'Media', mobileLabel: 'Media Cleanup' },
   { href: '/admin/payments', label: 'Payments', mobileLabel: 'Payments', badgeKey: 'payments' },
   { href: '/admin/profile', label: 'Profile', mobileLabel: 'Admin Profile' },
 ]

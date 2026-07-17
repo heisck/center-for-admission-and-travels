@@ -75,7 +75,8 @@ export function SingleImageUpload({
         throw new Error(result.error || 'Upload failed')
       }
 
-      // Update with Cloudinary URL
+      // Update with Cloudinary URL. Old asset is cleaned by the content save API
+      // only if nothing else still references it (production-safe for shared images).
       setPreview(result.url)
       onChange(result.url)
       toast.success('Image uploaded successfully')
@@ -112,25 +113,10 @@ export function SingleImageUpload({
   }
 
   const handleRemove = async () => {
-    // If current image is a Cloudinary URL, delete it from Cloudinary
-    if (currentImage && currentImage.includes('cloudinary.com')) {
-      try {
-        const response = await fetch(`/api/admin/images/delete?url=${encodeURIComponent(currentImage)}`, {
-          method: 'DELETE',
-        })
-        const result = await response.json()
-        if (!result.success) {
-          console.warn('Failed to delete from Cloudinary:', result.error)
-          // Continue with removal anyway
-        }
-      } catch (error) {
-        console.error('Delete error:', error)
-        // Continue with removal anyway
-      }
-    }
-
+    // Clear content only. Server-side unreferenced cleanup handles Cloudinary
+    // so we never delete an asset still used elsewhere.
     setPreview(null)
-    onChange('') // Clear the image immediately
+    onChange('')
     toast.success('Image removed')
   }
 

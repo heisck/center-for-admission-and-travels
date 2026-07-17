@@ -128,9 +128,9 @@ export default function AdminHomePage() {
                 </div>
                 <div className="mt-4 p-4 bg-white rounded-lg border border-border space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    <strong>First image</strong> is the public homepage hero portrait (MinimalistHero). Prefer a
-                    cutout / transparent PNG. Extra images are kept for future use and can be cleaned from Cloudinary
-                    via Media cleanup if unused.
+                    Upload a <strong>Cloudinary</strong> portrait for the public MinimalistHero. Prefer a cutout /
+                    transparent PNG. Local/legacy gallery tiles are ignored on the public hero so production stays
+                    stable. Unused Cloudinary files can be cleaned under Admin → Media.
                   </p>
                   <ImageEditor
                     images={heroImages}
@@ -161,6 +161,8 @@ export default function AdminHomePage() {
 
             <p className="text-center text-sm text-muted-foreground mb-8 max-w-xl mx-auto">
               Edit titles freely. Public page links stay stable via the route selector — not the title.
+              Card images come from each service page hero (Study / Work / Travel / Network admin). Upload
+              those heroes to change home service visuals safely.
             </p>
             <div className="grid md:grid-cols-2 gap-8">
               {services.map((service, idx) => {

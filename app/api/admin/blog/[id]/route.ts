@@ -12,6 +12,7 @@ import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
 import { ensureUniqueBlogSlug, slugifyBlogTitle } from '@/lib/blog-slug'
+import { deleteUnreferencedCloudinaryUrls } from '@/lib/cloudinary-orphans'
 
 function sanitizeBlogContent(value: unknown): string {
   return DOMPurify.sanitize(String(value || '').trim().slice(0, 50_000), {
@@ -49,7 +50,7 @@ export async function PUT(
 
     const existing = await prisma.blogPost.findUnique({
       where: { id },
-      select: { id: true, slug: true, published: true },
+      select: { id: true, slug: true, published: true, imageUrl: true },
     })
     if (!existing) {
       return NextResponse.json({ success: false, error: 'Post not found' }, { status: 404 })
@@ -108,10 +109,21 @@ export async function PUT(
       data: updateData,
     })
 
+    // Drop replaced blog cover only if nothing else still references it
+    if (
+      imageUrl !== undefined &&
+      existing.imageUrl &&
+      existing.imageUrl !== (imageUrl || null) &&
+      existing.imageUrl.includes('cloudinary.com')
+    ) {
+      void deleteUnreferencedCloudinaryUrls([existing.imageUrl])
+    }
+
     revalidateBlogPaths(existing.slug)
     if (post.slug !== existing.slug) {
       revalidateBlogPaths(post.slug)
     }
+    revalidatePath('/')
 
     await logAdminAudit({
       request,
@@ -148,12 +160,17 @@ export async function DELETE(
     const { id } = await Promise.resolve(params)
     const existingPost = await prisma.blogPost.findUnique({
       where: { id },
-      select: { slug: true },
+      select: { slug: true, imageUrl: true },
     })
 
     await prisma.blogPost.delete({ where: { id } })
 
+    if (existingPost?.imageUrl) {
+      void deleteUnreferencedCloudinaryUrls([existingPost.imageUrl])
+    }
+
     revalidateBlogPaths(existingPost?.slug)
+    revalidatePath('/')
 
     await logAdminAudit({
       request,

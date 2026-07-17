@@ -83,23 +83,8 @@ export function ImageEditor({
   }
   
   const handleRemoveImage = async (index: number) => {
-    const imageToRemove = images[index]
-    
-    // If it's a Cloudinary URL, delete it from Cloudinary
-    if (imageToRemove && imageToRemove.includes('cloudinary.com')) {
-      try {
-        const response = await fetch(`/api/admin/images/delete?url=${encodeURIComponent(imageToRemove)}`, {
-          method: 'DELETE',
-        })
-        const result = await response.json()
-        if (!result.success) {
-          console.warn('Failed to delete from Cloudinary:', result.error)
-        }
-      } catch (error) {
-        console.error('Delete error:', error)
-      }
-    }
-    
+    // Only drop the URL from content. Cloudinary cleanup runs server-side after save
+    // and only when the asset is no longer referenced anywhere (shared images stay safe).
     onChange(images.filter((_, i) => i !== index))
     toast.success('Image removed')
   }

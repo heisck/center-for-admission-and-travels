@@ -1,7 +1,7 @@
 'use client'
 
 import { useAdmin } from '@/context/admin-context'
-import { Undo2, Redo2, Save, Eye, LogOut } from 'lucide-react'
+import { Undo2, Redo2, Save, Eye, LogOut, ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -83,6 +83,15 @@ export function AdminToolbar() {
           >
             <Eye size={16} />
             <span className="hidden md:inline">Preview</span>
+          </Link>
+
+          <Link
+            href="/admin/media"
+            className="p-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition flex items-center gap-1 sm:gap-2 flex-shrink-0"
+            title="Media & Cloudinary cleanup"
+          >
+            <ImageIcon size={16} />
+            <span className="hidden md:inline">Media</span>
           </Link>
 
           <div className="w-px h-6 bg-slate-300 hidden sm:block" />

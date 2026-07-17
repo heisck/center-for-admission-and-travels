@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma'
 import {
   deleteImages,
+  deleteImagesByUrls,
   extractPublicId,
   isCloudinaryConfigured,
   listCloudinaryImagesInFolder,
@@ -65,6 +66,44 @@ export async function collectReferencedCloudinaryIds(): Promise<Set<string>> {
   for (const row of blogPosts) addUrl(referenced, row.imageUrl)
 
   return referenced
+}
+
+/**
+ * Production-safe Cloudinary delete:
+ * Only destroy assets that are no longer referenced anywhere in the CMS DB.
+ * Shared images (same URL on two packages / pages) are never removed.
+ * Failures never throw — request handlers stay healthy.
+ */
+export async function deleteUnreferencedCloudinaryUrls(
+  candidates: Array<string | null | undefined>
+): Promise<number> {
+  const unique = Array.from(
+    new Set(
+      (candidates || [])
+        .filter((u): u is string => typeof u === 'string' && u.includes('cloudinary.com'))
+        .map((u) => u.trim())
+        .filter(Boolean)
+    )
+  )
+  if (unique.length === 0) return 0
+
+  try {
+    if (!isCloudinaryConfigured()) return 0
+
+    const referenced = await collectReferencedCloudinaryIds()
+    const toDelete = unique.filter((url) => {
+      if (referenced.has(url)) return false
+      const publicId = extractPublicId(url)
+      if (publicId && referenced.has(publicId)) return false
+      return true
+    })
+
+    if (toDelete.length === 0) return 0
+    return await deleteImagesByUrls(toDelete)
+  } catch (error) {
+    console.error('[cloudinary] Safe unreferenced delete failed (non-fatal):', error)
+    return 0
+  }
 }
 
 export type OrphanCleanupResult = {

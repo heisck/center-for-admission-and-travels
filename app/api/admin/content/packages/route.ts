@@ -12,7 +12,7 @@ import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
 import { DEFAULT_CURRENCY, normalizeCurrency } from '@/lib/currency'
-import { deleteImagesByUrls } from '@/lib/cloudinary'
+import { deleteUnreferencedCloudinaryUrls } from '@/lib/cloudinary-orphans'
 
 function revalidatePackageSurfaces(packageId?: string) {
   revalidatePath('/api/content')
@@ -281,9 +281,9 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    // After DB commit: drop Cloudinary assets no longer referenced by this package
+    // After DB commit: drop only assets no longer referenced anywhere (shared URLs stay)
     if (removedImageUrls.length > 0) {
-      void deleteImagesByUrls(removedImageUrls)
+      void deleteUnreferencedCloudinaryUrls(removedImageUrls)
     }
 
     revalidatePackageSurfaces(id)
@@ -396,8 +396,8 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.package.delete({ where: { id } })
 
-    // Best-effort: remove package images from Cloudinary so storage stays clean
-    void deleteImagesByUrls(imageUrls)
+    // Best-effort: remove only unreferenced package images (shared URLs stay)
+    void deleteUnreferencedCloudinaryUrls(imageUrls)
 
     revalidatePackageSurfaces(id)
 

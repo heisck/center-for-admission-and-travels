@@ -25,6 +25,8 @@ export interface HomeServiceContent {
   title: string
   description: string
   href: string
+  /** Optional CMS image (service-page hero for this route); falls back to static brand assets */
+  image?: string
 }
 
 export interface BlogPostSummary {
@@ -646,10 +648,18 @@ export const getHomePageContent = unstable_cache(
             serviceId: true,
             title: true,
             route: true,
+            heroImageUrl: true,
           },
         }),
         getBlogPosts(),
       ])
+
+      const heroByRoute = new Map<string, string>()
+      for (const sp of servicePages) {
+        const route = (sp.route || '').trim()
+        const hero = (sp.heroImageUrl || '').trim()
+        if (route && hero) heroByRoute.set(route, hero)
+      }
 
       return {
         hero: {
@@ -666,21 +676,26 @@ export const getHomePageContent = unstable_cache(
             })) || [],
         },
         services:
-          homePage?.services?.map((service, index) => ({
-            id: service.id,
-            icon: service.icon,
-            title: service.title || `Service ${index + 1}`,
-            description: service.description || '',
-            // href is derived from stored `route` (or position), never from title alone
-            href: buildServiceHref(
+          homePage?.services?.map((service, index) => {
+            const href = buildServiceHref(
               {
                 title: service.title,
                 route: (service as { route?: string | null }).route,
                 position: index,
               },
               servicePages
-            ),
-          })) || [],
+            )
+            return {
+              id: service.id,
+              icon: service.icon,
+              title: service.title || `Service ${index + 1}`,
+              description: service.description || '',
+              // href is derived from stored `route` (or position), never from title alone
+              href,
+              // Prefer service-page hero (admin-editable) so home cards stay in sync
+              image: heroByRoute.get(href) || undefined,
+            }
+          }) || [],
         featuredPackages:
           (homePage?.featuredPackages ?? [])
             .map((item: any) => item.package)

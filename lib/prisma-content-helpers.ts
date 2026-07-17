@@ -6,8 +6,31 @@
  */
 
 import { prisma } from './prisma'
-import { deleteImagesByUrls } from './cloudinary'
+import { deleteUnreferencedCloudinaryUrls } from './cloudinary-orphans'
 import { detectSocialPlatform, normalizeSocialUrl } from './social-links'
+
+/** URLs present in `prev` but not in `next` (Cloudinary cleanup candidates). */
+function diffRemovedUrls(prev: Array<string | null | undefined>, next: Array<string | null | undefined>) {
+  const nextSet = new Set(
+    (next || []).map((u) => String(u || '').trim()).filter(Boolean)
+  )
+  return (prev || [])
+    .map((u) => String(u || '').trim())
+    .filter((u) => u && !nextSet.has(u))
+}
+
+/**
+ * Best-effort, production-safe cleanup. Never throws into the request path.
+ * Only deletes Cloudinary assets that are no longer referenced in the DB
+ * (so shared images across packages/pages stay intact).
+ */
+function scheduleCloudinaryCleanup(urls: Array<string | null | undefined>) {
+  const cleaned = (urls || []).filter(
+    (u): u is string => typeof u === 'string' && u.includes('cloudinary.com')
+  )
+  if (cleaned.length === 0) return
+  void deleteUnreferencedCloudinaryUrls(cleaned)
+}
 
 // ============================================================================
 // HOME PAGE
@@ -60,9 +83,7 @@ export async function updateHomeHeroImages(images: string[]) {
     })
   }
 
-  if (removed.length > 0) {
-    void deleteImagesByUrls(removed)
-  }
+  scheduleCloudinaryCleanup(removed)
 }
 
 export async function updateHomeStats(stats: Array<{ value: string; label: string }>) {
@@ -152,7 +173,12 @@ export async function updateAboutPage(data: {
   heroSubtitle?: string
   heroImageUrl?: string
 }) {
-  return await prisma.aboutPage.upsert({
+  const existing = await prisma.aboutPage.findUnique({
+    where: { id: 'about' },
+    select: { heroImageUrl: true },
+  })
+
+  const page = await prisma.aboutPage.upsert({
     where: { id: 'about' },
     update: data,
     create: {
@@ -162,6 +188,16 @@ export async function updateAboutPage(data: {
       heroImageUrl: data.heroImageUrl || '',
     },
   })
+
+  if (
+    data.heroImageUrl !== undefined &&
+    existing?.heroImageUrl &&
+    existing.heroImageUrl !== data.heroImageUrl
+  ) {
+    scheduleCloudinaryCleanup([existing.heroImageUrl])
+  }
+
+  return page
 }
 
 export async function updateAboutMission(data: { title?: string; description?: string; points?: string[] }) {
@@ -251,7 +287,12 @@ export async function updateAboutFounder(data: {
     await prisma.aboutPage.create({ data: { id: 'about', heroTitle: '', heroSubtitle: '', heroImageUrl: '' } })
   }
 
-  return await prisma.aboutFounder.upsert({
+  const existing = await prisma.aboutFounder.findUnique({
+    where: { aboutPageId: 'about' },
+    select: { imageUrl: true },
+  })
+
+  const founder = await prisma.aboutFounder.upsert({
     where: { aboutPageId: 'about' },
     update: data,
     create: {
@@ -265,6 +306,16 @@ export async function updateAboutFounder(data: {
       values: data.values || '',
     },
   })
+
+  if (
+    data.imageUrl !== undefined &&
+    existing?.imageUrl &&
+    existing.imageUrl !== data.imageUrl
+  ) {
+    scheduleCloudinaryCleanup([existing.imageUrl])
+  }
+
+  return founder
 }
 
 export async function updateAboutTeamMembers(members: Array<{ id?: string; name: string; role: string; imageUrl: string; description: string }>) {
@@ -273,17 +324,31 @@ export async function updateAboutTeamMembers(members: Array<{ id?: string; name:
     await prisma.aboutPage.create({ data: { id: 'about', heroTitle: '', heroSubtitle: '', heroImageUrl: '' } })
   }
 
-  await prisma.aboutTeamMember.deleteMany({ where: { aboutPageId: 'about' } })
-  await prisma.aboutTeamMember.createMany({
-    data: members.map((member, index) => ({
-      aboutPageId: 'about',
-      name: member.name,
-      role: member.role,
-      imageUrl: member.imageUrl,
-      description: member.description,
-      order: index,
-    })),
+  const previous = await prisma.aboutTeamMember.findMany({
+    where: { aboutPageId: 'about' },
+    select: { imageUrl: true },
   })
+  const nextUrls = members.map((m) => m.imageUrl)
+  const removed = diffRemovedUrls(
+    previous.map((p) => p.imageUrl),
+    nextUrls
+  )
+
+  await prisma.aboutTeamMember.deleteMany({ where: { aboutPageId: 'about' } })
+  if (members.length > 0) {
+    await prisma.aboutTeamMember.createMany({
+      data: members.map((member, index) => ({
+        aboutPageId: 'about',
+        name: member.name,
+        role: member.role,
+        imageUrl: member.imageUrl || '',
+        description: member.description || '',
+        order: index,
+      })),
+    })
+  }
+
+  scheduleCloudinaryCleanup(removed)
 }
 
 export async function updateAboutSuccessStories(stories: Array<{ id?: string; name: string; program: string; quote: string }>) {
@@ -321,8 +386,10 @@ export async function updatePackage(id: string, data: {
   included?: string[]
   notIncluded?: string[]
 }) {
-  return await prisma.$transaction(async (tx) => {
-    const pkg = await tx.package.update({
+  let removedImages: string[] = []
+
+  const pkg = await prisma.$transaction(async (tx) => {
+    const updated = await tx.package.update({
       where: { id },
       data: {
         name: data.name,
@@ -346,13 +413,26 @@ export async function updatePackage(id: string, data: {
     }
 
     if (data.images) {
+      const previous = await tx.packageImage.findMany({
+        where: { packageId: id },
+        select: { url: true },
+      })
+      const nextUrls = data.images.map((url) => String(url || '').trim()).filter(Boolean)
+      removedImages = diffRemovedUrls(
+        previous.map((p) => p.url),
+        nextUrls
+      )
+
       await tx.packageImage.deleteMany({ where: { packageId: id } })
-      const images = data.images.map((url, index) => ({
-        packageId: id,
-        url,
-        order: index,
-      }))
-      if (images.length > 0) await tx.packageImage.createMany({ data: images })
+      if (nextUrls.length > 0) {
+        await tx.packageImage.createMany({
+          data: nextUrls.map((url, index) => ({
+            packageId: id,
+            url,
+            order: index,
+          })),
+        })
+      }
     }
 
     if (data.included) {
@@ -375,8 +455,11 @@ export async function updatePackage(id: string, data: {
       if (notIncluded.length > 0) await tx.packageNotIncluded.createMany({ data: notIncluded })
     }
 
-    return pkg
+    return updated
   })
+
+  scheduleCloudinaryCleanup(removedImages)
+  return pkg
 }
 
 export async function createPackage(data: {
@@ -432,7 +515,17 @@ export async function createPackage(data: {
 }
 
 export async function deletePackage(id: string) {
-  return await prisma.package.delete({ where: { id } })
+  const existing = await prisma.package.findUnique({
+    where: { id },
+    include: { images: { select: { url: true } } },
+  })
+  if (!existing) {
+    throw new Error('Package not found')
+  }
+
+  const result = await prisma.package.delete({ where: { id } })
+  scheduleCloudinaryCleanup(existing.images.map((img) => img.url))
+  return result
 }
 
 // ============================================================================
@@ -445,7 +538,12 @@ export async function updateTravelToursPage(data: {
   heroParagraph?: string
   heroImageUrl?: string
 }) {
-  return await prisma.travelToursPage.upsert({
+  const existing = await prisma.travelToursPage.findUnique({
+    where: { id: 'travel-tours' },
+    select: { heroImageUrl: true },
+  })
+
+  const page = await prisma.travelToursPage.upsert({
     where: { id: 'travel-tours' },
     update: data,
     create: {
@@ -456,6 +554,16 @@ export async function updateTravelToursPage(data: {
       heroImageUrl: data.heroImageUrl || '',
     },
   })
+
+  if (
+    data.heroImageUrl !== undefined &&
+    existing?.heroImageUrl &&
+    existing.heroImageUrl !== data.heroImageUrl
+  ) {
+    scheduleCloudinaryCleanup([existing.heroImageUrl])
+  }
+
+  return page
 }
 
 export async function updateTravelToursFeaturedPackages(featured: Array<{
@@ -475,6 +583,16 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
     })
   }
 
+  const previous = await prisma.travelToursFeaturedPackage.findMany({
+    where: { pageId: 'travel-tours' },
+    select: { imageUrl: true },
+  })
+  const nextImages = featured.map((fp) => fp.image)
+  const removed = diffRemovedUrls(
+    previous.map((p) => p.imageUrl),
+    nextImages
+  )
+
   // Delete existing featured packages (cascade will delete highlights)
   await prisma.travelToursFeaturedPackage.deleteMany({ where: { pageId: 'travel-tours' } })
 
@@ -483,12 +601,12 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
     const featuredPkg = await prisma.travelToursFeaturedPackage.create({
       data: {
         pageId: 'travel-tours',
-        name: fp.name,
-        description: fp.description,
-        duration: fp.duration,
-        price: fp.price,
+        name: (fp.name || '').trim() || `Package ${index + 1}`,
+        description: (fp.description || '').trim(),
+        duration: (fp.duration || '').trim() || 'TBD',
+        price: Number(fp.price) || 0,
         currency: fp.currency || 'GHS',
-        imageUrl: fp.image,
+        imageUrl: (fp.image || '').trim() || '/placeholder.jpg',
         order: index,
       },
     })
@@ -496,14 +614,19 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
     // Create highlights
     if (fp.highlights && fp.highlights.length > 0) {
       await prisma.travelToursHighlight.createMany({
-        data: fp.highlights.map((text, hIndex) => ({
-          packageId: featuredPkg.id,
-          text,
-          order: hIndex,
-        })),
+        data: fp.highlights
+          .map((text) => String(text || '').trim())
+          .filter(Boolean)
+          .map((text, hIndex) => ({
+            packageId: featuredPkg.id,
+            text,
+            order: hIndex,
+          })),
       })
     }
   }
+
+  scheduleCloudinaryCleanup(removed)
 }
 
 export async function updateTravelToursGalleryImages(images: string[]) {
@@ -542,9 +665,7 @@ export async function updateTravelToursGalleryImages(images: string[]) {
     })
   }
 
-  if (removed.length > 0) {
-    void deleteImagesByUrls(removed)
-  }
+  scheduleCloudinaryCleanup(removed)
 }
 
 export async function updateTravelToursBenefits(benefits: Array<{
@@ -601,6 +722,15 @@ export async function updateServicePage(serviceId: string, data: {
   scholarships?: Array<{ name: string; amount: string; description: string }>
   whyStudyOutsideThisCountry?: { title: string; highlights: string[] }
 }) {
+  const existing = await prisma.servicePage.findUnique({
+    where: { serviceId },
+    select: {
+      id: true,
+      heroImageUrl: true,
+      countries: { select: { imageUrl: true } },
+    },
+  })
+
   const service = await prisma.servicePage.upsert({
     where: { serviceId },
     update: {
@@ -679,17 +809,32 @@ export async function updateServicePage(serviceId: string, data: {
     })
   }
 
+  let removedCountryImages: string[] = []
   if (data.countries) {
+    const previousCountryImages =
+      existing?.countries?.map((c) => c.imageUrl) ||
+      (
+        await prisma.serviceCountry.findMany({
+          where: { servicePageId: service.id },
+          select: { imageUrl: true },
+        })
+      ).map((c) => c.imageUrl)
+
+    const nextCountryImages = data.countries.map((c) => c.image)
+    removedCountryImages = diffRemovedUrls(previousCountryImages, nextCountryImages)
+
     await prisma.serviceCountry.deleteMany({ where: { servicePageId: service.id } })
-    await prisma.serviceCountry.createMany({
-      data: data.countries.map((country, index) => ({
-        servicePageId: service.id,
-        name: country.name,
-        description: country.description,
-        imageUrl: country.image,
-        order: index,
-      })),
-    })
+    if (data.countries.length > 0) {
+      await prisma.serviceCountry.createMany({
+        data: data.countries.map((country, index) => ({
+          servicePageId: service.id,
+          name: country.name,
+          description: country.description,
+          imageUrl: country.image || '/placeholder.jpg',
+          order: index,
+        })),
+      })
+    }
   }
 
   if (data.successStories) {
@@ -717,6 +862,15 @@ export async function updateServicePage(serviceId: string, data: {
       })),
     })
   }
+
+  if (
+    data.heroImageUrl !== undefined &&
+    existing?.heroImageUrl &&
+    existing.heroImageUrl !== data.heroImageUrl
+  ) {
+    scheduleCloudinaryCleanup([existing.heroImageUrl])
+  }
+  scheduleCloudinaryCleanup(removedCountryImages)
 
   return service
 }
