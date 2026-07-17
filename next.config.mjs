@@ -75,7 +75,12 @@ const nextConfig = {
 
 const sentryOptions = {
   silent: true,
-  disableLogger: true,
+  // disableLogger is deprecated — use webpack tree-shaking (Webpack builds only; not Turbopack)
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
 }
