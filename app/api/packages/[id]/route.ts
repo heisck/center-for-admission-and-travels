@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { normalizeCurrency } from '@/lib/currency'
 
 export const revalidate = 60
 
@@ -53,6 +54,7 @@ export async function GET(
           category: 'travel', // Travel tours packages are always travel category
           duration: featuredPkg.duration,
           price: featuredPkg.price,
+          currency: normalizeCurrency((featuredPkg as any).currency),
           highlights: featuredPkg.highlights?.map((h: any) => h.text) || [],
           itinerary: '', // Travel tours packages don't have itinerary in the schema
           images: featuredPkg.imageUrl ? [featuredPkg.imageUrl] : [],
@@ -86,6 +88,7 @@ export async function GET(
       category: pkg.category,
       duration: pkg.duration,
       price: pkg.price,
+      currency: normalizeCurrency(pkg.currency),
       highlights: pkg.highlights?.map((h: any) => h.text) || [],
       itinerary: pkg.itinerary || '',
       images: pkg.images?.map((img: any) => img.url) || [],

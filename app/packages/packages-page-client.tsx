@@ -35,6 +35,10 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
       setSearchQuery(q)
       if (q) setSearchOpen(true)
     }
+    const filterParam = searchParams.get("filter")
+    if (filterParam === "study" || filterParam === "work" || filterParam === "travel" || filterParam === "all") {
+      setFilter(filterParam)
+    }
   }, [searchParams])
 
   const toggleSearch = useCallback(() => {
@@ -67,15 +71,15 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4">
             <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              Packages Built For
+              CA Travels Packages
             </span>
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
-              Serious Global Goals
+              Study, Work & Travel Abroad from Ghana
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl">
-            Explore study, work, and travel options prepared with clear planning, verified pathways, and full support.
-            Find your best fit and move from interest to action quickly.
+            Explore CFAAT packages for study abroad, work abroad, and international tours — clear pricing,
+            verified pathways, and full support from Center for Admission and Travels.
           </p>
 
           {/* Mobile: full-width search always visible */}
@@ -219,7 +223,9 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
 
                     <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between gap-3 flex-nowrap">
                       <p className="text-lg font-semibold text-slate-900 whitespace-nowrap shrink-0">
-                        {pkg.price > 0 ? `GHS ${pkg.price.toLocaleString()}` : "Contact Us"}
+                        {pkg.price > 0
+                          ? `${(pkg as any).currency || 'GHS'} ${pkg.price.toLocaleString()}`
+                          : "Contact Us"}
                       </p>
                       <div className="flex items-center gap-2 shrink-0">
                         <button

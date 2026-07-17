@@ -94,7 +94,9 @@ export default async function TravelTours() {
                     </div>
                     <div className="flex items-center gap-2 text-foreground">
                       <DollarSign className="w-4 h-4 text-primary" />
-                      <span className="text-sm">From GHS {Number(pkg.price).toLocaleString()} per person</span>
+                      <span className="text-sm">
+                        From {(pkg as any).currency || 'GHS'} {Number(pkg.price).toLocaleString()} per person
+                      </span>
                     </div>
                   </div>
 

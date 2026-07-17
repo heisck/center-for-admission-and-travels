@@ -34,6 +34,7 @@ export default function AdminTravelToursPage() {
       description: 'Package description',
       duration: '3 Days',
       price: 500,
+      currency: 'GHS',
       image: '',
       highlights: ['Highlight 1', 'Highlight 2'],
     }
@@ -188,10 +189,23 @@ export default function AdminTravelToursPage() {
                         className="text-sm"
                       />
                     </div>
-                    <div className="flex items-center gap-2 text-foreground">
+                    <div className="flex items-center gap-2 text-foreground flex-wrap">
                       <DollarSign className="w-4 h-4 text-primary" />
                       <span className="text-sm">
-                        From $
+                        From{' '}
+                        <select
+                          value={pkg.currency || 'GHS'}
+                          onChange={(e) => {
+                            const idx = travelTours.featured.findIndex((f) => f.id === pkg.id)
+                            handleFeaturedUpdate(idx, 'currency', e.target.value)
+                          }}
+                          className="mx-1 px-1 py-0.5 border border-border rounded text-sm bg-white"
+                        >
+                          <option value="GHS">GHS</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                          <option value="GBP">GBP</option>
+                        </select>
                         <EditableTextWrapper
                           value={pkg.price.toString()}
                           onChange={(value) => {

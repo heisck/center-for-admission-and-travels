@@ -44,6 +44,7 @@ export interface PackageCardContent {
   category: PackageCategory
   duration: string
   price: number
+  currency: string
   highlights: string[]
   itinerary: string
   images: string[]
@@ -109,6 +110,7 @@ export interface TravelToursContent {
     description: string
     duration: string
     price: number
+    currency: string
     image: string
     highlights: string[]
   }>
@@ -317,6 +319,7 @@ function mapPackage(pkg: any): PackageCardContent {
     category: pkg.category,
     duration: pkg.duration,
     price: pkg.price,
+    currency: (pkg.currency || 'GHS').toString().toUpperCase(),
     highlights: pkg.highlights?.map((item: any) => item.text) || [],
     itinerary: pkg.itinerary || '',
     images: pkg.images?.map((img: any) => img.url) || [],
@@ -750,6 +753,7 @@ export const getTravelToursPageContent = unstable_cache(
             description: item.description,
             duration: item.duration,
             price: item.price,
+            currency: (item.currency || 'GHS').toString().toUpperCase(),
             image: item.imageUrl,
             highlights: item.highlights?.map((highlight) => highlight.text) || [],
           })) || [],

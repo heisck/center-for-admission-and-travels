@@ -40,6 +40,7 @@ export interface PublicContent {
       category: string
       duration: string
       price: number
+      currency?: string
       highlights: string[]
       images: string[]
     }>
@@ -96,6 +97,7 @@ export interface PublicContent {
     category: 'travel' | 'study' | 'work'
     duration: string
     price: number
+    currency?: string
     highlights: string[]
     itinerary: string
     images: string[]
@@ -115,6 +117,7 @@ export interface PublicContent {
       description: string
       duration: string
       price: number
+      currency?: string
       image: string
       highlights: string[]
     }>

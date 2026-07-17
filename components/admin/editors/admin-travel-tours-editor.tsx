@@ -34,6 +34,7 @@ export default function AdminTravelToursEditor() {
       description: 'Package description',
       duration: '5 Days',
       price: 999,
+      currency: 'GHS',
       image: '/placeholder.svg',
       highlights: ['Highlight 1', 'Highlight 2'],
     }
@@ -106,7 +107,9 @@ export default function AdminTravelToursEditor() {
             <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition">
               <div className="flex-1" onClick={() => toggleExpand(item.id)}>
                 <h4 className="font-semibold text-foreground">{item.name}</h4>
-                <p className="text-sm text-muted-foreground">${item.price} • {item.duration}</p>
+                <p className="text-sm text-muted-foreground">
+                  {(item as any).currency || 'GHS'} {item.price} • {item.duration}
+                </p>
               </div>
               <button
                 onClick={() => toggleExpand(item.id)}
@@ -145,7 +148,7 @@ export default function AdminTravelToursEditor() {
                   />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">Duration</label>
                     <input
@@ -157,13 +160,27 @@ export default function AdminTravelToursEditor() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Price ($)</label>
+                    <label className="block text-sm font-semibold text-foreground mb-2">Price</label>
                     <input
                       type="number"
                       value={item.price}
                       onChange={(e) => handleUpdateFeatured(item.id, 'price', Number(e.target.value))}
                       className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-foreground mb-2">Currency</label>
+                    <select
+                      value={(item as any).currency || 'GHS'}
+                      onChange={(e) => handleUpdateFeatured(item.id, 'currency', e.target.value)}
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="GHS">GHS (Cedis)</option>
+                      <option value="USD">USD (Dollars)</option>
+                      <option value="EUR">EUR (Euros)</option>
+                      <option value="GBP">GBP (Pounds)</option>
+                    </select>
                   </div>
                 </div>
 

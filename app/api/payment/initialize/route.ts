@@ -12,6 +12,9 @@
  *   phone?: string
  *   paymentMethod?: 'card' | 'mobile_money'
  * }
+ *
+ * Currency is taken from the package (never trusted from the client) and sent to
+ * Paystack as ISO 4217 (GHS | USD | EUR | GBP). Amount is always in minor units.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -21,6 +24,13 @@ import { getUserFromSessionToken, getUserSessionCookieName } from '@/lib/user-au
 import { getBaseUrl } from '@/lib/url'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
+import {
+  DEFAULT_CURRENCY,
+  normalizeCurrency,
+  supportsMobileMoney,
+  toMinorUnits,
+  type SupportedCurrency,
+} from '@/lib/currency'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -93,7 +103,7 @@ export async function POST(request: NextRequest) {
     const customerEmail = userEmail || normalizedEmail
     const customerName = String(name).trim().slice(0, 120) || user.displayName || user.username || 'Customer'
 
-    const normalizedPaymentMethod = paymentMethod === 'mobile_money' || paymentMethod === 'card'
+    const requestedPaymentMethod = paymentMethod === 'mobile_money' || paymentMethod === 'card'
       ? paymentMethod
       : 'card'
 
@@ -122,20 +132,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let finalAmount = amount
-    let packageData = null
+    let packageData: { id: string; name: string; price: number; currency: SupportedCurrency } | null = null
 
     // Try Package table first
-    packageData = await prisma.package.findUnique({
+    const pkg = await prisma.package.findUnique({
       where: { id: normalizedPackageId },
-      select: { id: true, name: true, price: true },
+      select: { id: true, name: true, price: true, currency: true },
     })
+
+    if (pkg) {
+      packageData = {
+        id: pkg.id,
+        name: pkg.name,
+        price: pkg.price,
+        currency: normalizeCurrency(pkg.currency),
+      }
+    }
 
     // If not found, try TravelToursFeaturedPackage
     if (!packageData) {
       const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
         where: { id: normalizedPackageId },
-        select: { id: true, name: true, price: true },
+        select: { id: true, name: true, price: true, currency: true },
       })
 
       if (featuredPkg) {
@@ -143,6 +161,7 @@ export async function POST(request: NextRequest) {
           id: featuredPkg.id,
           name: featuredPkg.name,
           price: featuredPkg.price,
+          currency: normalizeCurrency(featuredPkg.currency),
         }
       }
     }
@@ -154,11 +173,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const currency = packageData.currency || DEFAULT_CURRENCY
+
+    // Mobile money is only supported for GHS on Ghana Paystack businesses.
+    const normalizedPaymentMethod: 'card' | 'mobile_money' = requestedPaymentMethod
+    if (normalizedPaymentMethod === 'mobile_money' && !supportsMobileMoney(currency)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Mobile Money is only available for GHS packages. This package is priced in ${currency} — please pay by card.`,
+        },
+        { status: 400 }
+      )
+    }
+
     // Never trust client amount for package payments.
     const packageAmount = packageData.price
     if (amount !== undefined && amount !== null && Number(amount) > 0) {
-      const sentAmountMinor = Math.round(Number(amount) * 100)
-      const packageAmountMinor = Math.round(packageAmount * 100)
+      const sentAmountMinor = toMinorUnits(Number(amount), currency)
+      const packageAmountMinor = toMinorUnits(packageAmount, currency)
       if (sentAmountMinor !== packageAmountMinor) {
         return NextResponse.json(
           { success: false, error: 'Amount mismatch for selected package' },
@@ -167,27 +200,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    finalAmount = packageAmount
-
-    const parsedAmount = Number(finalAmount)
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+    const finalAmount = Number(packageAmount)
+    if (!Number.isFinite(finalAmount) || finalAmount <= 0) {
       return NextResponse.json(
         { success: false, error: 'Valid amount is required' },
         { status: 400 }
       )
     }
-    if (parsedAmount > 1_000_000) {
+    if (finalAmount > 1_000_000) {
       return NextResponse.json(
         { success: false, error: 'Amount exceeds allowed maximum' },
         { status: 400 }
       )
     }
 
-    finalAmount = parsedAmount
-
-    // Convert amount to kobo (Paystack uses smallest currency unit)
-    // For GHS, 1 GHS = 100 pesewas, so multiply by 100
-    const amountInKobo = Math.round(finalAmount * 100)
+    // Paystack uses the subunit of the currency (pesewas / cents).
+    const amountInMinor = toMinorUnits(finalAmount, currency)
 
     const completedPayment = await prisma.payment.findFirst({
       where: {
@@ -230,8 +258,8 @@ export async function POST(request: NextRequest) {
     const reusablePaystackData = reusablePendingPayment?.paystackData as any
     if (
       reusablePendingPayment &&
-      (reusablePendingPayment.amountMinor || Math.round(Number(reusablePendingPayment.amount) * 100)) === amountInKobo &&
-      reusablePendingPayment.currency === 'GHS' &&
+      (reusablePendingPayment.amountMinor || toMinorUnits(Number(reusablePendingPayment.amount), currency)) === amountInMinor &&
+      normalizeCurrency(reusablePendingPayment.currency) === currency &&
       reusablePaystackData?.authorization_url &&
       reusablePaystackData?.access_code
     ) {
@@ -241,6 +269,8 @@ export async function POST(request: NextRequest) {
           authorizationUrl: reusablePaystackData.authorization_url,
           accessCode: reusablePaystackData.access_code,
           reference: reusablePendingPayment.reference,
+          currency,
+          amount: finalAmount,
           reused: true,
         },
       })
@@ -271,8 +301,8 @@ export async function POST(request: NextRequest) {
       const existingPaystackData = existingPayment?.paystackData as any
       if (
         existingPayment &&
-        (existingPayment.amountMinor || Math.round(Number(existingPayment.amount) * 100)) === amountInKobo &&
-        existingPayment.currency === 'GHS' &&
+        (existingPayment.amountMinor || toMinorUnits(Number(existingPayment.amount), currency)) === amountInMinor &&
+        normalizeCurrency(existingPayment.currency) === currency &&
         existingPaystackData?.authorization_url &&
         existingPaystackData?.access_code
       ) {
@@ -282,6 +312,8 @@ export async function POST(request: NextRequest) {
             authorizationUrl: existingPaystackData.authorization_url,
             accessCode: existingPaystackData.access_code,
             reference: existingPayment.reference,
+            currency,
+            amount: finalAmount,
             reused: true,
           },
         })
@@ -298,7 +330,8 @@ export async function POST(request: NextRequest) {
       customerName,
       customerPhone: normalizedPhone,
       paymentMethod: normalizedPaymentMethod,
-      expectedAmountKobo: amountInKobo,
+      expectedAmountMinor: amountInMinor,
+      expectedCurrency: currency,
       checkoutId: normalizedIdempotencyKey || null,
     }
 
@@ -315,19 +348,45 @@ export async function POST(request: NextRequest) {
       paystackMetadata.momoNetwork = metadata.momoNetwork || null
     }
 
-    // Initialize payment with Paystack
-    const response = await paystack.transaction.initialize({
-      email: customerEmail,
-      amount: amountInKobo,
-      currency: 'GHS',
-      reference,
-      metadata: paystackMetadata,
-      callback_url: `${getBaseUrl(request)}/payment/callback?reference=${reference}`,
-    })
+    // Initialize payment with Paystack — amount in minor units + package currency
+    let response: any
+    try {
+      response = await paystack.transaction.initialize({
+        email: customerEmail,
+        amount: amountInMinor,
+        currency,
+        reference,
+        metadata: paystackMetadata,
+        callback_url: `${getBaseUrl(request)}/payment/callback?reference=${reference}`,
+      })
+    } catch (paystackError: any) {
+      console.error('Paystack initialize error:', paystackError)
+      const message =
+        paystackError?.message ||
+        paystackError?.response?.data?.message ||
+        'Failed to initialize payment with Paystack'
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            typeof message === 'string' && message.toLowerCase().includes('currency')
+              ? `Paystack rejected currency ${currency}. Enable this currency on your Paystack dashboard (Settings → Preferences / multi-currency), or price this package in a supported currency (GHS/USD).`
+              : message,
+        },
+        { status: 502 }
+      )
+    }
 
     if (!response.status || !response.data) {
+      const message = response?.message || 'Failed to initialize payment'
       return NextResponse.json(
-        { success: false, error: 'Failed to initialize payment' },
+        {
+          success: false,
+          error:
+            typeof message === 'string' && String(message).toLowerCase().includes('currency')
+              ? `Paystack rejected currency ${currency}. Enable this currency on your Paystack dashboard, or use GHS/USD.`
+              : message,
+        },
         { status: 500 }
       )
     }
@@ -337,8 +396,8 @@ export async function POST(request: NextRequest) {
       data: {
         reference,
         amount: finalAmount,
-        amountMinor: amountInKobo,
-        currency: 'GHS',
+        amountMinor: amountInMinor,
+        currency,
         status: 'pending',
         paymentMethod: normalizedPaymentMethod,
         customerEmail,
@@ -353,7 +412,8 @@ export async function POST(request: NextRequest) {
           billingCountry: metadata?.country || null,
           momoPhone: metadata?.momoPhone || null,
           momoNetwork: metadata?.momoNetwork || null,
-          expectedAmountKobo: amountInKobo,
+          expectedAmountMinor: amountInMinor,
+          expectedCurrency: currency,
           checkoutId: normalizedIdempotencyKey || null,
         },
         paystackData: response.data as any,
@@ -366,6 +426,8 @@ export async function POST(request: NextRequest) {
         authorizationUrl: response.data.authorization_url,
         accessCode: response.data.access_code,
         reference,
+        currency,
+        amount: finalAmount,
       },
     })
   } catch (error) {
@@ -376,4 +438,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

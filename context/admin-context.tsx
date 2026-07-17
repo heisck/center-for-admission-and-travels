@@ -80,6 +80,7 @@ export interface AdminContent {
     category: 'travel' | 'study' | 'work'
     duration: string
     price: number
+    currency: string
     highlights: string[]
     itinerary: string
     images: string[]
@@ -110,6 +111,7 @@ export interface AdminContent {
       description: string
       duration: string
       price: number
+      currency: string
       image: string
       highlights: string[]
     }>

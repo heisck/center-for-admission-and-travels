@@ -89,9 +89,11 @@ interface FooterServiceLink {
 }
 
 const DEFAULT_FOOTER_SERVICE_LINKS: FooterServiceLink[] = [
-  { href: "/study-abroad", label: "Study Abroad" },
+  { href: "/study-abroad-ghana", label: "Study Abroad from Ghana" },
+  { href: "/travel-abroad-ghana", label: "Travel Abroad from Ghana" },
   { href: "/work-abroad", label: "Work Abroad" },
-  { href: "/travel-tours", label: "Travel & Tours" },
+  { href: "/packages", label: "All Packages" },
+  { href: "/ghana", label: "CA Travels Ghana" },
   { href: "/global-network", label: "Global Network" },
 ]
 
@@ -106,7 +108,13 @@ export default function FooterContentView({ contact, footer, serviceLinks }: Foo
   const phone = contact.phone?.trim() || ""
   const email = contact.email?.trim() || ""
   const phoneHref = normalizePhoneForTel(phone)
-  const addressParts = [contact.address?.city, contact.address?.region, contact.address?.street].filter(Boolean)
+  // Full NAP (Name, Address, Phone) — include country for local SEO consistency with GBP
+  const addressParts = [
+    contact.address?.street,
+    contact.address?.city || "Accra",
+    contact.address?.region,
+    contact.address?.country || "Ghana",
+  ].filter(Boolean)
   const latitude = contact.location?.latitude
   const longitude = contact.location?.longitude
   const hasCoordinates =
@@ -134,11 +142,15 @@ export default function FooterContentView({ contact, footer, serviceLinks }: Foo
                 height={64}
                 className="h-10 min-[1920px]:h-12 min-[2560px]:h-16 w-auto"
               />
-              <span className="text-sm font-bold min-[1920px]:text-base min-[2560px]:text-lg">Center for Admission & Travels</span>
+              <span className="text-sm font-bold min-[1920px]:text-base min-[2560px]:text-lg">
+                Center for Admission & Travels (CA Travels)
+              </span>
             </div>
-            <p className="text-slate-400 text-sm mb-6">
-              {footer.companyDescription?.trim() || "Company description not set"}
+            <p className="text-slate-400 text-sm mb-2">
+              {footer.companyDescription?.trim() ||
+                "Study abroad, work abroad, and travel packages from Accra, Ghana — serving clients across West Africa."}
             </p>
+            <p className="text-slate-500 text-xs mb-6">Also known as CFAAT · CA Travels Ghana</p>
             <NewsletterSignupForm />
           </div>
 
@@ -206,7 +218,7 @@ export default function FooterContentView({ contact, footer, serviceLinks }: Foo
         <div className="border-t border-slate-700 pt-8 mb-8">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <p className="text-sm text-slate-400">
-              © 2025 Center for Admission and Travels (CFAAT). All rights reserved.
+              © {new Date().getFullYear()} Center for Admission and Travels (CA Travels / CFAAT), Ghana. All rights reserved.
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((link, index) => {

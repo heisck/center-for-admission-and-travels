@@ -281,6 +281,7 @@ export async function updatePackage(id: string, data: {
   description?: string
   duration?: string
   price?: number
+  currency?: string
   itinerary?: string
   highlights?: string[]
   images?: string[]
@@ -296,6 +297,7 @@ export async function updatePackage(id: string, data: {
         description: data.description,
         duration: data.duration,
         price: data.price,
+        currency: data.currency,
         itinerary: data.itinerary,
       },
     })
@@ -350,6 +352,7 @@ export async function createPackage(data: {
   description: string
   duration: string
   price: number
+  currency?: string
   itinerary?: string
   highlights?: string[]
   images?: string[]
@@ -363,6 +366,7 @@ export async function createPackage(data: {
       description: data.description,
       duration: data.duration,
       price: data.price,
+      currency: data.currency || 'GHS',
       itinerary: data.itinerary || '',
       highlights: {
         create: (data.highlights || []).map((text, index) => ({
@@ -427,6 +431,7 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
   description: string
   duration: string
   price: number
+  currency?: string
   image: string
   highlights: string[]
 }>) {
@@ -449,6 +454,7 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
         description: fp.description,
         duration: fp.duration,
         price: fp.price,
+        currency: fp.currency || 'GHS',
         imageUrl: fp.image,
         order: index,
       },

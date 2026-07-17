@@ -167,10 +167,10 @@ export default function AdminPaymentSettingsPage() {
               </p>
             </div>
 
-            {/* Currency */}
+            {/* Currency note — package-level currency is source of truth at checkout */}
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
-                Currency
+                Default env currency (legacy)
               </label>
               <select
                 value={settings.currency}
@@ -178,10 +178,14 @@ export default function AdminPaymentSettingsPage() {
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="GHS">GHS (Ghanaian Cedis)</option>
-                <option value="NGN">NGN (Nigerian Naira)</option>
                 <option value="USD">USD (US Dollars)</option>
                 <option value="EUR">EUR (Euros)</option>
+                <option value="GBP">GBP (British Pounds)</option>
               </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Checkout charges the <strong>currency set on each package</strong> (Admin → Packages).
+                Set package currencies to GHS, USD, EUR, or GBP there. Ensure Paystack has that currency enabled on your account.
+              </p>
             </div>
 
             {/* Base URL */}

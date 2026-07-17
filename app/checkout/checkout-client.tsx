@@ -15,12 +15,14 @@ import {
   savePendingPayment,
   type PendingPaymentRecord,
 } from "@/lib/pending-payment-storage"
+import { formatMoney, normalizeCurrency, supportsMobileMoney } from "@/lib/currency"
 
 interface PackageData {
   id: string
   name: string
   description: string
   price: number
+  currency?: string
   duration: string
   category: string
   highlights: string[]
@@ -165,11 +167,12 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
           }),
         })
 
+        const packageCurrency = normalizeCurrency(packageData.currency)
         const message = [
           `Hi, I'd like to book the *${packageData.name}* package.`,
           ``,
           `*Package Details:*`,
-          `- Price: GHS ${packageData.price.toLocaleString()}`,
+          `- Price: ${formatMoney(packageData.price, packageCurrency)}`,
           `- Duration: ${packageData.duration}`,
           `- Category: ${packageData.category}`,
           ``,
@@ -227,7 +230,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
             reference: result.data.reference,
             authorizationUrl: result.data.authorizationUrl,
             amount: packageData.price,
-            currency: "GHS",
+            currency: result.data.currency || normalizeCurrency(packageData.currency),
             createdAt: Date.now(),
           }
           savePendingPayment(user.id, nextPendingPayment)
@@ -245,6 +248,15 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
   }
 
   const packagePrice = packageData?.price || 0
+  const packageCurrency = normalizeCurrency(packageData?.currency)
+  const momoAvailable = supportsMobileMoney(packageCurrency)
+
+  useEffect(() => {
+    // Mobile Money is only available for GHS packages on Paystack (Ghana)
+    if (paymentMethod === "momo" && !momoAvailable) {
+      setPaymentMethod("card")
+    }
+  }, [paymentMethod, momoAvailable])
 
   if (!authLoading && !user) {
     return (
@@ -470,14 +482,26 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
                     </div>
                   </label>
 
-                  <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${paymentMethod === "momo" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
-                    <input type="radio" name="paymentMethod" value="momo" checked={paymentMethod === "momo"} onChange={() => setPaymentMethod("momo")} className="w-4 h-4 text-primary" />
-                    <Smartphone className="w-5 h-5 text-primary ml-3" />
-                    <div className="ml-3 flex-1">
-                      <span className="font-semibold text-foreground">Mobile Money</span>
-                      <p className="text-xs text-muted-foreground">MTN MoMo, Vodafone Cash, AirtelTigo Money</p>
+                  {momoAvailable ? (
+                    <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${paymentMethod === "momo" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                      <input type="radio" name="paymentMethod" value="momo" checked={paymentMethod === "momo"} onChange={() => setPaymentMethod("momo")} className="w-4 h-4 text-primary" />
+                      <Smartphone className="w-5 h-5 text-primary ml-3" />
+                      <div className="ml-3 flex-1">
+                        <span className="font-semibold text-foreground">Mobile Money</span>
+                        <p className="text-xs text-muted-foreground">MTN MoMo, Vodafone Cash, AirtelTigo Money</p>
+                      </div>
+                    </label>
+                  ) : (
+                    <div className="flex items-center p-4 border border-border rounded-lg bg-slate-50 opacity-80">
+                      <Smartphone className="w-5 h-5 text-muted-foreground ml-1" />
+                      <div className="ml-3 flex-1">
+                        <span className="font-semibold text-muted-foreground">Mobile Money</span>
+                        <p className="text-xs text-muted-foreground">
+                          Available only for GHS packages. This package is priced in {packageCurrency} — pay by card.
+                        </p>
+                      </div>
                     </div>
-                  </label>
+                  )}
 
                   <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${paymentMethod === "whatsapp" ? "border-green-500 bg-green-50" : "border-border hover:border-green-400"}`}>
                     <input type="radio" name="paymentMethod" value="whatsapp" checked={paymentMethod === "whatsapp"} onChange={() => setPaymentMethod("whatsapp")} className="w-4 h-4 text-green-600" />
@@ -585,7 +609,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
                     Open WhatsApp to Book
                   </>
                 ) : (
-                  `Pay GHS ${packagePrice.toLocaleString()} Now`
+                  `Pay ${formatMoney(packagePrice, packageCurrency)} Now`
                 )}
               </button>
             </form>
@@ -640,13 +664,19 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
                   <div className="border-t border-border pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Package Price</span>
-                      <span className="font-semibold text-foreground">GHS {packagePrice.toLocaleString()}</span>
+                      <span className="font-semibold text-foreground">
+                        {formatMoney(packagePrice, packageCurrency)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Currency</span>
+                      <span>{packageCurrency}</span>
                     </div>
                   </div>
                   <div className="border-t border-border mt-3 pt-3">
                     <div className="flex justify-between text-xl font-bold text-primary">
                       <span>Total</span>
-                      <span>GHS {packagePrice.toLocaleString()}</span>
+                      <span>{formatMoney(packagePrice, packageCurrency)}</span>
                     </div>
                   </div>
 

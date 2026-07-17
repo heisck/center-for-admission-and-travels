@@ -367,6 +367,8 @@ model Package {
   description String
   duration    String
   price       Float
+  /// ISO 4217 code charged via Paystack: GHS | USD | EUR | GBP
+  currency    String   @default("GHS")
   itinerary   String   @default("")
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -479,6 +481,8 @@ model TravelToursFeaturedPackage {
   description String
   duration    String
   price       Float
+  /// ISO 4217 code charged via Paystack: GHS | USD | EUR | GBP
+  currency    String   @default("GHS")
   imageUrl    String   // Cloudinary URL
   order       Int      @default(0)
   createdAt   DateTime @default(now())

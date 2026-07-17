@@ -56,7 +56,9 @@ export default function HomeFeaturedPackages({ featuredPackages }: HomeFeaturedP
                   <p className="text-muted-foreground line-clamp-2 mb-4">{pkg.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-primary font-bold text-lg">
-                      {pkg.price > 0 ? `GHS ${pkg.price.toLocaleString()}` : 'Contact Us'}
+                      {pkg.price > 0
+                        ? `${(pkg as any).currency || 'GHS'} ${pkg.price.toLocaleString()}`
+                        : 'Contact Us'}
                     </span>
                     <span className="text-primary font-semibold text-sm group-hover:translate-x-1 transition-transform">
                       View details →

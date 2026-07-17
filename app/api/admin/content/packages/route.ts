@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
+import { DEFAULT_CURRENCY, normalizeCurrency } from '@/lib/currency'
 
 // GET /api/admin/content/packages - Get all packages
 export async function GET(request: NextRequest) {
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
       category: pkg.category,
       duration: pkg.duration,
       price: pkg.price,
+      currency: normalizeCurrency(pkg.currency),
       highlights: pkg.highlights.map((h: any) => h.text),
       itinerary: pkg.itinerary || '',
       images: pkg.images.map((img: any) => img.url),
@@ -65,7 +67,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, category, duration, price, highlights, itinerary, images, included, notIncluded } = body
+    const { name, description, category, duration, price, currency, highlights, itinerary, images, included, notIncluded } = body
+    const packageCurrency = normalizeCurrency(currency, DEFAULT_CURRENCY)
 
     // Get max order to append new package
     const maxOrder = await prisma.package.aggregate({
@@ -81,6 +84,7 @@ export async function POST(request: NextRequest) {
         category,
         duration,
         price,
+        currency: packageCurrency,
         itinerary: itinerary || '',
         order: newOrder,
         highlights: {
@@ -139,6 +143,7 @@ export async function POST(request: NextRequest) {
         category: newPackage.category,
         duration: newPackage.duration,
         price: newPackage.price,
+        currency: normalizeCurrency(newPackage.currency),
         highlights: newPackage.highlights.map((h: any) => h.text),
         itinerary: newPackage.itinerary || '',
         images: newPackage.images.map((img: any) => img.url),
@@ -164,24 +169,29 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name, description, category, duration, price, highlights, itinerary, images, included, notIncluded } = body
+    const { id, name, description, category, duration, price, currency, highlights, itinerary, images, included, notIncluded } = body
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'Package ID required' }, { status: 400 })
     }
 
+    // Partial update: only write fields that were explicitly provided
+    const packageData: Record<string, unknown> = {}
+    if (name !== undefined) packageData.name = name
+    if (description !== undefined) packageData.description = description
+    if (category !== undefined) packageData.category = category
+    if (duration !== undefined) packageData.duration = duration
+    if (price !== undefined) packageData.price = price
+    if (currency !== undefined) packageData.currency = normalizeCurrency(currency)
+    if (itinerary !== undefined) packageData.itinerary = itinerary || ''
+
     await prisma.$transaction(async (tx) => {
-      await tx.package.update({
-        where: { id },
-        data: {
-          name,
-          description,
-          category,
-          duration,
-          price,
-          itinerary: itinerary || '',
-        },
-      })
+      if (Object.keys(packageData).length > 0) {
+        await tx.package.update({
+          where: { id },
+          data: packageData,
+        })
+      }
 
       if (highlights) {
         await tx.packageHighlight.deleteMany({ where: { packageId: id } })
@@ -235,13 +245,75 @@ export async function PUT(request: NextRequest) {
       action: 'package.update',
       entityType: 'package',
       entityId: id,
-      metadata: { name, category },
+      metadata: {
+        name: packageData.name,
+        category: packageData.category,
+        currency: packageData.currency,
+      },
     })
 
     return NextResponse.json({ success: true, message: 'Package updated' })
   } catch (error: any) {
     console.error('Error updating package:', error)
     return NextResponse.json({ success: false, error: 'Failed to update package' }, { status: 500 })
+  }
+}
+
+/**
+ * PATCH /api/admin/content/packages
+ * Bulk-update currency for all packages, or a selected subset.
+ * Body: { currency: 'USD' | 'EUR' | 'GBP' | 'GHS', packageIds?: string[] }
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await verifyAdminSession(request)
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!hasAdminPermission(session.role, 'content.write')) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const packageCurrency = normalizeCurrency(body?.currency)
+    const packageIds = Array.isArray(body?.packageIds)
+      ? body.packageIds.map((id: unknown) => String(id).trim()).filter(Boolean)
+      : null
+
+    const where =
+      packageIds && packageIds.length > 0
+        ? { id: { in: packageIds } }
+        : {}
+
+    const result = await prisma.package.updateMany({
+      where,
+      data: { currency: packageCurrency },
+    })
+
+    revalidatePath('/api/content')
+    revalidatePath('/', 'layout')
+    revalidateTag('public-content', 'max')
+
+    await logAdminAudit({
+      request,
+      session,
+      action: 'package.bulk_currency',
+      entityType: 'package',
+      metadata: {
+        currency: packageCurrency,
+        packageIds: packageIds || 'all',
+        updatedCount: result.count,
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: `Updated currency to ${packageCurrency} on ${result.count} package(s)`,
+      data: { currency: packageCurrency, updatedCount: result.count },
+    })
+  } catch (error: any) {
+    console.error('Error bulk-updating package currency:', error)
+    return NextResponse.json({ success: false, error: 'Failed to update package currencies' }, { status: 500 })
   }
 }
 

@@ -1,0 +1,29 @@
+{
+  "name": "Center for Admission and Travels (CA Travels / CFAAT)",
+  "short_name": "CA Travels",
+  "description": "Study abroad, work abroad, and travel packages from Ghana. Center for Admission and Travels.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "lang": "en-GH",
+  "categories": ["travel", "education", "business"],
+  "icons": [
+    {
+      "src": "/images/ca-20logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/cfaat-favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

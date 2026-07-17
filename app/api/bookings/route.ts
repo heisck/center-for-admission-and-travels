@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
+import { DEFAULT_CURRENCY, normalizeCurrency, toMinorUnits } from '@/lib/currency'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ALLOWED_METHODS = new Set(['whatsapp', 'email', 'phone', 'call', 'form'])
@@ -58,24 +59,27 @@ export async function POST(request: NextRequest) {
 
     let packageName = serviceType || 'General inquiry'
     let packagePrice = 0
+    let packageCurrency = DEFAULT_CURRENCY
 
     if (!isGeneralInquiry) {
       const pkg = await prisma.package.findUnique({
         where: { id: packageId },
-        select: { name: true, price: true },
+        select: { name: true, price: true, currency: true },
       })
 
       if (pkg) {
         packageName = pkg.name
         packagePrice = pkg.price
+        packageCurrency = normalizeCurrency(pkg.currency)
       } else {
         const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
           where: { id: packageId },
-          select: { name: true, price: true },
+          select: { name: true, price: true, currency: true },
         })
         if (featuredPkg) {
           packageName = featuredPkg.name
           packagePrice = featuredPkg.price
+          packageCurrency = normalizeCurrency(featuredPkg.currency)
         }
       }
 
@@ -91,8 +95,8 @@ export async function POST(request: NextRequest) {
       data: {
         reference: `BOOK_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`,
         amount: packagePrice,
-        amountMinor: Math.round(packagePrice * 100),
-        currency: 'GHS',
+        amountMinor: toMinorUnits(packagePrice, packageCurrency),
+        currency: packageCurrency,
         status: 'pending',
         paymentMethod: method,
         customerEmail: email,
