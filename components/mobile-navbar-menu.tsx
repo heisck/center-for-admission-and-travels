@@ -24,13 +24,32 @@ export default function MobileNavbarMenu({ currentPath, navLinks }: MobileNavbar
   const links = navLinks ?? NAV_LINKS
 
   return (
-    <div className="xl:hidden relative">
-      <button onClick={() => setIsOpen((current) => !current)} className="p-2 hover:bg-muted rounded-lg">
+    <div className="xl:hidden relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="p-2 hover:bg-muted rounded-lg"
+        aria-expanded={isOpen}
+        aria-label={isOpen ? 'Close menu' : 'Open menu'}
+      >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full mt-2 w-[min(92vw,22rem)] max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-xl p-4 space-y-2">
+        /*
+          Compact panel — never full page width on tablet/mid sizes.
+          Small phones only: allow almost full width via max-w calc.
+        */
+        <div
+          className={[
+            'absolute right-0 top-full mt-2 z-50',
+            'w-64 sm:w-72',
+            'max-w-[calc(100vw-1.5rem)]',
+            'max-h-[calc(100dvh-5rem)] overflow-y-auto overflow-x-hidden',
+            'rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-xl',
+            'p-4 space-y-2',
+          ].join(' ')}
+        >
           {links.map((link) => (
             <Link
               key={link.href}
@@ -83,18 +102,18 @@ export default function MobileNavbarMenu({ currentPath, navLinks }: MobileNavbar
               </button>
             </div>
           ) : (
-            <div className="border-t pt-4 space-y-2 mt-4">
+            <div className="border-t pt-4 mt-4 flex flex-row items-center gap-2">
               <Link
                 href="/signin"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm"
+                className="flex-1 min-w-0 px-3 py-2 text-primary border border-primary rounded-lg text-center font-semibold text-sm whitespace-nowrap"
               >
                 Sign In
               </Link>
               <Link
                 href="/signup"
                 onClick={() => setIsOpen(false)}
-                className="block w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold text-sm"
+                className="flex-1 min-w-0 px-3 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-center font-semibold text-sm whitespace-nowrap"
               >
                 Sign Up
               </Link>

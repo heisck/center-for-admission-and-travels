@@ -592,19 +592,20 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json()
       if (!result.success) {
         console.error('Failed to save package:', result.error)
+      } else {
+        notifyPublicContentUpdated()
       }
     } catch (error) {
       console.error('Error syncing package:', error)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const addPackage = useCallback(async (pkg: AdminContent['packages'][0]) => {
-    // Optimistic update
+    // Optimistic update with temporary client id
     const newPackages = [...content.packages, pkg]
     const newContent = { ...content, packages: newPackages }
     updateHistory(newContent)
 
-    // Sync to database
     try {
       const response = await fetch('/api/admin/content/packages', {
         method: 'POST',
@@ -613,26 +614,48 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       })
       const result = await response.json()
       if (result.success && result.data) {
-        // Update with the actual ID from database
-        const updatedPackages = content.packages.map((p) =>
-          p.id === pkg.id ? { ...p, id: result.data.id } : p
-        )
-        setContent({ ...content, packages: updatedPackages })
+        // Replace temp package with server record (real id + normalized fields)
+        setContent((prev) => {
+          const replaced = prev.packages.map((p) =>
+            p.id === pkg.id
+              ? {
+                  ...p,
+                  ...result.data,
+                  currency: result.data.currency || p.currency,
+                  highlights: result.data.highlights || [],
+                  images: result.data.images || [],
+                  included: result.data.included || [],
+                  notIncluded: result.data.notIncluded || [],
+                  itinerary: result.data.itinerary || '',
+                }
+              : p
+          )
+          // If temp id was already lost from history, append server package
+          const hasServerId = replaced.some((p) => p.id === result.data.id)
+          const hasTemp = replaced.some((p) => p.id === pkg.id)
+          const packages = hasServerId
+            ? replaced
+            : hasTemp
+              ? replaced
+              : [...replaced, result.data]
+          return { ...prev, packages }
+        })
+        notifyPublicContentUpdated()
       } else {
         console.error('Failed to create package:', result.error)
       }
     } catch (error) {
       console.error('Error creating package:', error)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const deletePackage = useCallback(async (id: string) => {
+    const previous = content
     // Optimistic update
     const newPackages = content.packages.filter((pkg) => pkg.id !== id)
     const newContent = { ...content, packages: newPackages }
     updateHistory(newContent)
 
-    // Sync to database
     try {
       const response = await fetch(`/api/admin/content/packages?id=${id}`, {
         method: 'DELETE',
@@ -640,15 +663,15 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json()
       if (!result.success) {
         console.error('Failed to delete package:', result.error)
-        // Revert on error
-        setContent(content)
+        setContent(previous)
+      } else {
+        notifyPublicContentUpdated()
       }
     } catch (error) {
       console.error('Error deleting package:', error)
-      // Revert on error
-      setContent(content)
+      setContent(previous)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const updateTravelTours = useCallback((updates: Partial<AdminContent['travelTours']>) => {
     const newContent = {
@@ -751,11 +774,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json()
       if (!result.success) {
         console.error('Failed to save travel tours gallery images:', result.error)
+      } else {
+        notifyPublicContentUpdated()
       }
     } catch (error) {
       console.error('Error syncing travel tours gallery images:', error)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const updateHomeHeroImages = useCallback(async (images: string[]) => {
     // Optimistic update
@@ -778,11 +803,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json()
       if (!result.success) {
         console.error('Failed to save home hero images:', result.error)
+      } else {
+        notifyPublicContentUpdated()
       }
     } catch (error) {
       console.error('Error syncing home hero images:', error)
     }
-  }, [content, updateHistory])
+  }, [content, notifyPublicContentUpdated, updateHistory])
 
   const undo = useCallback(() => {
     if (historyIndex > 0) {

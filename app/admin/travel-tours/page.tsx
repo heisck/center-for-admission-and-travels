@@ -57,7 +57,11 @@ export default function AdminTravelToursPage() {
             <div className="relative">
               <div className="relative h-80 rounded-2xl overflow-hidden">
                 {galleryImages.length > 0 ? (
-                  <DomeGallery images={galleryImages.map(img => ({ src: img, alt: '' }))} />
+                  <DomeGallery
+                    images={galleryImages.map((img) => ({ src: img, alt: '' }))}
+                    autoRotate
+                    autoRotateSpeed={0.12}
+                  />
                 ) : (
                   <div className="w-full h-full bg-slate-200 border-2 border-dashed border-slate-400 flex items-center justify-center text-slate-500 text-sm text-center px-4">
                     No images yet. Add images below to see the animation.

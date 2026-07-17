@@ -4,14 +4,12 @@
  * Destination Card (card-21)
  * Source: 21st.dev — @ravikatiyar/components/card-21
  *
- * Travel destination card with full-bleed image, themed overlay,
- * and interactive 3D tilt on hover.
+ * Travel destination card with full-bleed image and themed overlay.
+ * Hover: gentle scale-up only (no 3D tilt / “dance”).
  */
 
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
-import { motion, useMotionTemplate, useMotionValue, useSpring } from 'motion/react'
-import { useCallback, useRef, type MouseEvent } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -25,12 +23,16 @@ export type DestinationCardProps = {
   href?: string
   /**
    * Theme color as HSL channels without `hsl()` wrapper.
-   * Example: `"150 50% 25%"` → used as `hsl(var(--theme) / α)`
+   * Example: `"150 50% 25%"` → used as `hsl(... / α)`
    */
   themeColor?: string
   className?: string
-  /** Disable 3D tilt (useful for dense grids / reduced motion) */
+  /** @deprecated Tilt removed — kept for API compatibility */
   disableTilt?: boolean
+  /** When set, card acts as a button (details panel / custom handler) */
+  onClick?: () => void
+  /** Visual selected state (e.g. details open for this card) */
+  selected?: boolean
 }
 
 const DEFAULT_THEME = '24 95% 40%' // brand-adjacent orange
@@ -43,56 +45,19 @@ export function DestinationCard({
   href = '#',
   themeColor = DEFAULT_THEME,
   className,
-  disableTilt = false,
+  onClick,
+  selected = false,
 }: DestinationCardProps) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  const rotateX = useMotionValue(0)
-  const rotateY = useMotionValue(0)
-  const springX = useSpring(rotateX, { stiffness: 280, damping: 22, mass: 0.5 })
-  const springY = useSpring(rotateY, { stiffness: 280, damping: 22, mass: 0.5 })
-
-  const transform = useMotionTemplate`perspective(1000px) rotateX(${springX}deg) rotateY(${springY}deg)`
-
-  const handleMove = useCallback(
-    (e: MouseEvent<HTMLDivElement>) => {
-      if (disableTilt || !ref.current) return
-      const rect = ref.current.getBoundingClientRect()
-      const px = (e.clientX - rect.left) / rect.width
-      const py = (e.clientY - rect.top) / rect.height
-      // Max tilt ~10°
-      rotateY.set((px - 0.5) * 18)
-      rotateX.set((0.5 - py) * 14)
-    },
-    [disableTilt, rotateX, rotateY]
-  )
-
-  const handleLeave = useCallback(() => {
-    rotateX.set(0)
-    rotateY.set(0)
-  }, [rotateX, rotateY])
-
-  const style = {
-    // CSS variables for themed gradients / accents
-    ['--dest-theme' as string]: themeColor,
-    transformStyle: 'preserve-3d' as const,
-  }
-
   const inner = (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      style={{
-        ...style,
-        transform: disableTilt ? undefined : transform,
-      }}
+    <div
       className={cn(
         'group relative h-full w-full overflow-hidden rounded-3xl',
         'bg-neutral-900 shadow-xl shadow-black/20',
         'ring-1 ring-black/5 dark:ring-white/10',
-        'transition-shadow duration-300 hover:shadow-2xl hover:shadow-black/30',
-        'will-change-transform',
+        // Small expand (no tilt): lift + scale like previous package cards
+        'transition-all duration-300 ease-out',
+        'hover:-translate-y-1.5 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/30',
+        selected && 'ring-2 ring-orange-500 shadow-orange-500/25 -translate-y-1 scale-[1.01]',
         className
       )}
     >
@@ -101,7 +66,7 @@ export function DestinationCard({
       <img
         src={imageUrl}
         alt={location}
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
         loading="lazy"
         draggable={false}
       />
@@ -121,10 +86,7 @@ export function DestinationCard({
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/15 to-transparent" />
 
       {/* Content */}
-      <div
-        className="absolute inset-0 flex flex-col justify-end p-5 sm:p-6"
-        style={{ transform: 'translateZ(28px)' }}
-      >
+      <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-6">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
             {flag ? (
@@ -135,7 +97,7 @@ export function DestinationCard({
                 {flag}
               </span>
             ) : null}
-            <h3 className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl drop-shadow-md">
+            <h3 className="line-clamp-2 text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl drop-shadow-md">
               {location}
             </h3>
             {stats ? (
@@ -149,7 +111,7 @@ export function DestinationCard({
             className={cn(
               'flex h-11 w-11 shrink-0 items-center justify-center rounded-full',
               'bg-white text-neutral-900 shadow-lg',
-              'transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6'
+              'transition-transform duration-300 group-hover:scale-105'
             )}
             style={{
               boxShadow: `0 10px 30px hsl(${themeColor} / 0.45)`,
@@ -166,28 +128,31 @@ export function DestinationCard({
           style={{ backgroundColor: `hsl(${themeColor})` }}
         />
       </div>
-
-      {/* Hover sheen */}
-      <div
-        className="pointer-events-none absolute -inset-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{
-          background:
-            'linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%)',
-          transform: 'translateX(-30%)',
-        }}
-      />
-    </motion.div>
+    </div>
   )
+
+  const shellClass = 'block h-full w-full text-left'
+
+  // Prefer onClick (packages details panel) over navigation
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={shellClass}
+        aria-label={`View details for ${location}`}
+        aria-pressed={selected}
+      >
+        {inner}
+      </button>
+    )
+  }
 
   const isExternal = href.startsWith('http://') || href.startsWith('https://')
   const isHash = href === '#' || href.startsWith('#')
 
   if (isHash) {
-    return (
-      <div className="block h-full w-full cursor-pointer" style={{ perspective: 1000 }}>
-        {inner}
-      </div>
-    )
+    return <div className={`${shellClass} cursor-pointer`}>{inner}</div>
   }
 
   if (isExternal) {
@@ -196,8 +161,7 @@ export function DestinationCard({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="block h-full w-full"
-        style={{ perspective: 1000 }}
+        className={shellClass}
         aria-label={`Explore ${location}`}
       >
         {inner}
@@ -206,12 +170,7 @@ export function DestinationCard({
   }
 
   return (
-    <Link
-      href={href}
-      className="block h-full w-full"
-      style={{ perspective: 1000 }}
-      aria-label={`Explore ${location}`}
-    >
+    <Link href={href} className={shellClass} aria-label={`Explore ${location}`}>
       {inner}
     </Link>
   )

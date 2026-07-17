@@ -136,7 +136,36 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Solid page base only (no decorative grids) */
+    background-image: none !important;
   }
+  body::before,
+  body::after {
+    content: none !important;
+    display: none !important;
+    background-image: none !important;
+  }
+  /*
+   * Let orange background orbs show on all public pages.
+   * Full-bleed page surfaces go transparent; cards/panels keep their own solid bg.
+   */
+  main.min-h-screen {
+    background-color: transparent !important;
+  }
+  main.bg-background,
+  main.bg-white,
+  main.bg-slate-50 {
+    background-color: transparent !important;
+  }
+  main > section.bg-white,
+  main > section.bg-background,
+  main > section.bg-slate-50,
+  main section.bg-white,
+  main section.bg-background,
+  main section.bg-slate-50 {
+    background-color: transparent !important;
+  }
+
   /* Slim scrollbar so the page edge doesn't visibly retreat from the
      viewport edge on Windows browsers. */
   html {
@@ -181,6 +210,30 @@
 
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out;
+}
+
+/* Hero orange disc — slow continuous spin (keeps -50%/-50% centering) */
+@keyframes hero-globe-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.hero-globe-spin {
+  animation: hero-globe-spin 90s linear infinite;
+  will-change: transform;
+  /* Never clip the disc or its glow */
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-globe-spin {
+    animation: none;
+    transform: translate(-50%, -50%);
+  }
 }
 
 @keyframes slideUp {

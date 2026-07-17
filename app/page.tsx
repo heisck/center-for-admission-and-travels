@@ -1,5 +1,5 @@
 import PublicNavbar from "@/components/public-navbar"
-import HeroSection from "@/components/hero-section"
+import HomeMinimalistHero from "@/components/home-minimalist-hero"
 import ServicesGrid from "@/components/services-grid"
 import HomeFeaturedPackages from "@/components/home-featured-packages"
 import HomeLatestBlog from "@/components/home-latest-blog"
@@ -56,7 +56,7 @@ export default async function Home() {
         path="/travel-tours"
       />
       <PublicNavbar currentPath="/" />
-      <HeroSection hero={home.hero} />
+      <HomeMinimalistHero hero={home.hero} />
       <ServicesGrid services={home.services} />
       <HomeFeaturedPackages featuredPackages={home.featuredPackages} />
       <HomeLatestBlog posts={home.latestBlogPosts} />

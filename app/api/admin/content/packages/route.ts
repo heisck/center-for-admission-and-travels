@@ -6,11 +6,26 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import { PackageCategory } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
 import { DEFAULT_CURRENCY, normalizeCurrency } from '@/lib/currency'
+import { deleteImagesByUrls } from '@/lib/cloudinary'
+
+function revalidatePackageSurfaces(packageId?: string) {
+  revalidatePath('/api/content')
+  revalidatePath('/', 'layout')
+  revalidatePath('/packages')
+  revalidatePath('/travel-tours')
+  revalidatePath('/')
+  if (packageId) {
+    revalidatePath(`/api/packages/${packageId}`)
+    revalidatePath(`/checkout`)
+  }
+  revalidateTag('public-content', 'max')
+}
 
 // GET /api/admin/content/packages - Get all packages
 export async function GET(request: NextRequest) {
@@ -70,20 +85,41 @@ export async function POST(request: NextRequest) {
     const { name, description, category, duration, price, currency, highlights, itinerary, images, included, notIncluded } = body
     const packageCurrency = normalizeCurrency(currency, DEFAULT_CURRENCY)
 
+    const safeName = String(name || '').trim()
+    const safeDuration = String(duration || '').trim()
+    const categoryKey = String(category || '').toLowerCase()
+    const safeCategory: PackageCategory =
+      categoryKey === 'study'
+        ? PackageCategory.study
+        : categoryKey === 'work'
+          ? PackageCategory.work
+          : PackageCategory.travel
+
+    if (!safeName) {
+      return NextResponse.json({ success: false, error: 'Package name is required' }, { status: 400 })
+    }
+    if (!safeDuration) {
+      return NextResponse.json({ success: false, error: 'Package duration is required' }, { status: 400 })
+    }
+
     // Get max order to append new package
     const maxOrder = await prisma.package.aggregate({
       _max: { order: true },
     })
     const newOrder = (maxOrder._max.order || 0) + 1
 
+    const imageUrls = (Array.isArray(images) ? images : [])
+      .map((url: string) => String(url || '').trim())
+      .filter(Boolean)
+
     // Create package
     const newPackage = await prisma.package.create({
       data: {
-        name,
-        description,
-        category,
-        duration,
-        price,
+        name: safeName,
+        description: String(description || '').trim(),
+        category: safeCategory,
+        duration: safeDuration,
+        price: Number(price) || 0,
         currency: packageCurrency,
         itinerary: itinerary || '',
         order: newOrder,
@@ -94,10 +130,10 @@ export async function POST(request: NextRequest) {
           })) || [],
         },
         images: {
-          create: images?.map((url: string, index: number) => ({
+          create: imageUrls.map((url: string, index: number) => ({
             url,
             order: index,
-          })) || [],
+          })),
         },
         included: {
           create: included?.map((text: string, index: number) => ({
@@ -120,10 +156,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    revalidatePath('/api/content')
-    revalidatePath(`/api/packages/${newPackage.id}`)
-    revalidatePath('/', 'layout')
-    revalidateTag('public-content', 'max')
+    revalidatePackageSurfaces(newPackage.id)
 
     await logAdminAudit({
       request,
@@ -185,6 +218,8 @@ export async function PUT(request: NextRequest) {
     if (currency !== undefined) packageData.currency = normalizeCurrency(currency)
     if (itinerary !== undefined) packageData.itinerary = itinerary || ''
 
+    let removedImageUrls: string[] = []
+
     await prisma.$transaction(async (tx) => {
       if (Object.keys(packageData).length > 0) {
         await tx.package.update({
@@ -204,8 +239,20 @@ export async function PUT(request: NextRequest) {
       }
 
       if (images) {
+        const previousImages = await tx.packageImage.findMany({
+          where: { packageId: id },
+          select: { url: true },
+        })
+        const nextUrls = (images as string[])
+          .map((u) => String(u || '').trim())
+          .filter(Boolean)
+        const nextSet = new Set(nextUrls)
+        removedImageUrls = previousImages
+          .map((img) => img.url)
+          .filter((url) => !nextSet.has(url))
+
         await tx.packageImage.deleteMany({ where: { packageId: id } })
-        const data = images.map((url: string, index: number) => ({
+        const data = nextUrls.map((url: string, index: number) => ({
           packageId: id,
           url,
           order: index,
@@ -234,10 +281,12 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    revalidatePath('/api/content')
-    revalidatePath(`/api/packages/${id}`)
-    revalidatePath('/', 'layout')
-    revalidateTag('public-content', 'max')
+    // After DB commit: drop Cloudinary assets no longer referenced by this package
+    if (removedImageUrls.length > 0) {
+      void deleteImagesByUrls(removedImageUrls)
+    }
+
+    revalidatePackageSurfaces(id)
 
     await logAdminAudit({
       request,
@@ -290,9 +339,7 @@ export async function PATCH(request: NextRequest) {
       data: { currency: packageCurrency },
     })
 
-    revalidatePath('/api/content')
-    revalidatePath('/', 'layout')
-    revalidateTag('public-content', 'max')
+    revalidatePackageSurfaces()
 
     await logAdminAudit({
       request,
@@ -335,12 +382,24 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Package ID required' }, { status: 400 })
     }
 
+    // Capture Cloudinary URLs before cascade-delete removes image rows
+    const existing = await prisma.package.findUnique({
+      where: { id },
+      include: { images: { select: { url: true } } },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ success: false, error: 'Package not found' }, { status: 404 })
+    }
+
+    const imageUrls = existing.images.map((img) => img.url)
+
     await prisma.package.delete({ where: { id } })
 
-    revalidatePath('/api/content')
-    revalidatePath(`/api/packages/${id}`)
-    revalidatePath('/', 'layout')
-    revalidateTag('public-content', 'max')
+    // Best-effort: remove package images from Cloudinary so storage stays clean
+    void deleteImagesByUrls(imageUrls)
+
+    revalidatePackageSurfaces(id)
 
     await logAdminAudit({
       request,
@@ -348,6 +407,7 @@ export async function DELETE(request: NextRequest) {
       action: 'package.delete',
       entityType: 'package',
       entityId: id,
+      metadata: { name: existing.name, imageCount: imageUrls.length },
     })
 
     return NextResponse.json({ success: true, message: 'Package deleted' })

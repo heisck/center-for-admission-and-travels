@@ -11,7 +11,7 @@ export default function HomeLatestBlog({ posts }: HomeLatestBlogProps) {
   if (posts.length === 0) return null
 
   return (
-    <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
+    <section className="py-16 md:py-24 bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">

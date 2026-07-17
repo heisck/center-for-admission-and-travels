@@ -98,10 +98,17 @@ export default function AdminHomePage() {
                 </div>
               </div>
 
-              {/* Masonry Animation - mirrors main page exactly */}
+              {/* Hero portrait — first image feeds public MinimalistHero */}
               <div className="relative h-full">
-                <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden">
-                  {masonryItems.length > 0 ? (
+                <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden bg-slate-100 border border-border">
+                  {heroImages[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={heroImages[0]}
+                      alt="Home hero portrait preview"
+                      className="absolute inset-0 h-full w-full object-contain object-center bg-white"
+                    />
+                  ) : masonryItems.length > 0 ? (
                     <Masonry
                       items={masonryItems}
                       ease="power3.out"
@@ -115,17 +122,21 @@ export default function AdminHomePage() {
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-200 border-2 border-dashed border-slate-400 flex items-center justify-center text-slate-500 text-sm text-center px-4">
-                      No images yet. Add images below to see the animation.
+                      No hero image yet. Upload one below — the first image becomes the public home hero portrait.
                     </div>
                   )}
                 </div>
-                {/* Image Editor for Masonry */}
-                <div className="mt-4 p-4 bg-white rounded-lg border border-border">
+                <div className="mt-4 p-4 bg-white rounded-lg border border-border space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>First image</strong> is the public homepage hero portrait (MinimalistHero). Prefer a
+                    cutout / transparent PNG. Extra images are kept for future use and can be cleaned from Cloudinary
+                    via Media cleanup if unused.
+                  </p>
                   <ImageEditor
                     images={heroImages}
                     onChange={updateHomeHeroImages}
                     maxImages={10}
-                    label="Hero Gallery Images (for Masonry Animation)"
+                    label="Home Hero Images (first = public portrait)"
                   />
                 </div>
               </div>

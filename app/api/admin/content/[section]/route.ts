@@ -326,6 +326,14 @@ export async function PUT(
     revalidatePath('/api/content')
     revalidatePath('/api/contact/whatsapp')
     revalidatePath('/', 'layout')
+    revalidatePath('/')
+    revalidatePath('/packages')
+    revalidatePath('/travel-tours')
+    revalidatePath('/about')
+    revalidatePath('/study-abroad')
+    revalidatePath('/work-abroad')
+    revalidatePath('/global-network')
+    revalidatePath('/contact')
     revalidateTag('public-content', 'max')
 
     await logAdminAudit({

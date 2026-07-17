@@ -158,6 +158,19 @@ export async function replaceImage(
  * @param url - Cloudinary URL
  * @returns Public ID or null
  */
+/** True if a Cloudinary path segment looks like a transformation (not part of public_id). */
+function isTransformationSegment(segment: string): boolean {
+  if (!segment) return false
+  // e.g. w_500,h_500,c_fill or f_auto,q_auto
+  if (segment.includes(',')) return true
+  if (/^[a-z]+_/.test(segment) && !segment.includes('/')) {
+    // Single transform token like w_500, c_fill, q_80 — but not "folder_name"
+    // Transform tokens use short prefixes (w_, h_, c_, q_, f_, g_, ar_, dpr_, e_, fl_, t_, b_, r_, x_, y_, z_, a_, o_)
+    return /^(w|h|c|q|f|g|ar|dpr|e|fl|t|b|r|x|y|z|a|o|bo|l|u|if|pg)_/.test(segment)
+  }
+  return false
+}
+
 export function extractPublicId(url: string): string | null {
   if (!url || !url.includes('cloudinary.com')) {
     return null
@@ -165,40 +178,103 @@ export function extractPublicId(url: string): string | null {
 
   try {
     // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/image/upload/{transformations}/{public_id}.{format}
-    // Handle URLs with or without transformations
     // Example: https://res.cloudinary.com/demo/image/upload/v1234567890/folder/image.jpg
     // Example: https://res.cloudinary.com/demo/image/upload/w_500,h_500/folder/image.jpg
     // Example: https://res.cloudinary.com/demo/image/upload/folder/image.jpg
-    
+
     const urlObj = new URL(url)
-    const pathParts = urlObj.pathname.split('/')
-    
-    // Find the index of 'upload' in the path
+    const pathParts = urlObj.pathname.split('/').filter(Boolean)
+
     const uploadIndex = pathParts.indexOf('upload')
     if (uploadIndex === -1) {
       return null
     }
-    
-    // Everything after 'upload' is the path (may include version and transformations)
-    // Extract the public_id part (everything after upload, excluding version if present)
+
     const afterUpload = pathParts.slice(uploadIndex + 1)
-    
+
     // Remove version if present (v1234567890)
-    if (afterUpload.length > 0 && afterUpload[0].startsWith('v') && /^v\d+$/.test(afterUpload[0])) {
+    if (afterUpload.length > 0 && /^v\d+$/.test(afterUpload[0])) {
       afterUpload.shift()
     }
-    
-    // Join remaining parts to get public_id
+
+    // Skip transformation segments
+    while (afterUpload.length > 0 && isTransformationSegment(afterUpload[0])) {
+      afterUpload.shift()
+    }
+
+    if (afterUpload.length === 0) return null
+
     const publicId = afterUpload.join('/')
-    
-    // Remove file extension if present
     return publicId.replace(/\.[^.]+$/, '')
   } catch (error) {
     console.error('Error extracting public ID:', error)
-    // Fallback to regex
-    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/)
+    const match = url.match(/\/upload\/(?:v\d+\/)?(?:[^/]+,)?(.+?)(?:\.[^.]+)?$/)
     return match ? match[1] : null
   }
+}
+
+/**
+ * Delete a Cloudinary image by full URL (no-op for non-Cloudinary URLs).
+ */
+export async function deleteImageByUrl(url: string | null | undefined): Promise<boolean> {
+  if (!url || !url.includes('cloudinary.com')) return false
+  const publicId = extractPublicId(url)
+  if (!publicId) return false
+  return deleteImage(publicId)
+}
+
+/**
+ * Delete many Cloudinary URLs (best-effort; failures are ignored).
+ */
+export async function deleteImagesByUrls(urls: Array<string | null | undefined>): Promise<number> {
+  const unique = Array.from(
+    new Set(
+      urls
+        .filter((u): u is string => typeof u === 'string' && u.includes('cloudinary.com'))
+        .map((u) => u.trim())
+        .filter(Boolean)
+    )
+  )
+  if (unique.length === 0) return 0
+  const results = await Promise.all(unique.map((url) => deleteImageByUrl(url)))
+  return results.filter(Boolean).length
+}
+
+/**
+ * List image resources under a folder prefix (paginated).
+ */
+export async function listCloudinaryImagesInFolder(
+  folder: string = 'center-for-admission-and-travels',
+  maxPages: number = 20
+): Promise<Array<{ publicId: string; secureUrl: string }>> {
+  if (!isCloudinaryConfigured()) return []
+
+  const results: Array<{ publicId: string; secureUrl: string }> = []
+  let nextCursor: string | undefined
+
+  for (let page = 0; page < maxPages; page++) {
+    const response = await cloudinary.api.resources({
+      type: 'upload',
+      resource_type: 'image',
+      prefix: folder,
+      max_results: 100,
+      next_cursor: nextCursor,
+    })
+
+    for (const resource of response.resources || []) {
+      if (resource.public_id && resource.secure_url) {
+        results.push({
+          publicId: resource.public_id as string,
+          secureUrl: resource.secure_url as string,
+        })
+      }
+    }
+
+    nextCursor = response.next_cursor
+    if (!nextCursor) break
+  }
+
+  return results
 }
 
 /**

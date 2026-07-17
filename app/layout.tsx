@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 
 import CookieConsent from "@/components/cookie-consent"
+import SiteBackgroundOrbs from "@/components/site-background-orbs"
 import SiteWhatsAppButton from "@/components/site-whatsapp-button"
 import { Toaster } from "@/components/ui/sonner"
 import { OrganizationStructuredData, WebSiteStructuredData } from "@/components/structured-data"
@@ -117,23 +118,29 @@ export default async function RootLayout({
   const chrome = await getSiteChromeContent()
 
   return (
-    <html lang="en-GH" className="overflow-x-clip" suppressHydrationWarning>
+    <html lang="en-GH" className="overflow-x-hidden" suppressHydrationWarning>
       <head>
         <link rel="llms-txt" href="/llms.txt" />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
       </head>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased w-full overflow-x-clip`}
+        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased w-full overflow-x-hidden`}
         suppressHydrationWarning
       >
-        <OrganizationStructuredData contact={chrome.contact} footer={chrome.footer} />
-        <WebSiteStructuredData />
-        <GoogleAnalytics />
-        {children}
-        <SiteWhatsAppButton />
-        <Toaster />
-        <CookieConsent />
-        {AnalyticsComponent ? <AnalyticsComponent /> : null}
+        {/* relative + min-h so absolute orbs span full page height and scroll with content */}
+        <div className="relative min-h-screen w-full">
+          <SiteBackgroundOrbs />
+          <div className="relative z-10">
+            <OrganizationStructuredData contact={chrome.contact} footer={chrome.footer} />
+            <WebSiteStructuredData />
+            <GoogleAnalytics />
+            {children}
+            <SiteWhatsAppButton />
+            <Toaster />
+            <CookieConsent />
+            {AnalyticsComponent ? <AnalyticsComponent /> : null}
+          </div>
+        </div>
       </body>
     </html>
   )

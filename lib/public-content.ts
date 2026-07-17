@@ -312,19 +312,35 @@ function clampImagePosition(value: unknown): number {
 }
 
 function mapPackage(pkg: any): PackageCardContent {
+  const asTextList = (items: any[] | undefined) =>
+    (items || [])
+      .map((item) => (typeof item === 'string' ? item : item?.text))
+      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+
+  const asImageList = (items: any[] | undefined) =>
+    (items || [])
+      .map((img) => (typeof img === 'string' ? img : img?.url))
+      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+
+  const categoryRaw = (pkg.category || 'travel').toString().toLowerCase()
+  const category =
+    categoryRaw === 'study' || categoryRaw === 'work' || categoryRaw === 'travel'
+      ? categoryRaw
+      : 'travel'
+
   return {
-    id: pkg.id,
-    name: pkg.name,
-    description: pkg.description,
-    category: pkg.category,
-    duration: pkg.duration,
-    price: pkg.price,
+    id: String(pkg.id || ''),
+    name: (pkg.name || 'Package').toString(),
+    description: (pkg.description || '').toString(),
+    category,
+    duration: (pkg.duration || '').toString(),
+    price: Number(pkg.price) || 0,
     currency: (pkg.currency || 'GHS').toString().toUpperCase(),
-    highlights: pkg.highlights?.map((item: any) => item.text) || [],
-    itinerary: pkg.itinerary || '',
-    images: pkg.images?.map((img: any) => img.url) || [],
-    included: pkg.included?.map((item: any) => item.text) || [],
-    notIncluded: pkg.notIncluded?.map((item: any) => item.text) || [],
+    highlights: asTextList(pkg.highlights),
+    itinerary: (pkg.itinerary || '').toString(),
+    images: asImageList(pkg.images),
+    included: asTextList(pkg.included),
+    notIncluded: asTextList(pkg.notIncluded),
   }
 }
 

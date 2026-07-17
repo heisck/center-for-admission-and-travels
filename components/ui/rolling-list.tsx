@@ -86,8 +86,11 @@ function TitleBlock({
     'block max-w-full text-left text-[10px] sm:text-xs font-bold uppercase tracking-widest leading-none truncate',
     isHover ? accentClass : 'text-neutral-900 dark:text-white'
   )
+  // sm+: original large display type. max-sm: a bit smaller so multi-word titles can wrap cleanly.
   const titleClass = cn(
-    'block max-w-full text-left text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter leading-none break-words line-clamp-2',
+    'block max-w-full min-w-0 text-left font-black uppercase tracking-tighter',
+    'text-2xl leading-tight sm:text-5xl sm:leading-none md:text-6xl lg:text-7xl',
+    'break-words',
     isHover ? cn(accentClass, 'italic') : 'text-neutral-900 dark:text-white'
   )
 
@@ -108,7 +111,6 @@ function safeItemTitle(title?: string | null): string {
 function safeItemSrc(src?: string | null): string {
   const s = (src || '').trim()
   if (!s) return '/images/services/study-abroad.jpg'
-  // Block javascript: etc. Keep relative paths and https images.
   if (s.startsWith('/') || s.startsWith('https://') || s.startsWith('http://')) return s
   return '/images/services/study-abroad.jpg'
 }
@@ -116,7 +118,6 @@ function safeItemSrc(src?: string | null): string {
 function safeItemHref(href?: string | null): string | undefined {
   const h = (href || '').trim()
   if (!h) return undefined
-  // Only internal paths — never broken external/malformed admin values
   if (h.startsWith('/') && !h.startsWith('//') && !h.includes('://')) return h
   return undefined
 }
@@ -131,10 +132,11 @@ export function RollingTextItem({ item }: { item: RollingListItem }) {
   const href = safeItemHref(item.href)
   const hasStack = Boolean(prefix || suffix)
 
-  // One shared panel height so idle + hover faces align and spacing stays even
+  // Shared panel height so idle + hover faces align.
+  // Slightly taller on max-sm only so a wrapped 2-line title still fits.
   const panelHeight = hasStack
-    ? 'h-[5.75rem] sm:h-[6.5rem] md:h-[7.25rem]'
-    : 'h-[60px] md:h-20'
+    ? 'h-[6.25rem] sm:h-[6.5rem] md:h-[7.25rem]'
+    : 'h-[4.25rem] sm:h-[60px] md:h-20'
 
   const content = (
     <>

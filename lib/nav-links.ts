@@ -3,15 +3,6 @@ import 'server-only'
 import { prisma } from '@/lib/prisma'
 import { NAV_LINKS, type SiteNavLink } from '@/components/site-navigation'
 
-const DESKTOP_LABEL_MAX = 14
-const MOBILE_LABEL_MAX = 24
-
-function truncate(text: string, max: number): string {
-  const trimmed = text.trim()
-  if (trimmed.length <= max) return trimmed
-  return trimmed.slice(0, max - 1).trimEnd() + '…'
-}
-
 // First-N home service cards map by position to the four canonical service
 // routes. Used when admin has renamed a card before the `route` column existed,
 // so its explicit route is still null.
@@ -37,13 +28,15 @@ export async function getNavLinks(): Promise<SiteNavLink[]> {
     }
     if (overrides.size === 0) return NAV_LINKS
 
+    // Show full service titles in the nav (no ellipsis / hard truncate).
+    // Desktop has enough width; mobile menu can wrap/scroll as needed.
     return NAV_LINKS.map((link) => {
-      const override = overrides.get(link.href)
+      const override = overrides.get(link.href)?.trim()
       if (!override) return link
       return {
         ...link,
-        label: truncate(override, DESKTOP_LABEL_MAX),
-        mobileLabel: truncate(override, MOBILE_LABEL_MAX),
+        label: override,
+        mobileLabel: override,
       }
     })
   } catch {

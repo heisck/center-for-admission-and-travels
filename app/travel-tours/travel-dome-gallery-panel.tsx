@@ -116,8 +116,11 @@ export default function TravelDomeGalleryPanel({ images }: { images: DomeImage[]
       dragSensitivity={24}
       dragDampening={0.78}
       enlargeTransitionMs={260}
-      openedImageWidth="min(78vw, 380px)"
-      openedImageHeight="min(78vw, 380px)"
+      // Max box for enlarge — actual size is aspect-fitted inside the globe container
+      openedImageWidth="100%"
+      openedImageHeight="100%"
+      autoRotate
+      autoRotateSpeed={0.12}
     />
   )
 }

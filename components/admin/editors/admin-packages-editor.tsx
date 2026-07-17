@@ -36,12 +36,23 @@ export default function AdminPackagesEditor() {
   const packages = content.packages
 
   const handleAddPackage = () => {
-    if (!newPackage.name.trim() || !newPackage.duration.trim()) return
+    if (!newPackage.name.trim()) {
+      window.alert('Package name is required.')
+      return
+    }
+    if (!newPackage.duration.trim()) {
+      window.alert('Duration is required (e.g. "7 days" or "1 semester").')
+      return
+    }
 
     const pkg = {
       id: `tmp-${Date.now()}`,
-      ...newPackage,
+      name: newPackage.name.trim(),
+      category: newPackage.category,
+      duration: newPackage.duration.trim(),
+      price: Number(newPackage.price) || 0,
       currency: normalizeCurrency(newPackage.currency),
+      description: (newPackage.description || '').trim(),
       highlights: [] as string[],
       images: [] as string[],
       itinerary: '',
@@ -59,6 +70,7 @@ export default function AdminPackagesEditor() {
       description: '',
     })
     setShowAddPackage(false)
+    setExpandedId(null)
   }
 
   const handleUpdateField = <K extends keyof (typeof packages)[number]>(

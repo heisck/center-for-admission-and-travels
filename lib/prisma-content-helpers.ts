@@ -6,6 +6,7 @@
  */
 
 import { prisma } from './prisma'
+import { deleteImagesByUrls } from './cloudinary'
 import { detectSocialPlatform, normalizeSocialUrl } from './social-links'
 
 // ============================================================================
@@ -39,17 +40,29 @@ export async function updateHomeHeroImages(images: string[]) {
     await prisma.homePage.create({ data: { id: 'home', heroTitle: '', heroCta1Text: '', heroCta2Text: '' } })
   }
 
-  // Delete existing images
+  const nextUrls = (images || []).map((url) => String(url || '').trim()).filter(Boolean)
+  const previous = await prisma.homeHeroImage.findMany({
+    where: { homePageId: 'home' },
+    select: { url: true },
+  })
+  const nextSet = new Set(nextUrls)
+  const removed = previous.map((row) => row.url).filter((url) => !nextSet.has(url))
+
   await prisma.homeHeroImage.deleteMany({ where: { homePageId: 'home' } })
 
-  // Create new images
-  await prisma.homeHeroImage.createMany({
-    data: images.map((url, index) => ({
-      homePageId: 'home',
-      url,
-      order: index,
-    })),
-  })
+  if (nextUrls.length > 0) {
+    await prisma.homeHeroImage.createMany({
+      data: nextUrls.map((url, index) => ({
+        homePageId: 'home',
+        url,
+        order: index,
+      })),
+    })
+  }
+
+  if (removed.length > 0) {
+    void deleteImagesByUrls(removed)
+  }
 }
 
 export async function updateHomeStats(stats: Array<{ value: string; label: string }>) {
@@ -509,17 +522,29 @@ export async function updateTravelToursGalleryImages(images: string[]) {
     })
   }
 
-  // Delete existing gallery images
+  const nextUrls = (images || []).map((url) => String(url || '').trim()).filter(Boolean)
+  const previous = await prisma.travelToursGalleryImage.findMany({
+    where: { pageId: 'travel-tours' },
+    select: { url: true },
+  })
+  const nextSet = new Set(nextUrls)
+  const removed = previous.map((row) => row.url).filter((url) => !nextSet.has(url))
+
   await prisma.travelToursGalleryImage.deleteMany({ where: { pageId: 'travel-tours' } })
 
-  // Create new gallery images
-  await prisma.travelToursGalleryImage.createMany({
-    data: images.map((url, index) => ({
-      pageId: 'travel-tours',
-      url,
-      order: index,
-    })),
-  })
+  if (nextUrls.length > 0) {
+    await prisma.travelToursGalleryImage.createMany({
+      data: nextUrls.map((url, index) => ({
+        pageId: 'travel-tours',
+        url,
+        order: index,
+      })),
+    })
+  }
+
+  if (removed.length > 0) {
+    void deleteImagesByUrls(removed)
+  }
 }
 
 export async function updateTravelToursBenefits(benefits: Array<{

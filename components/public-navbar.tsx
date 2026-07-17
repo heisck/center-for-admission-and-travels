@@ -21,9 +21,9 @@ export default async function PublicNavbar({ currentPath }: PublicNavbarProps) {
   const navLinks = await getNavLinks()
   const headerNavLinks = getHeaderNavLinks(navLinks)
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-border">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 min-[1920px]:h-20 min-[2560px]:h-24">
+        <div className="flex justify-between items-center gap-3 h-16 min-[1920px]:h-20 min-[2560px]:h-24">
           <Link href="/" className="flex items-center flex-shrink-0">
             <Image
               src="/images/ca-20logo.png"
@@ -36,12 +36,13 @@ export default async function PublicNavbar({ currentPath }: PublicNavbarProps) {
             />
           </Link>
 
-          <div className="hidden xl:flex items-center justify-center gap-1 min-w-0">
+          <div className="hidden xl:flex flex-1 items-center justify-center gap-0.5 min-w-0 px-2">
             {headerNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-2.5 py-2 transition text-sm font-medium whitespace-nowrap ${
+                title={link.label}
+                className={`px-2 py-2 transition text-sm font-medium whitespace-nowrap shrink-0 ${
                   isLinkActive(link.href, currentPath)
                     ? "text-orange-600 font-semibold"
                     : "text-foreground hover:text-orange-600"
