@@ -1,25 +1,21 @@
 /**
- * GET /api/blog/[slug] - Fetch a single published blog post by slug
+ * GET /api/blog/[slug] - Fetch a single published blog post by slug (or id / title-like path)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { findBlogPostByParam } from '@/lib/blog-posts'
 
 export const revalidate = 60
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
   try {
     const { slug } = await Promise.resolve(params)
+    const post = await findBlogPostByParam(slug)
 
-    const post = await prisma.blogPost.findFirst({
-      where: { slug, published: true },
-      include: { package: true },
-    })
-
-    if (!post) {
+    if (!post || !post.published) {
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
     }
 
@@ -38,7 +34,6 @@ export async function GET(
             ? {
                 id: post.package.id,
                 name: post.package.name,
-                slug: post.package.id,
               }
             : null,
           publishedAt: post.publishedAt?.toISOString?.() || null,

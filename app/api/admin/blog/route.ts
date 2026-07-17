@@ -11,20 +11,23 @@ import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim()
-}
+import { ensureUniqueBlogSlug, slugifyBlogTitle } from '@/lib/blog-slug'
 
 function sanitizeBlogContent(value: unknown): string {
   return DOMPurify.sanitize(String(value || '').trim().slice(0, 50_000), {
     USE_PROFILES: { html: true },
   })
+}
+
+function revalidateBlogPaths(slug?: string) {
+  revalidatePath('/api/content')
+  revalidatePath('/blog')
+  revalidatePath('/', 'layout')
+  revalidateTag('public-content', 'max')
+  if (slug) {
+    revalidatePath(`/blog/${slug}`)
+    revalidatePath(`/api/blog/${slug}`)
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -37,16 +40,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
-    if (!(prisma as any).blogPost) {
-      return NextResponse.json({ success: true, data: [] })
-    }
-
-    const posts = await (prisma as any).blogPost.findMany({
+    const posts = await prisma.blogPost.findMany({
       orderBy: [{ publishedAt: 'desc' }, { order: 'asc' }, { createdAt: 'desc' }],
       include: { package: { select: { id: true, name: true } } },
     })
 
-    const formatted = posts.map((p: any) => ({
+    const formatted = posts.map((p) => ({
       id: p.id,
       slug: p.slug,
       title: p.title,
@@ -57,6 +56,7 @@ export async function GET(request: NextRequest) {
       package: p.package,
       published: p.published,
       publishedAt: p.publishedAt?.toISOString?.() || null,
+      publicPath: `/blog/${p.slug}`,
       order: p.order,
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),
@@ -79,25 +79,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 
-    if (!(prisma as any).blogPost) {
-      return NextResponse.json(
-        { success: false, error: 'Blog feature requires database migration. Run: npx prisma generate && npx prisma migrate deploy' },
-        { status: 503 }
-      )
-    }
-
     const body = await request.json()
-    const { title, excerpt, content, imageUrl, packageId, published } = body
+    const { title, excerpt, content, imageUrl, packageId, published, slug: requestedSlug } = body
 
     if (!title?.trim()) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 })
     }
 
-    const slug = slugify(title)
-    const existing = await (prisma as any).blogPost.findUnique({ where: { slug } })
-    const finalSlug = existing ? `${slug}-${Date.now()}` : slug
+    const seed = (typeof requestedSlug === 'string' && requestedSlug.trim()) || title.trim()
+    const finalSlug = await ensureUniqueBlogSlug(seed, async (candidate) => {
+      const existing = await prisma.blogPost.findUnique({
+        where: { slug: candidate },
+        select: { id: true },
+      })
+      return Boolean(existing)
+    })
 
-    const post = await (prisma as any).blogPost.create({
+    // Guard: never persist empty slug
+    if (!finalSlug || !slugifyBlogTitle(finalSlug)) {
+      return NextResponse.json({ success: false, error: 'Could not generate a valid URL slug' }, { status: 400 })
+    }
+
+    const post = await prisma.blogPost.create({
       data: {
         slug: finalSlug,
         title: title.trim(),
@@ -110,9 +113,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    revalidatePath('/api/content')
-    revalidatePath('/', 'layout')
-    revalidateTag('public-content', 'max')
+    revalidateBlogPaths(post.slug)
 
     await logAdminAudit({
       request,
@@ -123,7 +124,13 @@ export async function POST(request: NextRequest) {
       metadata: { slug: post.slug, published: post.published },
     })
 
-    return NextResponse.json({ success: true, data: post })
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...post,
+        publicPath: `/blog/${post.slug}`,
+      },
+    })
   } catch (error: any) {
     console.error('Error creating blog post:', error)
     return NextResponse.json({ success: false, error: 'Failed to create blog post' }, { status: 500 })

@@ -5,7 +5,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  Facebook,
   Linkedin,
   Instagram,
   Youtube,
@@ -18,7 +17,12 @@ import {
 import NewsletterSignupForm from "@/components/newsletter-signup-form"
 import { normalizePhoneForTel } from "@/lib/contact-utils"
 import type { ContactContent, FooterContent } from "@/lib/public-content"
-import { detectSocialPlatform, normalizeSocialUrl } from "@/lib/social-links"
+import {
+  normalizeSocialUrl,
+  resolveSocialPlatformKey,
+  socialPlatformLabel,
+  type SocialPlatformKey,
+} from "@/lib/social-links"
 
 function XBrandIcon({ size = 20, className }: { size?: number; className?: string }) {
   return (
@@ -35,8 +39,24 @@ function XBrandIcon({ size = 20, className }: { size?: number; className?: strin
   )
 }
 
-const iconMap: Record<string, ComponentType<{ size?: number; className?: string }>> = {
-  facebook: Facebook,
+/** Official-looking Facebook "f" mark (filled) so it never falls back to a generic globe. */
+function FacebookBrandIcon({ size = 20, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      className={className}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M22 12.07C22 6.48 17.52 2 11.93 2S1.86 6.48 1.86 12.07c0 5.02 3.66 9.18 8.44 9.93v-7.02H7.9v-2.91h2.4V9.84c0-2.37 1.4-3.69 3.56-3.69 1.03 0 2.11.19 2.11.19v2.33h-1.19c-1.17 0-1.54.73-1.54 1.48v1.78h2.62l-.42 2.91h-2.2V22c4.78-.75 8.44-4.91 8.44-9.93z" />
+    </svg>
+  )
+}
+
+const iconMap: Record<SocialPlatformKey, ComponentType<{ size?: number; className?: string }>> = {
+  facebook: FacebookBrandIcon,
   linkedin: Linkedin,
   twitter: XBrandIcon,
   x: XBrandIcon,
@@ -75,9 +95,13 @@ function getUniqueSocialLinks(links: FooterContent["socialLinks"]) {
   return (links || []).filter((link) => {
     if (!link.url?.trim()) return false
 
-    const key = (link.platform?.trim().toLowerCase() || detectSocialPlatform(link.url).toLowerCase() || link.url).trim()
-    if (seen.has(key)) return false
+    const key = resolveSocialPlatformKey(link.platform, link.url)
+    // Deduplicate by platform key + normalized host path so two Facebooks don't both show
+    const urlKey = normalizeSocialUrl(link.url).toLowerCase()
+    const dedupe = `${key}:${urlKey}`
+    if (seen.has(dedupe) || seen.has(key)) return false
 
+    seen.add(dedupe)
     seen.add(key)
     return true
   })
@@ -225,18 +249,20 @@ export default function FooterContentView({ contact, footer, serviceLinks }: Foo
                 const normalizedUrl = normalizeSocialUrl(link.url)
                 if (!normalizedUrl) return null
 
-                const detectedPlatform = detectSocialPlatform(link.url)
-                const key = detectedPlatform.toLowerCase() || link.platform?.toLowerCase() || "website"
+                // Use stored platform label OR URL — so "Facebook" never becomes a globe
+                const key = resolveSocialPlatformKey(link.platform, normalizedUrl)
                 const Icon = iconMap[key] || Globe
+                const label = socialPlatformLabel(key)
 
                 return (
                   <a
-                    key={`${link.platform}-${index}`}
+                    key={`${key}-${index}-${normalizedUrl}`}
                     href={normalizedUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-slate-400 hover:text-primary transition"
-                    title={detectedPlatform || link.platform || "Social link"}
+                    title={label}
+                    aria-label={label}
                   >
                     <Icon size={20} />
                   </a>

@@ -103,7 +103,10 @@ export default function AdminBlogPage() {
                   {posts.map((post) => (
                     <tr key={post.id} className="border-b border-border last:border-0 hover:bg-slate-50/50">
                       <td className="px-6 py-4">
-                        <span className="font-medium text-foreground">{post.title}</span>
+                        <span className="font-medium text-foreground block">{post.title}</span>
+                        <span className="text-xs text-muted-foreground font-mono break-all">
+                          /blog/{post.slug}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -120,11 +123,11 @@ export default function AdminBlogPage() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <a
-                            href={`/blog/${post.slug}`}
+                            href={`/blog/${encodeURIComponent(post.slug)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-2 hover:bg-slate-100 rounded-lg transition"
-                            title="View"
+                            title={post.published ? 'View public page' : 'Preview (draft — not public yet)'}
                           >
                             <Eye size={18} />
                           </a>

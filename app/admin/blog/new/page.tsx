@@ -55,7 +55,13 @@ export default function AdminBlogNewPage() {
       })
       const data = await res.json()
       if (data.success) {
-        router.push('/admin/blog')
+        // Land on edit page so admin sees the real public URL (/blog/{slug})
+        const newId = data.data?.id
+        if (newId) {
+          router.push(`/admin/blog/${newId}`)
+        } else {
+          router.push('/admin/blog')
+        }
       } else {
         alert(data.error || 'Failed to create post')
       }

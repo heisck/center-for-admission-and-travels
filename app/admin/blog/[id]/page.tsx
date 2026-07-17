@@ -25,7 +25,9 @@ export default function AdminBlogEditPage() {
     imageUrl: '',
     packageId: '',
     published: false,
+    slug: '',
   })
+  const [regenerateSlug, setRegenerateSlug] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -44,6 +46,7 @@ export default function AdminBlogEditPage() {
             imageUrl: post.imageUrl || '',
             packageId: post.packageId || '',
             published: post.published,
+            slug: post.slug || '',
           })
         }
       }
@@ -70,10 +73,14 @@ export default function AdminBlogEditPage() {
           imageUrl: form.imageUrl.trim() || undefined,
           packageId: form.packageId || undefined,
           published: form.published,
+          regenerateSlug,
         }),
       })
       const data = await res.json()
       if (data.success) {
+        if (data.data?.slug) {
+          setForm((prev) => ({ ...prev, slug: data.data.slug }))
+        }
         router.push('/admin/blog')
       } else {
         alert(data.error || 'Failed to update post')
@@ -112,6 +119,33 @@ export default function AdminBlogEditPage() {
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
+            {form.slug ? (
+              <p className="text-xs text-muted-foreground mt-2">
+                Public URL:{' '}
+                <a
+                  href={`/blog/${encodeURIComponent(form.slug)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-primary hover:underline"
+                >
+                  /blog/{form.slug}
+                </a>
+                <span className="block mt-1">
+                  The title can change freely; the URL stays stable unless you regenerate the slug.
+                </span>
+              </p>
+            ) : null}
+            <label className="mt-3 flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={regenerateSlug}
+                onChange={(e) => setRegenerateSlug(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-muted-foreground">
+                Regenerate URL slug from title on save (only if you need a new public link)
+              </span>
+            </label>
           </div>
 
           <div>

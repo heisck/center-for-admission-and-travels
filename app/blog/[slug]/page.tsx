@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import DOMPurify from 'isomorphic-dompurify'
 
 import PublicNavbar from '@/components/public-navbar'
@@ -11,36 +11,23 @@ import {
   BreadcrumbStructuredData,
 } from '@/components/structured-data'
 import { createMetadata } from '@/lib/metadata'
-import { prisma } from '@/lib/prisma'
+import { findBlogPostByParam } from '@/lib/blog-posts'
 import { getSiteChromeContent } from '@/lib/public-content'
 
-export const revalidate = 120
+export const revalidate = 60
+export const dynamicParams = true
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
-async function getPublishedPost(slug: string) {
-  try {
-    return await prisma.blogPost.findFirst({
-      where: { slug, published: true },
-      include: {
-        package: {
-          select: { id: true, name: true },
-        },
-      },
-    })
-  } catch {
-    return null
-  }
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const post = await getPublishedPost(slug)
-  if (!post) {
+  const post = await findBlogPostByParam(slug)
+
+  if (!post || !post.published) {
     return createMetadata({
-      title: 'Blog post not found',
+      title: post && !post.published ? 'Draft post' : 'Blog post not found',
       path: `/blog/${slug}`,
       noIndex: true,
     })
@@ -66,10 +53,65 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
-  const { slug } = await params
-  const [post, chrome] = await Promise.all([getPublishedPost(slug), getSiteChromeContent()])
+  const { slug: param } = await params
+  const [post, chrome] = await Promise.all([findBlogPostByParam(param), getSiteChromeContent()])
 
-  if (!post) notFound()
+  if (!post) {
+    notFound()
+  }
+
+  // Always land on the canonical slug URL (never leave users on a title-based or id URL)
+  let decoded = param
+  try {
+    decoded = decodeURIComponent(param)
+  } catch {
+    decoded = param
+  }
+  if (decoded !== post.slug) {
+    redirect(`/blog/${post.slug}`)
+  }
+
+  // Draft exists but is not public — branded message, not a bare 404
+  if (!post.published) {
+    return (
+      <main className="min-h-screen bg-background">
+        <PublicNavbar currentPath="/blog" />
+        <section className="relative overflow-hidden py-20 md:py-28 bg-gradient-to-br from-orange-50 to-red-50">
+          <div className="max-w-2xl mx-auto px-4 text-center">
+            <p className="text-sm font-semibold uppercase tracking-wide text-orange-600 mb-3">
+              Draft
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                This post is not published yet
+              </span>
+            </h1>
+            <p className="text-muted-foreground mb-2">
+              <span className="font-medium text-foreground">{post.title}</span>
+            </p>
+            <p className="text-muted-foreground mb-8">
+              Publish it from the admin blog panel to make it visible on the site.
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link
+                href="/blog"
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition"
+              >
+                Browse blog
+              </Link>
+              <Link
+                href={`/admin/blog/${post.id}`}
+                className="px-6 py-3 border border-orange-200 text-orange-800 bg-white rounded-xl font-semibold hover:bg-orange-50 transition"
+              >
+                Open in admin
+              </Link>
+            </div>
+          </div>
+        </section>
+        <Footer contact={chrome.contact} footer={chrome.footer} />
+      </main>
+    )
+  }
 
   const publishedIso = post.publishedAt?.toISOString?.() || post.createdAt?.toISOString?.() || null
   const modifiedIso = post.updatedAt?.toISOString?.() || publishedIso
@@ -149,7 +191,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             dangerouslySetInnerHTML={{ __html: safeHtml }}
           />
 
-          <aside className="mt-12 p-6 rounded-xl border border-border bg-orange-50/60">
+          <aside className="mt-12 p-6 rounded-xl border border-orange-100 bg-gradient-to-br from-orange-50 to-red-50">
             <h2 className="text-lg font-bold text-foreground mb-2">Plan with CA Travels</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Center for Admission and Travels (CFAAT) helps with study abroad, work abroad, and
@@ -164,7 +206,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               </Link>
               <Link
                 href="/contact"
-                className="px-4 py-2 rounded-lg border border-border bg-white text-sm font-semibold"
+                className="px-4 py-2 rounded-lg border border-orange-200 bg-white text-sm font-semibold text-orange-900"
               >
                 Contact us
               </Link>
