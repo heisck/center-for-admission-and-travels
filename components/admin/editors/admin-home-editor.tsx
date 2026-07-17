@@ -19,11 +19,20 @@ export default function AdminHomeEditor() {
   const hero = content.home.hero
   const services = content.home.services
 
+  const ROUTE_OPTIONS = [
+    { value: '/study-abroad', label: 'Study Abroad' },
+    { value: '/work-abroad', label: 'Work Abroad' },
+    { value: '/travel-tours', label: 'Travel & Tours' },
+    { value: '/global-network', label: 'Global Network' },
+  ] as const
+
   const handleAddService = () => {
     if (newService.title.trim()) {
       const service = {
         ...newService,
         id: Date.now().toString(),
+        // Pin public URL by slot so title renames never 404
+        route: ROUTE_OPTIONS[services.length]?.value || ROUTE_OPTIONS[0].value,
       }
       updateServices([...services, service])
       setNewService({ id: '', icon: 'Plus', title: '', description: '' })
@@ -155,8 +164,12 @@ export default function AdminHomeEditor() {
           </button>
         </div>
 
+        <p className="text-sm text-muted-foreground mb-4">
+          Titles and descriptions are free-form. Public URLs stay stable via the
+          &quot;Links to&quot; route below — not the title text.
+        </p>
         <div className="space-y-4">
-          {services.map((service) => (
+          {services.map((service, idx) => (
             <div key={service.id} className="border border-border rounded-lg p-4">
               <div className="flex justify-between items-start mb-3">
                 <input
@@ -179,6 +192,20 @@ export default function AdminHomeEditor() {
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 rows={2}
               />
+              <div className="mt-3 flex items-center gap-2 text-xs">
+                <label className="text-muted-foreground font-medium shrink-0">Links to:</label>
+                <select
+                  value={service.route || ROUTE_OPTIONS[idx]?.value || ROUTE_OPTIONS[0].value}
+                  onChange={(e) => handleUpdateService(service.id, 'route', e.target.value)}
+                  className="px-2 py-1 border border-border rounded bg-white text-foreground font-mono flex-1"
+                >
+                  {ROUTE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.value} ({opt.label})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           ))}
         </div>

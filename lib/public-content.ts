@@ -490,13 +490,22 @@ function buildServiceHref(
   service: { title?: string | null; route?: string | null; position?: number },
   servicePages: Array<{ title: string; route: string; serviceId: string }>
 ) {
-  const validRoutes = new Set(servicePages.map((p) => p.route))
+  const validRoutes = new Set([
+    ...servicePages.map((p) => p.route).filter(Boolean),
+    ...POSITION_FALLBACK_ROUTES,
+  ])
 
-  // 1. Stable route stored directly on the home service (set via admin or
-  //    backfilled on migration). Renames of `title` no longer break the link.
-  if (service.route && validRoutes.has(service.route)) return service.route
+  const normalizedRoute = (service.route || '').trim()
 
-  // 2. Match the current title against an existing service page.
+  // 1. Stable route stored on the home service (admin "Links to").
+  //    Title renames must never change this link.
+  if (normalizedRoute && validRoutes.has(normalizedRoute)) return normalizedRoute
+  // Even if service pages aren't loaded yet, accept canonical routes.
+  if (normalizedRoute && POSITION_FALLBACK_ROUTES.includes(normalizedRoute)) {
+    return normalizedRoute
+  }
+
+  // 2. Match the current title against an existing service page (legacy only).
   const matchingPage = servicePages.find(
     (page) =>
       page.title?.toLowerCase() === service.title?.toLowerCase() ||
@@ -504,23 +513,22 @@ function buildServiceHref(
   )
   if (matchingPage?.route) return matchingPage.route
 
-  // 3. Hardcoded legacy map (only when service pages aren't loaded).
+  // 3. Hardcoded legacy map (exact title only — never invent from free text).
   if (service.title && TITLE_TO_ROUTE_MAP[service.title]) return TITLE_TO_ROUTE_MAP[service.title]
 
-  // 4. Slugify only if the resulting route actually exists.
+  // 4. Slugify only if the resulting route actually exists as a service page.
   if (service.title) {
     const slug = `/${service.title.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')}`
     if (validRoutes.has(slug)) return slug
   }
 
-  // 5. Position fallback: a renamed card at one of the first four positions
-  //    is presumed to map to the canonical service route at that position.
+  // 5. Position fallback: first four slots map to canonical service routes.
+  //    This is the main safety net when route is null after a rename.
   if (service.position !== undefined && service.position < POSITION_FALLBACK_ROUTES.length) {
-    const fallback = POSITION_FALLBACK_ROUTES[service.position]
-    if (validRoutes.has(fallback)) return fallback
+    return POSITION_FALLBACK_ROUTES[service.position]
   }
 
-  // 6. Never return a 404. Fall back to home.
+  // 6. Never return a broken path. Fall back to home.
   return '/'
 }
 
@@ -645,9 +653,17 @@ export const getHomePageContent = unstable_cache(
           homePage?.services?.map((service, index) => ({
             id: service.id,
             icon: service.icon,
-            title: service.title,
-            description: service.description,
-            href: buildServiceHref({ title: service.title, route: (service as any).route, position: index }, servicePages),
+            title: service.title || `Service ${index + 1}`,
+            description: service.description || '',
+            // href is derived from stored `route` (or position), never from title alone
+            href: buildServiceHref(
+              {
+                title: service.title,
+                route: (service as { route?: string | null }).route,
+                position: index,
+              },
+              servicePages
+            ),
           })) || [],
         featuredPackages:
           (homePage?.featuredPackages ?? [])

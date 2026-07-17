@@ -69,6 +69,17 @@ export async function updateHomeStats(stats: Array<{ value: string; label: strin
   })
 }
 
+/** Canonical public routes for the first four home service slots.
+ *  Persisted when admin omits `route` so title renames never break links. */
+const HOME_SERVICE_ROUTE_FALLBACKS = [
+  '/study-abroad',
+  '/work-abroad',
+  '/travel-tours',
+  '/global-network',
+]
+
+const VALID_HOME_SERVICE_ROUTES = new Set(HOME_SERVICE_ROUTE_FALLBACKS)
+
 export async function updateHomeServices(services: Array<{ id?: string; icon: string; title: string; description: string; route?: string | null }>) {
   const homePage = await prisma.homePage.findUnique({ where: { id: 'home' } })
   if (!homePage) {
@@ -78,16 +89,25 @@ export async function updateHomeServices(services: Array<{ id?: string; icon: st
   // Delete existing services
   await prisma.homeService.deleteMany({ where: { homePageId: 'home' } })
 
-  // Create new services
+  // Create new services — always store a stable route when possible.
+  // Title text is free-form; links must not depend on the title string.
   await prisma.homeService.createMany({
-    data: services.map((svc, index) => ({
-      homePageId: 'home',
-      icon: svc.icon,
-      title: svc.title,
-      description: svc.description,
-      route: svc.route ?? null,
-      order: index,
-    })),
+    data: services.map((svc, index) => {
+      const rawRoute = (svc.route || '').trim()
+      const route =
+        rawRoute && VALID_HOME_SERVICE_ROUTES.has(rawRoute)
+          ? rawRoute
+          : HOME_SERVICE_ROUTE_FALLBACKS[index] ?? null
+
+      return {
+        homePageId: 'home',
+        icon: svc.icon || 'Globe',
+        title: (svc.title || '').trim() || `Service ${index + 1}`,
+        description: (svc.description || '').trim(),
+        route,
+        order: index,
+      }
+    }),
   })
 }
 

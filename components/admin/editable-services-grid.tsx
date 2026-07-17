@@ -22,7 +22,14 @@ const ROUTE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '/global-network', label: 'Global Network' },
 ]
 
-// Map service title to admin route (avoids 404 when service.id is a cuid)
+const ROUTE_TO_ADMIN: Record<string, string> = {
+  '/study-abroad': '/admin/study-abroad',
+  '/work-abroad': '/admin/work-abroad',
+  '/travel-tours': '/admin/travel-tours',
+  '/global-network': '/admin/global-network',
+}
+
+// Legacy title map only when route is unset
 const titleToAdminRoute: Record<string, string> = {
   'Study Abroad': '/admin/study-abroad',
   'Work Abroad': '/admin/work-abroad',
@@ -31,16 +38,26 @@ const titleToAdminRoute: Record<string, string> = {
   'Global Network': '/admin/global-network',
 }
 
-function getAdminRouteForService(service: { id: string; title: string }): string {
+function getAdminRouteForService(service: {
+  id: string
+  title: string
+  route?: string | null
+}): string {
+  if (service.route && ROUTE_TO_ADMIN[service.route]) {
+    return ROUTE_TO_ADMIN[service.route]
+  }
   const normalizedTitle = service.title?.trim() || ''
   const route = titleToAdminRoute[normalizedTitle]
   if (route) return route
-  // Fallback: try matching by slugified title
   const slug = normalizedTitle.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')
   if (['study-abroad', 'work-abroad', 'travel-tours', 'global-network'].includes(slug)) {
     return `/admin/${slug}`
   }
   return '/admin/services'
+}
+
+function defaultRouteForIndex(index: number): string {
+  return ROUTE_OPTIONS[index]?.value || ROUTE_OPTIONS[0].value
 }
 
 export function EditableServicesGrid() {
@@ -54,11 +71,14 @@ export function EditableServicesGrid() {
   }
 
   const handleAddService = () => {
+    const index = services.length
     const newService = {
       id: `new-${Date.now()}`,
       icon: 'Globe',
       title: 'New Service',
       description: 'Service description',
+      // Always pin a public route so renaming title later never 404s
+      route: defaultRouteForIndex(index),
     }
     updateServices([...services, newService])
   }
@@ -82,6 +102,10 @@ export function EditableServicesGrid() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Comprehensive solutions for your international journey
           </p>
+          <p className="mt-3 text-sm text-muted-foreground max-w-xl mx-auto">
+            Edit titles and descriptions freely. Public URLs stay stable via the
+            &quot;Links to&quot; route — not the title text.
+          </p>
           <button
             onClick={handleAddService}
             className="mt-4 px-6 py-2 bg-primary text-white rounded-lg font-semibold hover:shadow-lg transition flex items-center gap-2 mx-auto"
@@ -94,6 +118,7 @@ export function EditableServicesGrid() {
         <div className="grid md:grid-cols-2 gap-8">
           {services.map((service, idx) => {
             const Icon = iconMap[service.icon] || Globe
+            const linkedRoute = service.route || defaultRouteForIndex(idx)
             return (
               <div
                 key={service.id}
@@ -123,23 +148,29 @@ export function EditableServicesGrid() {
                   rows={3}
                   className="text-muted-foreground leading-relaxed mb-4"
                 />
-                <div className="flex items-center gap-2 mb-4 text-xs">
-                  <label className="text-muted-foreground font-medium">Links to:</label>
-                  <select
-                    value={service.route ?? ''}
-                    onChange={(e) => handleServiceUpdate(idx, 'route', e.target.value)}
-                    className="px-2 py-1 border border-border rounded bg-white text-foreground font-mono"
-                  >
-                    <option value="">(unset — falls back to home)</option>
-                    {ROUTE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.value} ({opt.label})
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-col gap-1 mb-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <label className="text-muted-foreground font-medium shrink-0">
+                      Links to:
+                    </label>
+                    <select
+                      value={linkedRoute}
+                      onChange={(e) => handleServiceUpdate(idx, 'route', e.target.value)}
+                      className="px-2 py-1 border border-border rounded bg-white text-foreground font-mono min-w-0 flex-1"
+                    >
+                      {ROUTE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.value} ({opt.label})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Changing the title above does not change this URL.
+                  </p>
                 </div>
                 <Link
-                  href={getAdminRouteForService(service)}
+                  href={getAdminRouteForService({ ...service, route: linkedRoute })}
                   className="inline-block text-primary font-semibold text-sm group-hover:translate-x-1 transition-transform"
                 >
                   Click to know more →
@@ -152,4 +183,3 @@ export function EditableServicesGrid() {
     </section>
   )
 }
-

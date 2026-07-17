@@ -148,37 +148,67 @@ export default function AdminHomePage() {
               </p>
             </div>
 
+            <p className="text-center text-sm text-muted-foreground mb-8 max-w-xl mx-auto">
+              Edit titles freely. Public page links stay stable via the route selector — not the title.
+            </p>
             <div className="grid md:grid-cols-2 gap-8">
-              {services.map((service, idx) => (
-                <div
-                  key={service.id}
-                  className="group p-8 rounded-2xl border border-border bg-white hover:border-primary hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
-                >
-                  <h3 className="text-2xl font-bold mb-3 text-foreground">
-                    <EditableTextWrapper
-                      value={service.title}
+              {services.map((service, idx) => {
+                const routeOptions = [
+                  { value: '/study-abroad', label: 'Study Abroad' },
+                  { value: '/work-abroad', label: 'Work Abroad' },
+                  { value: '/travel-tours', label: 'Travel & Tours' },
+                  { value: '/global-network', label: 'Global Network' },
+                ]
+                const linkedRoute =
+                  service.route || routeOptions[idx]?.value || routeOptions[0].value
+                return (
+                  <div
+                    key={service.id}
+                    className="group p-8 rounded-2xl border border-border bg-white hover:border-primary hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+                  >
+                    <h3 className="text-2xl font-bold mb-3 text-foreground">
+                      <EditableTextWrapper
+                        value={service.title}
+                        onChange={(value) => {
+                          const next = [...services]
+                          next[idx] = { ...service, title: value }
+                          updateServices(next)
+                        }}
+                        variant="heading"
+                      />
+                    </h3>
+                    <EditableTextareaWrapper
+                      value={service.description}
                       onChange={(value) => {
                         const next = [...services]
-                        next[idx] = { ...service, title: value }
+                        next[idx] = { ...service, description: value }
                         updateServices(next)
                       }}
-                      variant="heading"
+                      rows={3}
                     />
-                  </h3>
-                  <EditableTextareaWrapper
-                    value={service.description}
-                    onChange={(value) => {
-                      const next = [...services]
-                      next[idx] = { ...service, description: value }
-                      updateServices(next)
-                    }}
-                    rows={3}
-                  />
-                  <div className="mt-4 text-sm text-primary font-semibold">
-                    Linked to: <span className="underline">{service.id}</span>
+                    <div className="mt-4 flex flex-col gap-1 text-sm">
+                      <label className="text-muted-foreground font-medium text-xs">
+                        Links to (public URL):
+                      </label>
+                      <select
+                        value={linkedRoute}
+                        onChange={(e) => {
+                          const next = [...services]
+                          next[idx] = { ...service, route: e.target.value }
+                          updateServices(next)
+                        }}
+                        className="px-2 py-1.5 border border-border rounded bg-white text-foreground font-mono text-xs"
+                      >
+                        {routeOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.value} ({opt.label})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>
