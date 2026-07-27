@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { BlogImageUpload } from '@/components/admin/blog-image-upload'
+import { BlogRichTextEditor } from '@/components/admin/blog-rich-text-editor'
 
 interface Package {
   id: string
@@ -107,13 +108,15 @@ export default function AdminBlogNewPage() {
 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Content</label>
-            <textarea
+            <BlogRichTextEditor
               value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              rows={12}
-              placeholder="Write your post content here. Use line breaks for paragraphs."
+              onChange={(content) => setForm((current) => ({ ...current, content }))}
+              placeholder="Write or paste the blog post here. Formatting appears as you type."
             />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Paste formatted text to preserve its styling. Multiline plain text is automatically organized into
+              headings, paragraphs, lists, and links.
+            </p>
           </div>
 
           <div>

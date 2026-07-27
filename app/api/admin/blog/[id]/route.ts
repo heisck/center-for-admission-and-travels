@@ -6,18 +6,16 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath, revalidateTag } from 'next/cache'
-import DOMPurify from 'isomorphic-dompurify'
 import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
 import { ensureUniqueBlogSlug, slugifyBlogTitle } from '@/lib/blog-slug'
 import { deleteUnreferencedCloudinaryUrls } from '@/lib/cloudinary-orphans'
+import { contentToSafeHtml } from '@/lib/safe-html'
 
 function sanitizeBlogContent(value: unknown): string {
-  return DOMPurify.sanitize(String(value || '').trim().slice(0, 50_000), {
-    USE_PROFILES: { html: true },
-  })
+  return contentToSafeHtml(String(value || '').trim().slice(0, 50_000))
 }
 
 function revalidateBlogPaths(slug?: string | null) {

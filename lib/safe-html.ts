@@ -114,6 +114,26 @@ export function sanitizeHtmlBasic(dirty: string): string {
       return `<img src="${escapeHtml(src)}" alt="${alt}" loading="lazy" />`
     }
 
+    if (tag === 'ul') {
+      const styleMatch = attrs.match(/data-list-style\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i)
+      const listStyle = (styleMatch ? styleMatch[2] || styleMatch[3] || styleMatch[4] || '' : '').toLowerCase()
+      return listStyle === 'circle' ? '<ul data-list-style="circle">' : '<ul data-list-style="disc">'
+    }
+
+    if (tag === 'ol') {
+      const startMatch = attrs.match(/start\s*=\s*("(\d+)"|'(\d+)'|(\d+))/i)
+      const start = startMatch ? startMatch[2] || startMatch[3] || startMatch[4] || '' : ''
+      return start && Number(start) > 1 ? `<ol start="${Number(start)}">` : '<ol>'
+    }
+
+    if (['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+      const alignMatch = attrs.match(/text-align\s*:\s*(left|center|right)/i)
+      const alignment = alignMatch?.[1]?.toLowerCase()
+      if (alignment === 'center' || alignment === 'right') {
+        return `<${tag} style="text-align: ${alignment}">`
+      }
+    }
+
     return `<${tag}>`
   })
 

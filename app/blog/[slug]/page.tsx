@@ -261,7 +261,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           ) : null}
 
           <div
-            className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground"
+            className="blog-post-content"
             // suppressHydrationWarning: browser may normalize rare HTML entities in prose
             suppressHydrationWarning
             dangerouslySetInnerHTML={{ __html: safeHtml }}
