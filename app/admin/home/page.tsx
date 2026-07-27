@@ -98,7 +98,7 @@ export default function AdminHomePage() {
                 </div>
               </div>
 
-              {/* Hero portrait — first image feeds public MinimalistHero */}
+              {/* Legacy home hero gallery. The public hero uses the local brand portrait. */}
               <div className="relative h-full">
                 <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden bg-slate-100 border border-border">
                   {heroImages[0] ? (
@@ -122,21 +122,21 @@ export default function AdminHomePage() {
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-200 border-2 border-dashed border-slate-400 flex items-center justify-center text-slate-500 text-sm text-center px-4">
-                      No hero image yet. Upload one below — the first image becomes the public home hero portrait.
+                      No legacy home hero gallery images have been uploaded.
                     </div>
                   )}
                 </div>
                 <div className="mt-4 p-4 bg-white rounded-lg border border-border space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    Upload a <strong>Cloudinary</strong> portrait for the public MinimalistHero. Prefer a cutout /
-                    transparent PNG. Local/legacy gallery tiles are ignored on the public hero so production stays
-                    stable. Unused Cloudinary files can be cleaned under Admin → Media.
+                    These legacy gallery images do not control the public hero portrait. The public MinimalistHero
+                    uses <strong>/images/hero/ca-travels-hero-portrait.png</strong>. Unused Cloudinary files can be
+                    cleaned under Admin → Media.
                   </p>
                   <ImageEditor
                     images={heroImages}
                     onChange={updateHomeHeroImages}
                     maxImages={10}
-                    label="Home Hero Images (first = public portrait)"
+                    label="Legacy Home Hero Gallery Images"
                   />
                 </div>
               </div>

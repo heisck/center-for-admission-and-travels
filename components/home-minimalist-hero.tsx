@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Home page hero — MinimalistHero with CA Travels brand + generated portrait.
+ * Home page hero — MinimalistHero with CA Travels brand + local cutout portrait.
  * Get Started matches CTA "Get Started Today": sign in if logged out, contact if logged in.
  */
 
@@ -24,30 +24,8 @@ function getOverlayText(): { part1: string; part2: string } {
   }
 }
 
-/** Default cutout — always safe for production if CMS gallery is empty or legacy */
-const DEFAULT_HERO_IMAGE = '/images/hero/ca-travels-hero-portrait.png?v=cutout-white'
-
-/**
- * Production-safe hero image selection:
- * - Prefer the designed cutout by default so legacy multi-image masonry galleries
- *   (old home data) never accidentally replace MinimalistHero with a random tile.
- * - Only use a CMS image when it is clearly an admin-uploaded Cloudinary asset
- *   or an explicit /images/hero/ path.
- */
-function resolveHeroImage(hero: HomeHeroContent): string {
-  const candidates = (hero.images || [])
-    .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
-    .map((url) => url.trim())
-
-  const adminPortrait = candidates.find(
-    (url) =>
-      url.includes('cloudinary.com') ||
-      url.includes('/images/hero/') ||
-      url.startsWith('/images/hero/')
-  )
-
-  return adminPortrait || DEFAULT_HERO_IMAGE
-}
+/** The public hero always uses this transparent local brand asset. */
+const HERO_IMAGE = '/images/hero/ca-travels-hero-portrait.png'
 
 export default function HomeMinimalistHero({ hero }: HomeMinimalistHeroProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -64,8 +42,6 @@ export default function HomeMinimalistHero({ hero }: HomeMinimalistHeroProps) {
   // Same destinations as CTASection "Get Started Today"
   const getStartedHref = isLoggedIn ? '/contact' : '/signin'
   const getStartedLabel = isLoggedIn ? 'Contact Us Today' : 'Get Started'
-  const imageSrc = resolveHeroImage(hero)
-
   return (
     <MinimalistHero
       hideNav
@@ -73,7 +49,7 @@ export default function HomeMinimalistHero({ hero }: HomeMinimalistHeroProps) {
       mainText={description}
       readMoreLink={getStartedHref}
       readMoreLabel={getStartedLabel}
-      imageSrc={imageSrc}
+      imageSrc={HERO_IMAGE}
       imageAlt="Young woman traveler with a bag — Center for Admission and Travels"
       overlayText={getOverlayText()}
       socialLinks={[]}
