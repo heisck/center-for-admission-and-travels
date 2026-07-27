@@ -5,6 +5,7 @@ import crypto from 'crypto'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { pruneAdminSessions } from '@/lib/auth-helpers'
+import { validatePassword } from '@/lib/password-policy'
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
@@ -15,7 +16,10 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { email, password } = body
 
     if (!email || !password) {
@@ -25,8 +29,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const id = String(email).trim().toLowerCase()
-    const passwordTrimmed = String(password).trim()
+    const id = String(email).trim().toLowerCase().slice(0, 254)
+    const passwordResult = validatePassword(password)
+    if (!passwordResult.password) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
 
     const adminUser = await prisma.adminUser.findFirst({
       where: {
@@ -41,7 +51,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const isValid = await compare(passwordTrimmed, adminUser.password)
+    const isValid = await compare(passwordResult.password, adminUser.password)
     if (!isValid) {
       return NextResponse.json(
         { success: false, error: 'Invalid credentials' },

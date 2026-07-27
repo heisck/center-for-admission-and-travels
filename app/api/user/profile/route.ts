@@ -56,7 +56,10 @@ export async function PATCH(request: NextRequest) {
     })
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { displayName, phone } = body
 
     if (displayName !== undefined && typeof displayName !== 'string') {
@@ -73,6 +76,9 @@ export async function PATCH(request: NextRequest) {
     const updateData: { displayName?: string | null; phone?: string | null } = {}
     if (normalizedDisplayName !== undefined) updateData.displayName = normalizedDisplayName || null
     if (normalizedPhone !== undefined) updateData.phone = normalizedPhone || null
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid profile fields to update' }, { status: 400 })
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },

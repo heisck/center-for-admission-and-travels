@@ -6,6 +6,8 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { logAdminAudit } from '@/lib/admin-audit'
 
+const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -27,7 +29,13 @@ export async function PATCH(
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const { id } = await params
-    const body = await request.json()
+    if (!ID_PATTERN.test(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid payment ID' }, { status: 400 })
+    }
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const data: { adminNote?: string; adminViewedAt?: Date } = {}
     const auditMetadata: Record<string, unknown> = {}
 

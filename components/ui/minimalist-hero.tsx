@@ -77,7 +77,6 @@ function OverlayLines({
 
 export function MinimalistHero({
   logoText = 'CA Travels',
-  navLinks = [],
   mainText = '',
   readMoreLink = '#',
   readMoreLabel = 'Explore services',

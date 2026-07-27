@@ -1,29 +1,37 @@
 import { NextRequest } from 'next/server'
 
+function parseBaseUrl(value: string | undefined, allowHttp: boolean): string | null {
+  const raw = value?.trim()
+  if (!raw) return null
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`
+
+  try {
+    const url = new URL(withProtocol)
+    if (url.protocol !== 'https:' && !(allowHttp && url.protocol === 'http:')) return null
+    if (url.username || url.password || !url.hostname) return null
+    return url.origin
+  } catch {
+    return null
+  }
+}
+
 /**
- * Get the application base URL. When a request is available and comes from
- * production (non-localhost), uses the request origin so reset links etc.
- * point to the correct deployment. Otherwise uses NEXT_PUBLIC_BASE_URL or
- * falls back to localhost.
+ * Resolve the canonical application origin for email links and OAuth.
+ * Production never trusts the request Host header because that would allow
+ * password-reset and verification link poisoning behind a permissive proxy.
  */
 export function getBaseUrl(request?: NextRequest): string {
-  const envUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '')
+  const isProduction = process.env.NODE_ENV === 'production'
+  const configured =
+    parseBaseUrl(process.env.NEXT_PUBLIC_BASE_URL, !isProduction) ||
+    parseBaseUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL, false) ||
+    parseBaseUrl(process.env.VERCEL_URL, false)
 
-  if (request) {
-    const proto = request.headers.get('x-forwarded-proto') || 'http'
-    const host = request.headers.get('host') || 'localhost:3000'
-    const requestOrigin = `${proto}://${host}`
+  if (configured) return configured
 
-    // When request is from production (not localhost), always use request origin
-    // so reset links point to the actual deployment (fixes Vercel when env has localhost)
-    if (!host.includes('localhost')) {
-      return requestOrigin
-    }
+  if (!isProduction && request) {
+    return parseBaseUrl(request.nextUrl.origin, true) || 'http://localhost:3000'
   }
 
-  if (envUrl) {
-    return envUrl
-  }
-
-  return 'http://localhost:3000'
+  return isProduction ? 'https://catravels.com' : 'http://localhost:3000'
 }

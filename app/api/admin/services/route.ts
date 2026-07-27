@@ -8,6 +8,12 @@ import { ensureUniqueBlogSlug } from '@/lib/blog-slug'
 import { normalizeCurrency } from '@/lib/currency'
 import { prisma } from '@/lib/prisma'
 import { contentToSafeHtml } from '@/lib/safe-html'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+
+function isValidImageUrl(value: string) {
+  return value.startsWith('/') || /^https:\/\/[^\s]+$/i.test(value)
+}
 
 function revalidateServiceSurfaces() {
   revalidatePath('/')
@@ -84,8 +90,16 @@ export async function POST(request: NextRequest) {
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const { allowed, retryAfterMs } = await checkRateLimit(
+      `admin-services-write:${session.userId}:${getClientIp(request)}`,
+      { maxRequests: 30, windowMs: 60_000 }
+    )
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const name = String(body?.name || '').trim().slice(0, 160)
     if (!name) {
       return NextResponse.json(
@@ -106,15 +120,21 @@ export async function POST(request: NextRequest) {
     const plans = normalizePlans(body?.plans)
     const imageUrl = String(body?.imageUrl || '').trim().slice(0, 2000)
     const published = body?.published !== false
+    if (imageUrl && !isValidImageUrl(imageUrl)) {
+      return NextResponse.json(
+        { success: false, error: 'Image must use an HTTPS URL or a local /public path' },
+        { status: 400 }
+      )
+    }
     if (published && !imageUrl) {
       return NextResponse.json(
         { success: false, error: 'Published services require an image' },
         { status: 400 }
       )
     }
-    if (published && plans.length === 0) {
+    if (published && !plans.some((plan) => plan.published)) {
       return NextResponse.json(
-        { success: false, error: 'Published services require at least one valid plan' },
+        { success: false, error: 'Published services require at least one published plan' },
         { status: 400 }
       )
     }

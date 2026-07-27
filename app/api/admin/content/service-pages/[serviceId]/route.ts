@@ -10,6 +10,10 @@ import { verifyAdminSession } from '@/lib/auth-helpers'
 import { updateServicePage } from '@/lib/prisma-content-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+
+const SERVICE_IDS = new Set(['study-abroad', 'work-abroad', 'global-network'])
 
 // PUT /api/admin/content/service-pages/[serviceId]
 export async function PUT(
@@ -25,18 +29,29 @@ export async function PUT(
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const { allowed, retryAfterMs } = await checkRateLimit(
+      `admin-service-page-write:${session.userId}:${getClientIp(request)}`,
+      { maxRequests: 60, windowMs: 60_000 }
+    )
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     // Resolve params in case it's a Promise (framework version differences)
     const resolvedParams = await Promise.resolve(params)
     const { serviceId } = resolvedParams
 
-    if (!serviceId) {
+    if (!SERVICE_IDS.has(serviceId)) {
       return NextResponse.json(
-        { success: false, error: 'Missing serviceId in route params' },
+        { success: false, error: 'Invalid service page ID' },
         { status: 400 }
       )
     }
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
+    if (JSON.stringify(body).length > 1_000_000) {
+      return NextResponse.json({ success: false, error: 'Content payload is too large' }, { status: 413 })
+    }
 
     // Transform frontend format to database format
     const updateData: any = {

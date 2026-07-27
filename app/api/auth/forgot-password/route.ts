@@ -13,13 +13,17 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
-    const { email } = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
+    const { email } = body
 
     if (!email) {
       return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 })
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase()
+    const normalizedEmail = String(email).trim().toLowerCase().slice(0, 254)
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return NextResponse.json(
         { success: true, message: 'If an account with that email exists, a reset link has been sent.' }

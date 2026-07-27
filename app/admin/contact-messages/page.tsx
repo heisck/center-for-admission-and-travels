@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Mail, MessageSquare, Phone, User, Loader2, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Mail, MessageSquare, Phone, User, Loader2, Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface ContactMessage {
   id: string
@@ -18,13 +18,20 @@ export default function AdminContactMessagesPage() {
   const [messages, setMessages] = useState<ContactMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [unreadCount, setUnreadCount] = useState(0)
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (requestedPage: number) => {
+    setLoading(true)
     try {
-      const res = await fetch('/api/admin/contact-messages', { credentials: 'include' })
+      const res = await fetch(`/api/admin/contact-messages?page=${requestedPage}&limit=20`, { credentials: 'include' })
       const data = await res.json()
       if (data.success) {
-        setMessages(data.data)
+        setMessages(data.data.messages)
+        setPage(data.data.pagination.page)
+        setTotalPages(Math.max(1, data.data.pagination.totalPages))
+        setUnreadCount(data.data.unreadTotal)
       }
     } catch {
       setMessages([])
@@ -34,8 +41,8 @@ export default function AdminContactMessagesPage() {
   }
 
   useEffect(() => {
-    fetchMessages()
-  }, [])
+    fetchMessages(page)
+  }, [page])
 
   const markAsRead = async (id: string) => {
     try {
@@ -48,12 +55,11 @@ export default function AdminContactMessagesPage() {
       const data = await res.json()
       if (data.success) {
         setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, read: true } : m)))
+        setUnreadCount((count) => Math.max(0, count - 1))
         window.dispatchEvent(new Event('admin-notifications-update'))
       }
     } catch {}
   }
-
-  const unreadCount = messages.filter((m) => !m.read).length
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -163,6 +169,29 @@ export default function AdminContactMessagesPage() {
                 )}
               </div>
             ))}
+            {totalPages > 1 ? (
+              <div className="flex items-center justify-between pt-4">
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={page <= 1 || loading}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium disabled:opacity-50"
+                >
+                  <ChevronLeft size={16} /> Previous
+                </button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                  disabled={page >= totalPages || loading}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium disabled:opacity-50"
+                >
+                  Next <ChevronRight size={16} />
+                </button>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

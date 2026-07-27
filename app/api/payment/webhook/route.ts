@@ -71,6 +71,12 @@ export async function POST(request: NextRequest) {
     }
 
     const rawBody = await request.text()
+    if (Buffer.byteLength(rawBody, 'utf8') > 1_000_000) {
+      return NextResponse.json(
+        { success: false, error: 'Webhook payload is too large' },
+        { status: 413 }
+      )
+    }
     const signature = request.headers.get('x-paystack-signature') || ''
 
     if (!signature || !isValidSignature(rawBody, signature, paystackSecret)) {
@@ -92,9 +98,9 @@ export async function POST(request: NextRequest) {
     const { event, data } = body
     const reference = String(data?.reference || '').trim()
 
-    if (!reference) {
+    if (!reference || !/^[A-Za-z0-9_-]{1,128}$/.test(reference)) {
       return NextResponse.json(
-        { success: false, error: 'Missing payment reference' },
+        { success: false, error: 'Missing or invalid payment reference' },
         { status: 400 }
       )
     }

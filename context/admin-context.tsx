@@ -1,6 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { toast } from 'sonner'
 
 export interface AdminContent {
   home: {
@@ -296,6 +297,36 @@ const createEmptyContent = (): AdminContent => ({
 })
 
 const PUBLIC_CONTENT_VERSION_KEY = 'public_content_version'
+const ADMIN_AUTOSAVE_DELAY_MS = 600
+
+type AdminSaveJob = {
+  label: string
+  url: string
+  body: unknown
+  onSuccess?: () => void
+}
+
+type AdminSaveQueue = {
+  timer?: ReturnType<typeof setTimeout>
+  running: boolean
+  latest?: AdminSaveJob
+  promise?: Promise<void>
+}
+
+async function sendAdminJson(url: string, body: unknown, method = 'PUT') {
+  const response = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  const result = await response.json().catch(() => null)
+  if (!response.ok || !result?.success) {
+    throw new Error(result?.error || `Request failed with status ${response.status}`)
+  }
+
+  return result
+}
 
 // Helper function to check if value is an object
 const isObject = (item: any): boolean => {
@@ -371,6 +402,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     { content: createEmptyContent(), timestamp: Date.now() },
   ])
   const [historyIndex, setHistoryIndex] = useState(0)
+  const saveQueuesRef = useRef<Map<string, AdminSaveQueue>>(new Map())
 
   const notifyPublicContentUpdated = useCallback(() => {
     if (typeof window === 'undefined') return
@@ -381,6 +413,74 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       // Cross-tab notification is best effort; the current tab still receives the event below.
     }
     window.dispatchEvent(new CustomEvent('content-updated'))
+  }, [])
+
+  const drainAdminSaveQueue = useCallback(async (key: string) => {
+    const queue = saveQueuesRef.current.get(key)
+    if (!queue) return
+
+    if (queue.timer) {
+      clearTimeout(queue.timer)
+      queue.timer = undefined
+    }
+    if (queue.running) {
+      await queue.promise
+      return
+    }
+
+    queue.running = true
+    queue.promise = (async () => {
+      while (queue.latest) {
+        const job = queue.latest
+        queue.latest = undefined
+        try {
+          await sendAdminJson(job.url, job.body)
+          job.onSuccess?.()
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown save error'
+          console.error(`[Admin autosave] ${job.label} failed:`, error)
+          toast.error(`${job.label} was not saved`, {
+            description: `${message}. Your edits remain on screen; use Save to retry.`,
+          })
+        }
+      }
+    })().finally(() => {
+      queue.running = false
+      queue.promise = undefined
+      if (!queue.latest && !queue.timer) {
+        saveQueuesRef.current.delete(key)
+      }
+    })
+
+    await queue.promise
+  }, [])
+
+  const queueAdminSave = useCallback((
+    key: string,
+    job: AdminSaveJob
+  ) => {
+    const queue = saveQueuesRef.current.get(key) || { running: false }
+    queue.latest = job
+    if (queue.timer) clearTimeout(queue.timer)
+    queue.timer = setTimeout(() => {
+      void drainAdminSaveQueue(key)
+    }, ADMIN_AUTOSAVE_DELAY_MS)
+    saveQueuesRef.current.set(key, queue)
+  }, [drainAdminSaveQueue])
+
+  const flushAdminSaveQueues = useCallback(async () => {
+    const keys = Array.from(saveQueuesRef.current.keys())
+    await Promise.all(keys.map((key) => drainAdminSaveQueue(key)))
+  }, [drainAdminSaveQueue])
+
+  useEffect(() => {
+    const queues = saveQueuesRef.current
+    return () => {
+      for (const queue of queues.values()) {
+        if (queue.timer) clearTimeout(queue.timer)
+      }
+      queues.clear()
+    }
   }, [])
 
   // Load content from database on mount
@@ -465,24 +565,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
-
-    // Sync to database via API
-    try {
-      const response = await fetch('/api/admin/content/home', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hero: newContent.home.hero }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save to database:', result.error)
-        // Could revert here if needed
-      }
-    } catch (error) {
-      console.error('Error syncing to database:', error)
-      // Could revert here if needed
-    }
-  }, [content, updateHistory])
+    queueAdminSave('home', {
+      label: 'Home content',
+      url: '/api/admin/content/home',
+      body: {
+        hero: newContent.home.hero,
+        services: newContent.home.services,
+        featuredPackages: newContent.home.featuredPackages || [],
+      },
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateServices = useCallback(async (services: AdminContent['home']['services']) => {
     // Optimistic update
@@ -494,22 +587,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/home', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ services }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save services:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing services:', error)
-    }
-  }, [content, updateHistory])
+    queueAdminSave('home', {
+      label: 'Home services',
+      url: '/api/admin/content/home',
+      body: {
+        hero: newContent.home.hero,
+        services: newContent.home.services,
+        featuredPackages: newContent.home.featuredPackages || [],
+      },
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateHomeFeaturedPackages = useCallback(async (packageIds: string[]) => {
     const featured = packageIds
@@ -523,23 +611,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
-
-    try {
-      const response = await fetch('/api/admin/content/home', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          featuredPackages: featured,
-        }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save featured packages:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing featured packages:', error)
-    }
-  }, [content, updateHistory])
+    queueAdminSave('home', {
+      label: 'Featured packages',
+      url: '/api/admin/content/home',
+      body: {
+        hero: newContent.home.hero,
+        services: newContent.home.services,
+        featuredPackages: featured,
+      },
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateAbout = useCallback(async (updates: Partial<AdminContent['about']>) => {
     // Optimistic update
@@ -548,22 +630,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       about: { ...content.about, ...updates },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/about', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save about page:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing about page:', error)
-    }
-  }, [content, updateHistory])
+    queueAdminSave('about', {
+      label: 'About page',
+      url: '/api/admin/content/about',
+      body: newContent.about,
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updatePackages = useCallback(async (packages: AdminContent['packages']) => {
     // Optimistic update
@@ -581,24 +654,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     )
     const newContent = { ...content, packages: newPackages }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/packages', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates }),
+    const updatedPackage = newPackages.find((pkg) => pkg.id === id)
+    if (updatedPackage) {
+      queueAdminSave(`package:${id}`, {
+        label: `Package "${updatedPackage.name || 'Untitled'}"`,
+        url: '/api/admin/content/packages',
+        body: updatedPackage,
+        onSuccess: notifyPublicContentUpdated,
       })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save package:', result.error)
-      } else {
-        notifyPublicContentUpdated()
-      }
-    } catch (error) {
-      console.error('Error syncing package:', error)
     }
-  }, [content, notifyPublicContentUpdated, updateHistory])
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const addPackage = useCallback(async (pkg: AdminContent['packages'][0]) => {
     // Optimistic update with temporary client id
@@ -643,9 +708,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         notifyPublicContentUpdated()
       } else {
         console.error('Failed to create package:', result.error)
+        setContent(content)
+        toast.error('Package was not created', {
+          description: result.error || 'The server rejected the package.',
+        })
       }
     } catch (error) {
       console.error('Error creating package:', error)
+      setContent(content)
+      toast.error('Package was not created', {
+        description: error instanceof Error ? error.message : 'Network error',
+      })
     }
   }, [content, notifyPublicContentUpdated, updateHistory])
 
@@ -664,12 +737,18 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       if (!result.success) {
         console.error('Failed to delete package:', result.error)
         setContent(previous)
+        toast.error('Package was not deleted', {
+          description: result.error || 'The server rejected the request.',
+        })
       } else {
         notifyPublicContentUpdated()
       }
     } catch (error) {
       console.error('Error deleting package:', error)
       setContent(previous)
+      toast.error('Package was not deleted', {
+        description: error instanceof Error ? error.message : 'Network error',
+      })
     }
   }, [content, notifyPublicContentUpdated, updateHistory])
 
@@ -691,22 +770,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/travel-tours', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hero: newContent.travelTours.hero }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save travel tours hero:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing travel tours hero:', error)
-    }
-  }, [content, updateHistory])
+    queueAdminSave('travel-tours', {
+      label: 'Travel and tours content',
+      url: '/api/admin/content/travel-tours',
+      body: newContent.travelTours,
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateTravelToursFeatured = useCallback(async (featured: AdminContent['travelTours']['featured']) => {
     // Optimistic update
@@ -715,22 +785,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       travelTours: { ...content.travelTours, featured },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/travel-tours', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ featured }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save travel tours featured:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing travel tours featured:', error)
-    }
-  }, [content, updateHistory])
+    queueAdminSave('travel-tours', {
+      label: 'Travel packages',
+      url: '/api/admin/content/travel-tours',
+      body: newContent.travelTours,
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateTravelToursBenefits = useCallback(async (benefits: AdminContent['travelTours']['benefits']) => {
     // Optimistic update
@@ -739,22 +800,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       travelTours: { ...content.travelTours, benefits },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/travel-tours', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ benefits }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save travel tours benefits:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing travel tours benefits:', error)
-    }
-  }, [content, updateHistory])
+    queueAdminSave('travel-tours', {
+      label: 'Travel benefits',
+      url: '/api/admin/content/travel-tours',
+      body: newContent.travelTours,
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateTravelToursGalleryImages = useCallback(async (images: string[]) => {
     // Optimistic update
@@ -763,24 +815,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       travelTours: { ...content.travelTours, galleryImages: images },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/travel-tours', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ galleryImages: images }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save travel tours gallery images:', result.error)
-      } else {
-        notifyPublicContentUpdated()
-      }
-    } catch (error) {
-      console.error('Error syncing travel tours gallery images:', error)
-    }
-  }, [content, notifyPublicContentUpdated, updateHistory])
+    queueAdminSave('travel-tours', {
+      label: 'Travel gallery',
+      url: '/api/admin/content/travel-tours',
+      body: newContent.travelTours,
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateHomeHeroImages = useCallback(async (images: string[]) => {
     // Optimistic update
@@ -792,24 +833,17 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/home', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hero: { ...content.home.hero, images } }),
-      })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save home hero images:', result.error)
-      } else {
-        notifyPublicContentUpdated()
-      }
-    } catch (error) {
-      console.error('Error syncing home hero images:', error)
-    }
-  }, [content, notifyPublicContentUpdated, updateHistory])
+    queueAdminSave('home', {
+      label: 'Home hero images',
+      url: '/api/admin/content/home',
+      body: {
+        hero: newContent.home.hero,
+        services: newContent.home.services,
+        featuredPackages: newContent.home.featuredPackages || [],
+      },
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const undo = useCallback(() => {
     if (historyIndex > 0) {
@@ -834,24 +868,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       contact: { ...content.contact, ...updates },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/contact', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      })
-      const result = await response.json()
-      if (result.success) {
-        notifyPublicContentUpdated()
-      } else if (!result.success) {
-        console.error('Failed to save contact info:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing contact info:', error)
-    }
-  }, [content, notifyPublicContentUpdated, updateHistory])
+    queueAdminSave('contact', {
+      label: 'Contact information',
+      url: '/api/admin/content/contact',
+      body: newContent.contact,
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateFooter = useCallback(async (updates: Partial<AdminContent['footer']>) => {
     // Optimistic update
@@ -860,24 +883,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       footer: { ...content.footer, ...updates },
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch('/api/admin/content/footer', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      })
-      const result = await response.json()
-      if (result.success) {
-        notifyPublicContentUpdated()
-      } else if (!result.success) {
-        console.error('Failed to save footer info:', result.error)
-      }
-    } catch (error) {
-      console.error('Error syncing footer info:', error)
-    }
-  }, [content, notifyPublicContentUpdated, updateHistory])
+    queueAdminSave('footer', {
+      label: 'Footer information',
+      url: '/api/admin/content/footer',
+      body: newContent.footer,
+      onSuccess: notifyPublicContentUpdated,
+    })
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const updateServicePage = useCallback(async (serviceId: string, updates: Partial<AdminContent['servicePages'][0]>) => {
     // Optimistic update
@@ -889,29 +901,24 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       servicePages: newServicePages,
     }
     updateHistory(newContent)
-
-    // Sync to database
-    try {
-      const response = await fetch(`/api/admin/content/service-pages/${serviceId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+    const service = newServicePages.find((item) => item.id === serviceId)
+    if (service) {
+      queueAdminSave(`service-page:${serviceId}`, {
+        label: `${service.title || 'Service'} page`,
+        url: `/api/admin/content/service-pages/${serviceId}`,
+        body: service,
+        onSuccess: notifyPublicContentUpdated,
       })
-      const result = await response.json()
-      if (!result.success) {
-        console.error('Failed to save service page:', result.error)
-      } else {
-        // Refresh public site cache so destination carousel picks up new images/text
-        notifyPublicContentUpdated()
-      }
-    } catch (error) {
-      console.error('Error syncing service page:', error)
     }
-  }, [content, notifyPublicContentUpdated, updateHistory])
+  }, [content, notifyPublicContentUpdated, queueAdminSave, updateHistory])
 
   const saveAll = useCallback(async () => {
     setIsSaving(true)
     try {
+      // Serialize behind any in-flight autosaves so an older response can never
+      // overwrite this explicit full-state save.
+      await flushAdminSaveQueues()
+
       // Save all sections to database with section names for error tracking
       const savePromises: Array<{ name: string; promise: Promise<Response> }> = [
         // Home
@@ -1052,22 +1059,27 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           `• ${f.name}: ${f.error}`
         ).join('\n')
         console.error('Failed sections:', errorDetails)
-        alert(`Saved with ${failures.length} error(s). Check console (F12) for details.\n\nFailed sections:\n${errorDetails}`)
+        toast.error(`Save failed for ${failures.length} section(s)`, {
+          description: errorDetails,
+          duration: 10_000,
+        })
       } else {
         // Clear undo/redo history after successful save
         const newHistory = [{ content, timestamp: Date.now() }]
         setHistory(newHistory)
         setHistoryIndex(0)
         notifyPublicContentUpdated()
-        alert('All changes saved successfully!')
+        toast.success('All changes saved successfully')
       }
     } catch (error) {
       console.error('Error saving all changes:', error)
-      alert('Failed to save changes. Please try again.')
+      toast.error('Failed to save changes', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
     } finally {
       setIsSaving(false)
     }
-  }, [content, notifyPublicContentUpdated])
+  }, [content, flushAdminSaveQueues, notifyPublicContentUpdated])
 
   return (
     <AdminContext.Provider

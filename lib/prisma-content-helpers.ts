@@ -71,17 +71,18 @@ export async function updateHomeHeroImages(images: string[]) {
   const nextSet = new Set(nextUrls)
   const removed = previous.map((row) => row.url).filter((url) => !nextSet.has(url))
 
-  await prisma.homeHeroImage.deleteMany({ where: { homePageId: 'home' } })
-
-  if (nextUrls.length > 0) {
-    await prisma.homeHeroImage.createMany({
-      data: nextUrls.map((url, index) => ({
-        homePageId: 'home',
-        url,
-        order: index,
-      })),
-    })
-  }
+  await prisma.$transaction(async (tx) => {
+    await tx.homeHeroImage.deleteMany({ where: { homePageId: 'home' } })
+    if (nextUrls.length > 0) {
+      await tx.homeHeroImage.createMany({
+        data: nextUrls.map((url, index) => ({
+          homePageId: 'home',
+          url,
+          order: index,
+        })),
+      })
+    }
+  })
 
   scheduleCloudinaryCleanup(removed)
 }
@@ -92,14 +93,18 @@ export async function updateHomeStats(stats: Array<{ value: string; label: strin
     await prisma.homePage.create({ data: { id: 'home', heroTitle: '', heroCta1Text: '', heroCta2Text: '' } })
   }
 
-  await prisma.homeStat.deleteMany({ where: { homePageId: 'home' } })
-  await prisma.homeStat.createMany({
-    data: stats.map((stat, index) => ({
-      homePageId: 'home',
-      value: stat.value,
-      label: stat.label,
-      order: index,
-    })),
+  await prisma.$transaction(async (tx) => {
+    await tx.homeStat.deleteMany({ where: { homePageId: 'home' } })
+    if (stats.length > 0) {
+      await tx.homeStat.createMany({
+        data: stats.map((stat, index) => ({
+          homePageId: 'home',
+          value: stat.value,
+          label: stat.label,
+          order: index,
+        })),
+      })
+    }
   })
 }
 
@@ -121,11 +126,12 @@ export async function updateHomeServices(services: Array<{ id?: string; icon: st
   }
 
   // Delete existing services
-  await prisma.homeService.deleteMany({ where: { homePageId: 'home' } })
+  await prisma.$transaction(async (tx) => {
+    await tx.homeService.deleteMany({ where: { homePageId: 'home' } })
 
   // Create new services — always store a stable route when possible.
   // Title text is free-form; links must not depend on the title string.
-  await prisma.homeService.createMany({
+    if (services.length > 0) await tx.homeService.createMany({
     data: services.map((svc, index) => {
       const rawRoute = (svc.route || '').trim()
       const route =
@@ -142,6 +148,7 @@ export async function updateHomeServices(services: Array<{ id?: string; icon: st
         order: index,
       }
     }),
+    })
   })
 }
 
@@ -151,17 +158,18 @@ export async function updateHomeFeaturedPackages(packageIds: string[]) {
     await prisma.homePage.create({ data: { id: 'home', heroTitle: '', heroCta1Text: '', heroCta2Text: '' } })
   }
 
-  await prisma.homeFeaturedPackage.deleteMany({ where: { homePageId: 'home' } })
-
-  if (packageIds.length > 0) {
-    await prisma.homeFeaturedPackage.createMany({
-      data: packageIds.map((packageId, index) => ({
-        homePageId: 'home',
-        packageId,
-        order: index,
-      })),
-    })
-  }
+  await prisma.$transaction(async (tx) => {
+    await tx.homeFeaturedPackage.deleteMany({ where: { homePageId: 'home' } })
+    if (packageIds.length > 0) {
+      await tx.homeFeaturedPackage.createMany({
+        data: packageIds.map((packageId, index) => ({
+          homePageId: 'home',
+          packageId,
+          order: index,
+        })),
+      })
+    }
+  })
 }
 
 // ============================================================================
@@ -217,13 +225,17 @@ export async function updateAboutMission(data: { title?: string; description?: s
   })
 
   if (data.points) {
-    await prisma.aboutMissionPoint.deleteMany({ where: { missionId: mission.id } })
-    await prisma.aboutMissionPoint.createMany({
-      data: data.points.map((text, index) => ({
-        missionId: mission.id,
-        text,
-        order: index,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.aboutMissionPoint.deleteMany({ where: { missionId: mission.id } })
+      if (data.points!.length > 0) {
+        await tx.aboutMissionPoint.createMany({
+          data: data.points!.map((text, index) => ({
+            missionId: mission.id,
+            text,
+            order: index,
+          })),
+        })
+      }
     })
   }
 }
@@ -245,13 +257,17 @@ export async function updateAboutVision(data: { title?: string; description?: st
   })
 
   if (data.points) {
-    await prisma.aboutVisionPoint.deleteMany({ where: { visionId: vision.id } })
-    await prisma.aboutVisionPoint.createMany({
-      data: data.points.map((text, index) => ({
-        visionId: vision.id,
-        text,
-        order: index,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.aboutVisionPoint.deleteMany({ where: { visionId: vision.id } })
+      if (data.points!.length > 0) {
+        await tx.aboutVisionPoint.createMany({
+          data: data.points!.map((text, index) => ({
+            visionId: vision.id,
+            text,
+            order: index,
+          })),
+        })
+      }
     })
   }
 }
@@ -262,14 +278,18 @@ export async function updateAboutCoreValues(values: Array<{ id?: string; title: 
     await prisma.aboutPage.create({ data: { id: 'about', heroTitle: '', heroSubtitle: '', heroImageUrl: '' } })
   }
 
-  await prisma.aboutCoreValue.deleteMany({ where: { aboutPageId: 'about' } })
-  await prisma.aboutCoreValue.createMany({
-    data: values.map((val, index) => ({
-      aboutPageId: 'about',
-      title: val.title,
-      description: val.description,
-      order: index,
-    })),
+  await prisma.$transaction(async (tx) => {
+    await tx.aboutCoreValue.deleteMany({ where: { aboutPageId: 'about' } })
+    if (values.length > 0) {
+      await tx.aboutCoreValue.createMany({
+        data: values.map((val, index) => ({
+          aboutPageId: 'about',
+          title: val.title,
+          description: val.description,
+          order: index,
+        })),
+      })
+    }
   })
 }
 
@@ -334,19 +354,21 @@ export async function updateAboutTeamMembers(members: Array<{ id?: string; name:
     nextUrls
   )
 
-  await prisma.aboutTeamMember.deleteMany({ where: { aboutPageId: 'about' } })
-  if (members.length > 0) {
-    await prisma.aboutTeamMember.createMany({
-      data: members.map((member, index) => ({
-        aboutPageId: 'about',
-        name: member.name,
-        role: member.role,
-        imageUrl: member.imageUrl || '',
-        description: member.description || '',
-        order: index,
-      })),
-    })
-  }
+  await prisma.$transaction(async (tx) => {
+    await tx.aboutTeamMember.deleteMany({ where: { aboutPageId: 'about' } })
+    if (members.length > 0) {
+      await tx.aboutTeamMember.createMany({
+        data: members.map((member, index) => ({
+          aboutPageId: 'about',
+          name: member.name,
+          role: member.role,
+          imageUrl: member.imageUrl || '',
+          description: member.description || '',
+          order: index,
+        })),
+      })
+    }
+  })
 
   scheduleCloudinaryCleanup(removed)
 }
@@ -357,15 +379,19 @@ export async function updateAboutSuccessStories(stories: Array<{ id?: string; na
     await prisma.aboutPage.create({ data: { id: 'about', heroTitle: '', heroSubtitle: '', heroImageUrl: '' } })
   }
 
-  await prisma.aboutSuccessStory.deleteMany({ where: { aboutPageId: 'about' } })
-  await prisma.aboutSuccessStory.createMany({
-    data: stories.map((story, index) => ({
-      aboutPageId: 'about',
-      name: story.name,
-      program: story.program,
-      quote: story.quote,
-      order: index,
-    })),
+  await prisma.$transaction(async (tx) => {
+    await tx.aboutSuccessStory.deleteMany({ where: { aboutPageId: 'about' } })
+    if (stories.length > 0) {
+      await tx.aboutSuccessStory.createMany({
+        data: stories.map((story, index) => ({
+          aboutPageId: 'about',
+          name: story.name,
+          program: story.program,
+          quote: story.quote,
+          order: index,
+        })),
+      })
+    }
   })
 }
 
@@ -593,38 +619,35 @@ export async function updateTravelToursFeaturedPackages(featured: Array<{
     nextImages
   )
 
-  // Delete existing featured packages (cascade will delete highlights)
-  await prisma.travelToursFeaturedPackage.deleteMany({ where: { pageId: 'travel-tours' } })
-
-  // Create new featured packages with highlights
-  for (const [index, fp] of featured.entries()) {
-    const featuredPkg = await prisma.travelToursFeaturedPackage.create({
-      data: {
-        pageId: 'travel-tours',
-        name: (fp.name || '').trim() || `Package ${index + 1}`,
-        description: (fp.description || '').trim(),
-        duration: (fp.duration || '').trim() || 'TBD',
-        price: Number(fp.price) || 0,
-        currency: fp.currency || 'GHS',
-        imageUrl: (fp.image || '').trim() || '/placeholder.jpg',
-        order: index,
-      },
-    })
-
-    // Create highlights
-    if (fp.highlights && fp.highlights.length > 0) {
-      await prisma.travelToursHighlight.createMany({
-        data: fp.highlights
-          .map((text) => String(text || '').trim())
-          .filter(Boolean)
-          .map((text, hIndex) => ({
-            packageId: featuredPkg.id,
-            text,
-            order: hIndex,
-          })),
+  await prisma.$transaction(async (tx) => {
+    await tx.travelToursFeaturedPackage.deleteMany({ where: { pageId: 'travel-tours' } })
+    for (const [index, fp] of featured.entries()) {
+      const featuredPkg = await tx.travelToursFeaturedPackage.create({
+        data: {
+          pageId: 'travel-tours',
+          name: (fp.name || '').trim() || `Package ${index + 1}`,
+          description: (fp.description || '').trim(),
+          duration: (fp.duration || '').trim() || 'TBD',
+          price: Number(fp.price) || 0,
+          currency: fp.currency || 'GHS',
+          imageUrl: (fp.image || '').trim() || '/placeholder.jpg',
+          order: index,
+        },
       })
+
+      const highlights = (fp.highlights || [])
+        .map((text) => String(text || '').trim())
+        .filter(Boolean)
+        .map((text, hIndex) => ({
+          packageId: featuredPkg.id,
+          text,
+          order: hIndex,
+        }))
+      if (highlights.length > 0) {
+        await tx.travelToursHighlight.createMany({ data: highlights })
+      }
     }
-  }
+  })
 
   scheduleCloudinaryCleanup(removed)
 }
@@ -653,17 +676,18 @@ export async function updateTravelToursGalleryImages(images: string[]) {
   const nextSet = new Set(nextUrls)
   const removed = previous.map((row) => row.url).filter((url) => !nextSet.has(url))
 
-  await prisma.travelToursGalleryImage.deleteMany({ where: { pageId: 'travel-tours' } })
-
-  if (nextUrls.length > 0) {
-    await prisma.travelToursGalleryImage.createMany({
-      data: nextUrls.map((url, index) => ({
-        pageId: 'travel-tours',
-        url,
-        order: index,
-      })),
-    })
-  }
+  await prisma.$transaction(async (tx) => {
+    await tx.travelToursGalleryImage.deleteMany({ where: { pageId: 'travel-tours' } })
+    if (nextUrls.length > 0) {
+      await tx.travelToursGalleryImage.createMany({
+        data: nextUrls.map((url, index) => ({
+          pageId: 'travel-tours',
+          url,
+          order: index,
+        })),
+      })
+    }
+  })
 
   scheduleCloudinaryCleanup(removed)
 }
@@ -683,19 +707,20 @@ export async function updateTravelToursBenefits(benefits: Array<{
     })
   }
 
-  // Delete existing benefits
-  await prisma.travelToursBenefit.deleteMany({
-    where: { pageId: 'travel-tours' },
-  })
-
-  // Create new benefits
-  await prisma.travelToursBenefit.createMany({
-    data: benefits.map((b, index) => ({
-      pageId: 'travel-tours',
-      title: b.title,
-      description: b.description,
-      order: index,
-    })),
+  await prisma.$transaction(async (tx) => {
+    await tx.travelToursBenefit.deleteMany({
+      where: { pageId: 'travel-tours' },
+    })
+    if (benefits.length > 0) {
+      await tx.travelToursBenefit.createMany({
+        data: benefits.map((b, index) => ({
+          pageId: 'travel-tours',
+          title: b.title,
+          description: b.description,
+          order: index,
+        })),
+      })
+    }
   })
 }
 
@@ -776,36 +801,49 @@ export async function updateServicePage(serviceId: string, data: {
     })
 
     if (data.whyStudyOutsideThisCountry.highlights) {
-      await prisma.serviceWhyStudyHighlight.deleteMany({ where: { sectionId: whyStudySection.id } })
-      await prisma.serviceWhyStudyHighlight.createMany({
-        data: data.whyStudyOutsideThisCountry.highlights.map((text, index) => ({
-          sectionId: whyStudySection.id,
-          text,
-          order: index,
-        })),
+      const highlights = data.whyStudyOutsideThisCountry.highlights
+      await prisma.$transaction(async (tx) => {
+        await tx.serviceWhyStudyHighlight.deleteMany({ where: { sectionId: whyStudySection.id } })
+        if (highlights.length > 0) {
+          await tx.serviceWhyStudyHighlight.createMany({
+            data: highlights.map((text, index) => ({
+              sectionId: whyStudySection.id,
+              text,
+              order: index,
+            })),
+          })
+        }
       })
     }
   }
 
   if (data.benefits) {
-    await prisma.serviceBenefit.deleteMany({ where: { servicePageId: service.id } })
-    await prisma.serviceBenefit.createMany({
-      data: data.benefits.map((text, index) => ({
-        servicePageId: service.id,
-        text,
-        order: index,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.serviceBenefit.deleteMany({ where: { servicePageId: service.id } })
+      if (data.benefits!.length > 0) {
+        await tx.serviceBenefit.createMany({
+          data: data.benefits!.map((text, index) => ({
+            servicePageId: service.id,
+            text,
+            order: index,
+          })),
+        })
+      }
     })
   }
 
   if (data.requirements) {
-    await prisma.serviceRequirement.deleteMany({ where: { servicePageId: service.id } })
-    await prisma.serviceRequirement.createMany({
-      data: data.requirements.map((text, index) => ({
-        servicePageId: service.id,
-        text,
-        order: index,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.serviceRequirement.deleteMany({ where: { servicePageId: service.id } })
+      if (data.requirements!.length > 0) {
+        await tx.serviceRequirement.createMany({
+          data: data.requirements!.map((text, index) => ({
+            servicePageId: service.id,
+            text,
+            order: index,
+          })),
+        })
+      }
     })
   }
 
@@ -823,43 +861,53 @@ export async function updateServicePage(serviceId: string, data: {
     const nextCountryImages = data.countries.map((c) => c.image)
     removedCountryImages = diffRemovedUrls(previousCountryImages, nextCountryImages)
 
-    await prisma.serviceCountry.deleteMany({ where: { servicePageId: service.id } })
-    if (data.countries.length > 0) {
-      await prisma.serviceCountry.createMany({
-        data: data.countries.map((country, index) => ({
-          servicePageId: service.id,
-          name: country.name,
-          description: country.description,
-          imageUrl: country.image || '/placeholder.jpg',
-          order: index,
-        })),
-      })
-    }
+    await prisma.$transaction(async (tx) => {
+      await tx.serviceCountry.deleteMany({ where: { servicePageId: service.id } })
+      if (data.countries!.length > 0) {
+        await tx.serviceCountry.createMany({
+          data: data.countries!.map((country, index) => ({
+            servicePageId: service.id,
+            name: country.name,
+            description: country.description,
+            imageUrl: country.image || '/placeholder.jpg',
+            order: index,
+          })),
+        })
+      }
+    })
   }
 
   if (data.successStories) {
-    await prisma.serviceSuccessStory.deleteMany({ where: { servicePageId: service.id } })
-    await prisma.serviceSuccessStory.createMany({
-      data: data.successStories.map((story, index) => ({
-        servicePageId: service.id,
-        name: story.name,
-        program: story.program,
-        quote: story.quote,
-        order: index,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.serviceSuccessStory.deleteMany({ where: { servicePageId: service.id } })
+      if (data.successStories!.length > 0) {
+        await tx.serviceSuccessStory.createMany({
+          data: data.successStories!.map((story, index) => ({
+            servicePageId: service.id,
+            name: story.name,
+            program: story.program,
+            quote: story.quote,
+            order: index,
+          })),
+        })
+      }
     })
   }
 
   if (data.scholarships) {
-    await prisma.serviceScholarship.deleteMany({ where: { servicePageId: service.id } })
-    await prisma.serviceScholarship.createMany({
-      data: data.scholarships.map((scholarship, index) => ({
-        servicePageId: service.id,
-        name: scholarship.name,
-        amount: scholarship.amount,
-        description: scholarship.description,
-        order: index,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.serviceScholarship.deleteMany({ where: { servicePageId: service.id } })
+      if (data.scholarships!.length > 0) {
+        await tx.serviceScholarship.createMany({
+          data: data.scholarships!.map((scholarship, index) => ({
+            servicePageId: service.id,
+            name: scholarship.name,
+            amount: scholarship.amount,
+            description: scholarship.description,
+            order: index,
+          })),
+        })
+      }
     })
   }
 
@@ -933,14 +981,18 @@ export async function updateFooterInfo(data: {
       })
       .filter(Boolean) as Array<{ platform: string; url: string }>
 
-    await prisma.footerSocialLink.deleteMany({ where: { footerInfoId: footer.id } })
-    await prisma.footerSocialLink.createMany({
-      data: normalizedLinks.map((link, index) => ({
-        footerInfoId: footer.id,
-        platform: link.platform,
-        url: link.url,
-        order: index,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.footerSocialLink.deleteMany({ where: { footerInfoId: footer.id } })
+      if (normalizedLinks.length > 0) {
+        await tx.footerSocialLink.createMany({
+          data: normalizedLinks.map((link, index) => ({
+            footerInfoId: footer.id,
+            platform: link.platform,
+            url: link.url,
+            order: index,
+          })),
+        })
+      }
     })
   }
 

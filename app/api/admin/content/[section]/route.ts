@@ -15,6 +15,8 @@ import { verifyAdminSession } from '@/lib/auth-helpers'
 import * as contentHelpers from '@/lib/prisma-content-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 type UrlRow = { url: string }
 type FeaturedPackageRow = { package: unknown }
@@ -170,11 +172,22 @@ export async function PUT(
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const { allowed, retryAfterMs } = await checkRateLimit(
+      `admin-content-write:${session.userId}:${getClientIp(request)}`,
+      { maxRequests: 120, windowMs: 60_000 }
+    )
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
     // Handle both Promise and direct params (Next.js 15+ vs 14)
     const resolvedParams = await Promise.resolve(params)
     const { section } = resolvedParams
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
+    if (JSON.stringify(body).length > 1_000_000) {
+      return NextResponse.json({ success: false, error: 'Content payload is too large' }, { status: 413 })
+    }
 
     // Update database using Prisma
     switch (section) {
@@ -194,6 +207,9 @@ export async function PUT(
             await contentHelpers.updateHomeStats(body.hero.stats)
           }
         }
+        if (body.services !== undefined && !Array.isArray(body.services)) {
+          return NextResponse.json({ success: false, error: 'Services must be an array' }, { status: 400 })
+        }
         if (body.services) {
           await contentHelpers.updateHomeServices(body.services)
         }
@@ -203,7 +219,11 @@ export async function PUT(
         }
         break
       case 'about':
-        if (body.heroTitle || body.heroSubtitle || body.heroImage) {
+        if (
+          body.heroTitle !== undefined ||
+          body.heroSubtitle !== undefined ||
+          body.heroImage !== undefined
+        ) {
           await contentHelpers.updateAboutPage({
             heroTitle: body.heroTitle,
             heroSubtitle: body.heroSubtitle,
@@ -240,7 +260,7 @@ export async function PUT(
         }
         // Only update team if explicitly provided and not empty
         // This prevents accidentally deleting team members when updating other fields
-        if (body.team && Array.isArray(body.team) && body.team.length > 0) {
+        if (Array.isArray(body.team)) {
           await contentHelpers.updateAboutTeamMembers(
             body.team.map((tm: any) => ({
               name: tm.name,
@@ -262,9 +282,10 @@ export async function PUT(
         }
         break
       case 'packages':
-        // Handle package updates (create/update/delete)
-        // This would need more specific endpoints for individual packages
-        break
+        return NextResponse.json(
+          { success: false, error: 'Use /api/admin/content/packages for package changes' },
+          { status: 405 }
+        )
       case 'travel-tours':
         if (body.hero) {
           await contentHelpers.updateTravelToursPage({
@@ -288,9 +309,10 @@ export async function PUT(
         }
         break
       case 'service-pages':
-        // Service pages are updated individually by serviceId
-        // This would need a nested route like /api/admin/content/service-pages/[serviceId]
-        break
+        return NextResponse.json(
+          { success: false, error: 'Service pages must be updated by service ID' },
+          { status: 405 }
+        )
       case 'contact':
         const latitude =
           body.location?.latitude !== undefined && body.location?.latitude !== null && body.location?.latitude !== ''

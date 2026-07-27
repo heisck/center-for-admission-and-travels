@@ -73,7 +73,7 @@ function AdminResetPasswordContent() {
       const res = await fetch('/api/admin/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password: password.trim() }),
+        body: JSON.stringify({ token, password }),
       })
       const data = await res.json()
       if (data.success) {

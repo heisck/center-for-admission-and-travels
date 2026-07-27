@@ -7,11 +7,19 @@ import {
 } from '@/lib/admin-google-oauth'
 import { buildGoogleAuthorizationUrl } from '@/lib/google-oauth'
 import { createSessionToken } from '@/lib/user-auth'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const { allowed, retryAfterMs } = await checkRateLimit(`admin-google-oauth-start:${getClientIp(request)}`, {
+      maxRequests: 20,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
+
     const state = createSessionToken()
     const googleUrl = buildGoogleAuthorizationUrl(request, state, ADMIN_GOOGLE_OAUTH_CALLBACK_PATH)
     const response = NextResponse.redirect(googleUrl)

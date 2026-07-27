@@ -8,6 +8,7 @@ import { getSupportContact } from '@/lib/support-contact'
 import { getClientIp } from '@/lib/security'
 import { createResetTokenPair } from '@/lib/reset-token'
 import { getBaseUrl } from '@/lib/url'
+import { validatePassword } from '@/lib/password-policy'
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
@@ -15,7 +16,10 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { username, email, password, displayName } = body ?? {}
 
     if (!username || !email || !password) {
@@ -25,16 +29,20 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = String(email).trim().toLowerCase()
     const normalizedUsername = String(username).trim().toLowerCase()
 
-    if (normalizedUsername.length < 3) {
-      return NextResponse.json({ success: false, error: 'Username must be at least 3 characters' }, { status: 400 })
+    if (!/^[a-z0-9_]{3,30}$/.test(normalizedUsername)) {
+      return NextResponse.json(
+        { success: false, error: 'Username must be 3-30 characters using letters, numbers, or underscores' },
+        { status: 400 }
+      )
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return NextResponse.json({ success: false, error: 'Valid email is required' }, { status: 400 })
     }
 
-    if (String(password).length < 8) {
-      return NextResponse.json({ success: false, error: 'Password must be at least 8 characters' }, { status: 400 })
+    const passwordResult = validatePassword(password)
+    if (!passwordResult.password) {
+      return NextResponse.json({ success: false, error: passwordResult.error }, { status: 400 })
     }
 
     const existing = await prisma.user.findFirst({
@@ -48,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Email or username already in use' }, { status: 409 })
     }
 
-    const passwordHash = await hashPassword(String(password))
+    const passwordHash = await hashPassword(passwordResult.password)
     const { token: verificationToken, tokenHash: verificationTokenHash } = createResetTokenPair()
     const verificationTokenExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24)
 

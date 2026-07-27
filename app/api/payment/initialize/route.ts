@@ -64,7 +64,10 @@ export async function POST(request: NextRequest) {
     })
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const {
       packageId,
       servicePlanId,
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    if (String(email).length > 254 || !emailRegex.test(String(email))) {
       return NextResponse.json(
         { success: false, error: 'Invalid email address' },
         { status: 400 }
@@ -142,12 +145,9 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedIdempotencyKey = String(idempotencyKey || '').trim()
-    if (
-      normalizedIdempotencyKey &&
-      !/^[A-Za-z0-9_\-.]{16,100}$/.test(normalizedIdempotencyKey)
-    ) {
+    if (!/^[A-Za-z0-9_\-.]{16,100}$/.test(normalizedIdempotencyKey)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid payment attempt key' },
+        { success: false, error: 'A valid payment attempt key is required' },
         { status: 400 }
       )
     }
@@ -305,90 +305,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const reusablePendingPayment = await prisma.payment.findFirst({
-      where: {
-        userId: user.id,
-        packageId: packageData.id,
-        status: { in: ['pending', 'processing'] },
-        createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60 * 24) },
-      },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        reference: true,
-        amount: true,
-        amountMinor: true,
-        currency: true,
-        paystackData: true,
-      },
-    })
-
-    const reusablePaystackData = reusablePendingPayment?.paystackData as any
-    if (
-      reusablePendingPayment &&
-      (reusablePendingPayment.amountMinor || toMinorUnits(Number(reusablePendingPayment.amount), currency)) === amountInMinor &&
-      normalizeCurrency(reusablePendingPayment.currency) === currency &&
-      reusablePaystackData?.authorization_url &&
-      reusablePaystackData?.access_code
-    ) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          authorizationUrl: reusablePaystackData.authorization_url,
-          accessCode: reusablePaystackData.access_code,
-          reference: reusablePendingPayment.reference,
-          currency,
-          amount: finalAmount,
-          reused: true,
-        },
-      })
-    }
-
-    if (normalizedIdempotencyKey) {
-      const existingPayment = await prisma.payment.findFirst({
-        where: {
-          userId: user.id,
-          packageId: packageData.id,
-          paymentMethod: normalizedPaymentMethod,
-          status: { in: ['pending', 'processing'] },
-          metadata: {
-            path: ['checkoutId'],
-            equals: normalizedIdempotencyKey,
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        select: {
-          reference: true,
-          amount: true,
-          amountMinor: true,
-          currency: true,
-          paystackData: true,
-        },
-      })
-
-      const existingPaystackData = existingPayment?.paystackData as any
-      if (
-        existingPayment &&
-        (existingPayment.amountMinor || toMinorUnits(Number(existingPayment.amount), currency)) === amountInMinor &&
-        normalizeCurrency(existingPayment.currency) === currency &&
-        existingPaystackData?.authorization_url &&
-        existingPaystackData?.access_code
-      ) {
-        return NextResponse.json({
-          success: true,
-          data: {
-            authorizationUrl: existingPaystackData.authorization_url,
-            accessCode: existingPaystackData.access_code,
-            reference: existingPayment.reference,
-            currency,
-            amount: finalAmount,
-            reused: true,
-          },
-        })
-      }
-    }
-
     // Generate unique reference
     const reference = `CAT_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`
+    const billingAddress = String(metadata?.address || '').trim().slice(0, 500) || null
+    const billingCity = String(metadata?.city || '').trim().slice(0, 120) || null
+    const billingCountry = String(metadata?.country || '').trim().slice(0, 120) || null
+    const momoPhone = String(metadata?.momoPhone || '').trim().slice(0, 40) || null
+    const momoNetwork = String(metadata?.momoNetwork || '').trim().slice(0, 40) || null
 
     // Prepare metadata for Paystack
     const paystackMetadata: any = {
@@ -406,23 +329,127 @@ export async function POST(request: NextRequest) {
       paymentMethod: normalizedPaymentMethod,
       expectedAmountMinor: amountInMinor,
       expectedCurrency: currency,
-      checkoutId: normalizedIdempotencyKey || null,
+      checkoutId: normalizedIdempotencyKey,
     }
 
     // Add billing address if provided (for card payments)
-    if (metadata?.address) {
-      paystackMetadata.billingAddress = metadata.address
-      paystackMetadata.billingCity = metadata.city || null
-      paystackMetadata.billingCountry = metadata.country || null
+    if (billingAddress) {
+      paystackMetadata.billingAddress = billingAddress
+      paystackMetadata.billingCity = billingCity
+      paystackMetadata.billingCountry = billingCountry
     }
 
     // Add mobile money details if provided
-    if (metadata?.momoPhone) {
-      paystackMetadata.momoPhone = metadata.momoPhone
-      paystackMetadata.momoNetwork = metadata.momoNetwork || null
+    if (momoPhone) {
+      paystackMetadata.momoPhone = momoPhone
+      paystackMetadata.momoNetwork = momoNetwork
     }
 
     // Initialize payment with Paystack — amount in minor units + package currency
+    const paymentMetadata = {
+      itemType: packageData.itemType,
+      itemName: packageData.name,
+      packageName: packageData.itemType === 'package' ? packageData.name : null,
+      serviceId: packageData.serviceId || null,
+      serviceName: packageData.serviceName || null,
+      servicePlanId: packageData.servicePlanId || null,
+      planName: packageData.planName || null,
+      duration: packageData.duration || null,
+      billingAddress,
+      billingCity,
+      billingCountry,
+      momoPhone,
+      momoNetwork,
+      expectedAmountMinor: amountInMinor,
+      expectedCurrency: currency,
+      checkoutId: normalizedIdempotencyKey,
+    }
+
+    // Reserve the unique checkout before contacting Paystack. The unique
+    // checkoutId closes the double-submit race across multiple server instances.
+    let reservedPayment: { id: string; reference: string }
+    try {
+      reservedPayment = await prisma.payment.create({
+        data: {
+          reference,
+          checkoutId: normalizedIdempotencyKey,
+          amount: finalAmount,
+          amountMinor: amountInMinor,
+          currency,
+          status: 'processing',
+          paymentMethod: normalizedPaymentMethod,
+          customerEmail,
+          customerName,
+          customerPhone: normalizedPhone,
+          packageId: packageData.id,
+          userId: user.id,
+          metadata: paymentMetadata,
+        },
+        select: { id: true, reference: true },
+      })
+    } catch (reservationError: any) {
+      if (reservationError?.code !== 'P2002') throw reservationError
+
+      const existingPayment = await prisma.payment.findUnique({
+        where: { checkoutId: normalizedIdempotencyKey },
+        select: {
+          userId: true,
+          packageId: true,
+          paymentMethod: true,
+          status: true,
+          reference: true,
+          amount: true,
+          amountMinor: true,
+          currency: true,
+          paystackData: true,
+        },
+      })
+
+      if (
+        !existingPayment ||
+        existingPayment.userId !== user.id ||
+        existingPayment.packageId !== packageData.id ||
+        existingPayment.paymentMethod !== normalizedPaymentMethod ||
+        (existingPayment.amountMinor || toMinorUnits(Number(existingPayment.amount), currency)) !== amountInMinor ||
+        normalizeCurrency(existingPayment.currency) !== currency
+      ) {
+        return NextResponse.json(
+          { success: false, error: 'This payment attempt key is already in use' },
+          { status: 409 }
+        )
+      }
+
+      const existingData = existingPayment.paystackData as any
+      if (
+        ['pending', 'processing'].includes(existingPayment.status) &&
+        existingData?.authorization_url &&
+        existingData?.access_code
+      ) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            authorizationUrl: existingData.authorization_url,
+            accessCode: existingData.access_code,
+            reference: existingPayment.reference,
+            currency,
+            amount: finalAmount,
+            reused: true,
+          },
+        })
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            existingPayment.status === 'processing'
+              ? 'This payment is still being initialized. Please retry in a moment.'
+              : 'This payment attempt is closed. Start a new checkout attempt.',
+        },
+        { status: 409 }
+      )
+    }
+
     let response: any
     try {
       response = await paystack.transaction.initialize({
@@ -439,6 +466,13 @@ export async function POST(request: NextRequest) {
         paystackError?.message ||
         paystackError?.response?.data?.message ||
         'Failed to initialize payment with Paystack'
+      await prisma.payment.update({
+        where: { id: reservedPayment.id },
+        data: {
+          status: 'failed',
+          paystackData: { initializationError: String(message).slice(0, 500) },
+        },
+      }).catch(() => undefined)
       return NextResponse.json(
         {
           success: false,
@@ -451,8 +485,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!response.status || !response.data) {
+    const authorizationUrl =
+      typeof response?.data?.authorization_url === 'string'
+        ? response.data.authorization_url.trim()
+        : ''
+    const accessCode =
+      typeof response?.data?.access_code === 'string'
+        ? response.data.access_code.trim()
+        : ''
+
+    if (
+      !response.status ||
+      !response.data ||
+      !authorizationUrl ||
+      !accessCode ||
+      !/^https:\/\//i.test(authorizationUrl)
+    ) {
       const message = response?.message || 'Failed to initialize payment'
+      await prisma.payment.update({
+        where: { id: reservedPayment.id },
+        data: {
+          status: 'failed',
+          paystackData: { initializationError: String(message).slice(0, 500) },
+        },
+      }).catch(() => undefined)
       return NextResponse.json(
         {
           success: false,
@@ -465,38 +521,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create payment record in database linked to the authenticated user
-    await prisma.payment.create({
+    await prisma.payment.update({
+      where: { id: reservedPayment.id },
       data: {
-        reference,
-        amount: finalAmount,
-        amountMinor: amountInMinor,
-        currency,
         status: 'pending',
-        paymentMethod: normalizedPaymentMethod,
-        customerEmail,
-        customerName,
-        customerPhone: normalizedPhone,
-        packageId: packageData.id,
-        userId: user.id,
-        metadata: {
-          itemType: packageData.itemType,
-          itemName: packageData.name,
-          packageName: packageData.itemType === 'package' ? packageData.name : null,
-          serviceId: packageData.serviceId || null,
-          serviceName: packageData.serviceName || null,
-          servicePlanId: packageData.servicePlanId || null,
-          planName: packageData.planName || null,
-          duration: packageData.duration || null,
-          billingAddress: metadata?.address || null,
-          billingCity: metadata?.city || null,
-          billingCountry: metadata?.country || null,
-          momoPhone: metadata?.momoPhone || null,
-          momoNetwork: metadata?.momoNetwork || null,
-          expectedAmountMinor: amountInMinor,
-          expectedCurrency: currency,
-          checkoutId: normalizedIdempotencyKey || null,
-        },
         paystackData: response.data as any,
       },
     })
@@ -504,9 +532,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        authorizationUrl: response.data.authorization_url,
-        accessCode: response.data.access_code,
-        reference,
+        authorizationUrl,
+        accessCode,
+        reference: reservedPayment.reference,
         currency,
         amount: finalAmount,
       },

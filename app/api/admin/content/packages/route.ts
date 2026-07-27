@@ -11,8 +11,92 @@ import { prisma } from '@/lib/prisma'
 import { verifyAdminSession } from '@/lib/auth-helpers'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
-import { DEFAULT_CURRENCY, normalizeCurrency } from '@/lib/currency'
+import { DEFAULT_CURRENCY, isSupportedCurrency, normalizeCurrency } from '@/lib/currency'
 import { deleteUnreferencedCloudinaryUrls } from '@/lib/cloudinary-orphans'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+
+const PACKAGE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/
+const VALID_CATEGORIES = new Set<PackageCategory>([
+  PackageCategory.travel,
+  PackageCategory.study,
+  PackageCategory.work,
+])
+
+type ParseResult<T> =
+  | { value: T; error?: never }
+  | { error: string; value?: never }
+
+function boundedText(value: unknown, maxLength: number) {
+  return String(value ?? '').trim().slice(0, maxLength)
+}
+
+function parseTextArray(
+  value: unknown,
+  field: string,
+  options: { maxItems?: number; maxLength?: number } = {}
+): ParseResult<string[]> {
+  if (!Array.isArray(value)) {
+    return { error: `${field} must be an array` } as const
+  }
+
+  const maxItems = options.maxItems ?? 100
+  const maxLength = options.maxLength ?? 500
+  if (value.length > maxItems) {
+    return { error: `${field} cannot contain more than ${maxItems} items` } as const
+  }
+
+  return {
+    value: value
+      .map((item) => boundedText(item, maxLength))
+      .filter(Boolean),
+  } as const
+}
+
+function parseImageArray(value: unknown): ParseResult<string[]> {
+  const parsed = parseTextArray(value, 'Images', { maxItems: 20, maxLength: 2000 })
+  if ('error' in parsed) return parsed
+
+  const invalid = parsed.value.find(
+    (url) => !url.startsWith('/') && !/^https:\/\/[^\s]+$/i.test(url)
+  )
+  if (invalid) {
+    return { error: 'Images must use an HTTPS URL or a local /public path' } as const
+  }
+  return parsed
+}
+
+function parsePrice(value: unknown) {
+  const price = Number(value)
+  if (!Number.isFinite(price) || price <= 0 || price > 1_000_000) {
+    return { error: 'Price must be greater than 0 and no more than 1,000,000' } as const
+  }
+  return { value: price } as const
+}
+
+function parseCategory(value: unknown) {
+  const category = String(value || '').trim().toLowerCase() as PackageCategory
+  if (!VALID_CATEGORIES.has(category)) {
+    return { error: 'Category must be travel, study, or work' } as const
+  }
+  return { value: category } as const
+}
+
+function parseCurrency(value: unknown) {
+  const currency = String(value || '').trim().toUpperCase()
+  if (!isSupportedCurrency(currency)) {
+    return { error: 'Currency must be GHS, USD, EUR, or GBP' } as const
+  }
+  return { value: normalizeCurrency(currency) } as const
+}
+
+async function enforceAdminWriteLimit(request: NextRequest, userId: string) {
+  const { allowed, retryAfterMs } = await checkRateLimit(
+    `admin-packages-write:${userId}:${getClientIp(request)}`,
+    { maxRequests: 60, windowMs: 60_000 }
+  )
+  return allowed ? null : rateLimitResponse(retryAfterMs)
+}
 
 function revalidatePackageSurfaces(packageId?: string) {
   revalidatePath('/api/content')
@@ -80,26 +164,48 @@ export async function POST(request: NextRequest) {
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const limited = await enforceAdminWriteLimit(request, session.userId)
+    if (limited) return limited
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { name, description, category, duration, price, currency, highlights, itinerary, images, included, notIncluded } = body
-    const packageCurrency = normalizeCurrency(currency, DEFAULT_CURRENCY)
 
-    const safeName = String(name || '').trim()
-    const safeDuration = String(duration || '').trim()
-    const categoryKey = String(category || '').toLowerCase()
-    const safeCategory: PackageCategory =
-      categoryKey === 'study'
-        ? PackageCategory.study
-        : categoryKey === 'work'
-          ? PackageCategory.work
-          : PackageCategory.travel
+    const safeName = boundedText(name, 160)
+    const safeDuration = boundedText(duration, 120)
+    const safeDescription = boundedText(description, 5000)
+    const safeItinerary = boundedText(itinerary, 50_000)
 
     if (!safeName) {
       return NextResponse.json({ success: false, error: 'Package name is required' }, { status: 400 })
     }
     if (!safeDuration) {
       return NextResponse.json({ success: false, error: 'Package duration is required' }, { status: 400 })
+    }
+    const parsedCategory = parseCategory(category)
+    if ('error' in parsedCategory) {
+      return NextResponse.json({ success: false, error: parsedCategory.error }, { status: 400 })
+    }
+    const parsedPrice = parsePrice(price)
+    if ('error' in parsedPrice) {
+      return NextResponse.json({ success: false, error: parsedPrice.error }, { status: 400 })
+    }
+    const parsedCurrency = currency === undefined
+      ? { value: DEFAULT_CURRENCY } as const
+      : parseCurrency(currency)
+    if ('error' in parsedCurrency) {
+      return NextResponse.json({ success: false, error: parsedCurrency.error }, { status: 400 })
+    }
+    const parsedHighlights = parseTextArray(highlights ?? [], 'Highlights')
+    const parsedImages = parseImageArray(images ?? [])
+    const parsedIncluded = parseTextArray(included ?? [], 'Included items')
+    const parsedNotIncluded = parseTextArray(notIncluded ?? [], 'Not included items')
+    for (const parsed of [parsedHighlights, parsedImages, parsedIncluded, parsedNotIncluded]) {
+      if ('error' in parsed) {
+        return NextResponse.json({ success: false, error: parsed.error }, { status: 400 })
+      }
     }
 
     // Get max order to append new package
@@ -108,44 +214,40 @@ export async function POST(request: NextRequest) {
     })
     const newOrder = (maxOrder._max.order || 0) + 1
 
-    const imageUrls = (Array.isArray(images) ? images : [])
-      .map((url: string) => String(url || '').trim())
-      .filter(Boolean)
-
     // Create package
     const newPackage = await prisma.package.create({
       data: {
         name: safeName,
-        description: String(description || '').trim(),
-        category: safeCategory,
+        description: safeDescription,
+        category: parsedCategory.value,
         duration: safeDuration,
-        price: Number(price) || 0,
-        currency: packageCurrency,
-        itinerary: itinerary || '',
+        price: parsedPrice.value,
+        currency: parsedCurrency.value,
+        itinerary: safeItinerary,
         order: newOrder,
         highlights: {
-          create: highlights?.map((text: string, index: number) => ({
+          create: parsedHighlights.value.map((text: string, index: number) => ({
             text,
             order: index,
-          })) || [],
+          })),
         },
         images: {
-          create: imageUrls.map((url: string, index: number) => ({
+          create: parsedImages.value.map((url: string, index: number) => ({
             url,
             order: index,
           })),
         },
         included: {
-          create: included?.map((text: string, index: number) => ({
+          create: parsedIncluded.value.map((text: string, index: number) => ({
             text,
             order: index,
-          })) || [],
+          })),
         },
         notIncluded: {
-          create: notIncluded?.map((text: string, index: number) => ({
+          create: parsedNotIncluded.value.map((text: string, index: number) => ({
             text,
             order: index,
-          })) || [],
+          })),
         },
       },
       include: {
@@ -200,80 +302,141 @@ export async function PUT(request: NextRequest) {
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const limited = await enforceAdminWriteLimit(request, session.userId)
+    if (limited) return limited
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { id, name, description, category, duration, price, currency, highlights, itinerary, images, included, notIncluded } = body
 
-    if (!id) {
+    const safeId = boundedText(id, 128)
+    if (!PACKAGE_ID_PATTERN.test(safeId)) {
       return NextResponse.json({ success: false, error: 'Package ID required' }, { status: 400 })
     }
 
     // Partial update: only write fields that were explicitly provided
     const packageData: Record<string, unknown> = {}
-    if (name !== undefined) packageData.name = name
-    if (description !== undefined) packageData.description = description
-    if (category !== undefined) packageData.category = category
-    if (duration !== undefined) packageData.duration = duration
-    if (price !== undefined) packageData.price = price
-    if (currency !== undefined) packageData.currency = normalizeCurrency(currency)
-    if (itinerary !== undefined) packageData.itinerary = itinerary || ''
+    if (name !== undefined) {
+      const value = boundedText(name, 160)
+      if (!value) {
+        return NextResponse.json({ success: false, error: 'Package name is required' }, { status: 400 })
+      }
+      packageData.name = value
+    }
+    if (description !== undefined) packageData.description = boundedText(description, 5000)
+    if (category !== undefined) {
+      const parsed = parseCategory(category)
+      if ('error' in parsed) {
+        return NextResponse.json({ success: false, error: parsed.error }, { status: 400 })
+      }
+      packageData.category = parsed.value
+    }
+    if (duration !== undefined) {
+      const value = boundedText(duration, 120)
+      if (!value) {
+        return NextResponse.json({ success: false, error: 'Package duration is required' }, { status: 400 })
+      }
+      packageData.duration = value
+    }
+    if (price !== undefined) {
+      const parsed = parsePrice(price)
+      if ('error' in parsed) {
+        return NextResponse.json({ success: false, error: parsed.error }, { status: 400 })
+      }
+      packageData.price = parsed.value
+    }
+    if (currency !== undefined) {
+      const parsed = parseCurrency(currency)
+      if ('error' in parsed) {
+        return NextResponse.json({ success: false, error: parsed.error }, { status: 400 })
+      }
+      packageData.currency = parsed.value
+    }
+    if (itinerary !== undefined) packageData.itinerary = boundedText(itinerary, 50_000)
+
+    const parsedHighlights = highlights === undefined ? null : parseTextArray(highlights, 'Highlights')
+    const parsedImages = images === undefined ? null : parseImageArray(images)
+    const parsedIncluded = included === undefined ? null : parseTextArray(included, 'Included items')
+    const parsedNotIncluded = notIncluded === undefined ? null : parseTextArray(notIncluded, 'Not included items')
+    for (const parsed of [parsedHighlights, parsedImages, parsedIncluded, parsedNotIncluded]) {
+      if (parsed && 'error' in parsed) {
+        return NextResponse.json({ success: false, error: parsed.error }, { status: 400 })
+      }
+    }
+    if (
+      Object.keys(packageData).length === 0 &&
+      !parsedHighlights &&
+      !parsedImages &&
+      !parsedIncluded &&
+      !parsedNotIncluded
+    ) {
+      return NextResponse.json({ success: false, error: 'No package fields supplied' }, { status: 400 })
+    }
+
+    const existingPackage = await prisma.package.findUnique({
+      where: { id: safeId },
+      select: { id: true },
+    })
+    if (!existingPackage) {
+      return NextResponse.json({ success: false, error: 'Package not found' }, { status: 404 })
+    }
 
     let removedImageUrls: string[] = []
 
     await prisma.$transaction(async (tx) => {
       if (Object.keys(packageData).length > 0) {
         await tx.package.update({
-          where: { id },
+          where: { id: safeId },
           data: packageData,
         })
       }
 
-      if (highlights) {
-        await tx.packageHighlight.deleteMany({ where: { packageId: id } })
-        const data = highlights.map((text: string, index: number) => ({
-          packageId: id,
+      if (parsedHighlights) {
+        await tx.packageHighlight.deleteMany({ where: { packageId: safeId } })
+        const data = parsedHighlights.value.map((text: string, index: number) => ({
+          packageId: safeId,
           text,
           order: index,
         }))
         if (data.length > 0) await tx.packageHighlight.createMany({ data })
       }
 
-      if (images) {
+      if (parsedImages) {
         const previousImages = await tx.packageImage.findMany({
-          where: { packageId: id },
+          where: { packageId: safeId },
           select: { url: true },
         })
-        const nextUrls = (images as string[])
-          .map((u) => String(u || '').trim())
-          .filter(Boolean)
+        const nextUrls = parsedImages.value
         const nextSet = new Set(nextUrls)
         removedImageUrls = previousImages
           .map((img) => img.url)
           .filter((url) => !nextSet.has(url))
 
-        await tx.packageImage.deleteMany({ where: { packageId: id } })
+        await tx.packageImage.deleteMany({ where: { packageId: safeId } })
         const data = nextUrls.map((url: string, index: number) => ({
-          packageId: id,
+          packageId: safeId,
           url,
           order: index,
         }))
         if (data.length > 0) await tx.packageImage.createMany({ data })
       }
 
-      if (included) {
-        await tx.packageIncluded.deleteMany({ where: { packageId: id } })
-        const data = included.map((text: string, index: number) => ({
-          packageId: id,
+      if (parsedIncluded) {
+        await tx.packageIncluded.deleteMany({ where: { packageId: safeId } })
+        const data = parsedIncluded.value.map((text: string, index: number) => ({
+          packageId: safeId,
           text,
           order: index,
         }))
         if (data.length > 0) await tx.packageIncluded.createMany({ data })
       }
 
-      if (notIncluded) {
-        await tx.packageNotIncluded.deleteMany({ where: { packageId: id } })
-        const data = notIncluded.map((text: string, index: number) => ({
-          packageId: id,
+      if (parsedNotIncluded) {
+        await tx.packageNotIncluded.deleteMany({ where: { packageId: safeId } })
+        const data = parsedNotIncluded.value.map((text: string, index: number) => ({
+          packageId: safeId,
           text,
           order: index,
         }))
@@ -286,14 +449,14 @@ export async function PUT(request: NextRequest) {
       void deleteUnreferencedCloudinaryUrls(removedImageUrls)
     }
 
-    revalidatePackageSurfaces(id)
+    revalidatePackageSurfaces(safeId)
 
     await logAdminAudit({
       request,
       session,
       action: 'package.update',
       entityType: 'package',
-      entityId: id,
+      entityId: safeId,
       metadata: {
         name: packageData.name,
         category: packageData.category,
@@ -322,12 +485,32 @@ export async function PATCH(request: NextRequest) {
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const limited = await enforceAdminWriteLimit(request, session.userId)
+    if (limited) return limited
 
-    const body = await request.json()
-    const packageCurrency = normalizeCurrency(body?.currency)
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
+    const parsedCurrency = parseCurrency(body?.currency)
+    if ('error' in parsedCurrency) {
+      return NextResponse.json({ success: false, error: parsedCurrency.error }, { status: 400 })
+    }
+    const packageCurrency = parsedCurrency.value
     const packageIds = Array.isArray(body?.packageIds)
-      ? body.packageIds.map((id: unknown) => String(id).trim()).filter(Boolean)
+      ? body.packageIds
+          .map((id: unknown) => boundedText(id, 128))
+          .filter((id: string) => PACKAGE_ID_PATTERN.test(id))
       : null
+    if (Array.isArray(body?.packageIds) && body.packageIds.length > 500) {
+      return NextResponse.json(
+        { success: false, error: 'No more than 500 packages can be updated at once' },
+        { status: 400 }
+      )
+    }
+    if (Array.isArray(body?.packageIds) && packageIds?.length !== body.packageIds.length) {
+      return NextResponse.json({ success: false, error: 'One or more package IDs are invalid' }, { status: 400 })
+    }
 
     const where =
       packageIds && packageIds.length > 0
@@ -374,11 +557,13 @@ export async function DELETE(request: NextRequest) {
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const limited = await enforceAdminWriteLimit(request, session.userId)
+    if (limited) return limited
 
     const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
+    const id = boundedText(searchParams.get('id'), 128)
 
-    if (!id) {
+    if (!PACKAGE_ID_PATTERN.test(id)) {
       return NextResponse.json({ success: false, error: 'Package ID required' }, { status: 400 })
     }
 

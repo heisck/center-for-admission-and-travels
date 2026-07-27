@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const website = normalizeString(body?.website, 200)
     if (website) {
       // Honeypot field hit by bots: pretend success to reduce retries.

@@ -11,6 +11,7 @@ import { hasAdminPermission } from '@/lib/admin-permissions'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { logAdminAudit } from '@/lib/admin-audit'
+import { collectReferencedCloudinaryIds } from '@/lib/cloudinary-orphans'
 
 // DELETE /api/admin/images/delete
 export async function DELETE(request: NextRequest) {
@@ -73,6 +74,31 @@ export async function DELETE(request: NextRequest) {
         success: true,
         message: 'Image is not stored in Cloudinary, skipping deletion',
       })
+    }
+
+    // Direct media deletion must never break a live CMS page. Editors should
+    // first remove the image from every page/package that references it; the
+    // normal content update flow then performs safe orphan cleanup.
+    const referenced = await collectReferencedCloudinaryIds()
+    if (
+      referenced.has(idToDelete) ||
+      (url ? referenced.has(url.trim()) : false)
+    ) {
+      await logAdminAudit({
+        request,
+        session,
+        action: 'media.delete.blocked',
+        entityType: 'image',
+        entityId: idToDelete,
+        metadata: { reason: 'asset-still-referenced', url: url || null },
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This image is still used by published content. Remove it from the page or item first.',
+        },
+        { status: 409 }
+      )
     }
 
     const success = await deleteImage(idToDelete)

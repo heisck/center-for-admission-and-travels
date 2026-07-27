@@ -12,6 +12,19 @@ import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
 import { ensureUniqueBlogSlug, slugifyBlogTitle } from '@/lib/blog-slug'
 import { contentToSafeHtml } from '@/lib/safe-html'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+
+const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/
+
+function normalizeImageUrl(value: unknown) {
+  const imageUrl = String(value || '').trim().slice(0, 2000)
+  if (!imageUrl) return { value: null }
+  if (!imageUrl.startsWith('/') && !/^https:\/\/[^\s]+$/i.test(imageUrl)) {
+    return { error: 'Image must use an HTTPS URL or a local /public path' }
+  }
+  return { value: imageUrl }
+}
 
 function sanitizeBlogContent(value: unknown): string {
   return contentToSafeHtml(String(value || '').trim().slice(0, 50_000))
@@ -76,15 +89,45 @@ export async function POST(request: NextRequest) {
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const { allowed, retryAfterMs } = await checkRateLimit(
+      `admin-blog-write:${session.userId}:${getClientIp(request)}`,
+      { maxRequests: 30, windowMs: 60_000 }
+    )
+    if (!allowed) return rateLimitResponse(retryAfterMs)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { title, excerpt, content, imageUrl, packageId, published, slug: requestedSlug } = body
+    const normalizedTitle = String(title || '').trim().slice(0, 200)
+    const rawContent = String(content || '')
 
-    if (!title?.trim()) {
+    if (!normalizedTitle) {
       return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 })
     }
+    if (rawContent.length > 50_000) {
+      return NextResponse.json({ success: false, error: 'Blog content is too long' }, { status: 400 })
+    }
+    const normalizedImage = normalizeImageUrl(imageUrl)
+    if (normalizedImage.error) {
+      return NextResponse.json({ success: false, error: normalizedImage.error }, { status: 400 })
+    }
+    const normalizedPackageId = String(packageId || '').trim()
+    if (normalizedPackageId && !ID_PATTERN.test(normalizedPackageId)) {
+      return NextResponse.json({ success: false, error: 'Invalid package ID' }, { status: 400 })
+    }
+    if (normalizedPackageId) {
+      const linkedPackage = await prisma.package.findUnique({
+        where: { id: normalizedPackageId },
+        select: { id: true },
+      })
+      if (!linkedPackage) {
+        return NextResponse.json({ success: false, error: 'Linked package not found' }, { status: 400 })
+      }
+    }
 
-    const seed = (typeof requestedSlug === 'string' && requestedSlug.trim()) || title.trim()
+    const seed = (typeof requestedSlug === 'string' && requestedSlug.trim()) || normalizedTitle
     const finalSlug = await ensureUniqueBlogSlug(seed, async (candidate) => {
       const existing = await prisma.blogPost.findUnique({
         where: { slug: candidate },
@@ -101,11 +144,11 @@ export async function POST(request: NextRequest) {
     const post = await prisma.blogPost.create({
       data: {
         slug: finalSlug,
-        title: title.trim(),
-        excerpt: (excerpt || '').trim(),
-        content: sanitizeBlogContent(content),
-        imageUrl: imageUrl || null,
-        packageId: packageId || null,
+        title: normalizedTitle,
+        excerpt: String(excerpt || '').trim().slice(0, 1000),
+        content: sanitizeBlogContent(rawContent),
+        imageUrl: normalizedImage.value,
+        packageId: normalizedPackageId || null,
         published: !!published,
         publishedAt: published ? new Date() : null,
       },

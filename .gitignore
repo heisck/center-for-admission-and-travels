@@ -1,7 +1,10 @@
 node_modules/
 
 .next/
+.vercel/
 *.tsbuildinfo
 .env
 .env.local
 .env*.local
+.vercel
+.env*

@@ -4,6 +4,7 @@ import { createSessionToken, pruneUserSessions, verifyPassword } from '@/lib/use
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { getUserSessionCookieName, getUserSessionHintCookieName } from '@/lib/user-session-cookies'
+import { validatePassword } from '@/lib/password-policy'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,15 +15,21 @@ export async function POST(request: NextRequest) {
 
   let step = 'parse-body'
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { identifier, password, rememberMe } = body ?? {}
 
     if (!identifier || !password) {
       return NextResponse.json({ success: false, error: 'Email/username and password are required' }, { status: 400 })
     }
 
-    const id = String(identifier).trim().toLowerCase()
-    const passwordTrimmed = String(password).trim()
+    const id = String(identifier).trim().toLowerCase().slice(0, 254)
+    const passwordResult = validatePassword(password)
+    if (!passwordResult.password) {
+      return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
+    }
 
     step = 'find-user'
     const user = await prisma.user.findFirst({
@@ -43,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     step = 'verify-password'
-    const ok = await verifyPassword(passwordTrimmed, user.passwordHash)
+    const ok = await verifyPassword(passwordResult.password, user.passwordHash)
     if (!ok) {
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }

@@ -22,6 +22,11 @@ const contentSecurityPolicy = [
 ].filter(Boolean).join('; ')
 
 const nextConfig = {
+  turbopack: {
+    // Keep tracing/build resolution inside this repository when parent folders
+    // contain unrelated lockfiles.
+    root: process.cwd(),
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

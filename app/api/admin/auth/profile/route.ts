@@ -6,6 +6,7 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { logAdminAudit } from '@/lib/admin-audit'
+import { validatePassword } from '@/lib/password-policy'
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -63,25 +64,28 @@ export async function PUT(request: NextRequest) {
     })
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const emailInput = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
-    const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword.trim() : ''
-    const newPassword = typeof body?.newPassword === 'string' ? body.newPassword.trim() : ''
+    const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword : ''
+    const newPasswordResult = body?.newPassword ? validatePassword(body.newPassword) : null
 
     if (!currentPassword) {
       return NextResponse.json({ success: false, error: 'Current password is required' }, { status: 400 })
     }
 
-    if (!emailInput && !newPassword) {
+    if (!emailInput && !body?.newPassword) {
       return NextResponse.json({ success: false, error: 'No changes provided' }, { status: 400 })
     }
 
-    if (emailInput && !isValidEmail(emailInput)) {
+    if (emailInput && (emailInput.length > 254 || !isValidEmail(emailInput))) {
       return NextResponse.json({ success: false, error: 'Please enter a valid email address' }, { status: 400 })
     }
 
-    if (newPassword && newPassword.length < 8) {
-      return NextResponse.json({ success: false, error: 'New password must be at least 8 characters' }, { status: 400 })
+    if (newPasswordResult && !newPasswordResult.password) {
+      return NextResponse.json({ success: false, error: newPasswordResult.error }, { status: 400 })
     }
 
     const adminUser = await prisma.adminUser.findUnique({
@@ -115,8 +119,8 @@ export async function PUT(request: NextRequest) {
     if (emailInput) {
       updateData.email = emailInput
     }
-    if (newPassword) {
-      updateData.password = await hashPassword(newPassword)
+    if (newPasswordResult?.password) {
+      updateData.password = await hashPassword(newPasswordResult.password)
     }
 
     await prisma.adminUser.update({
@@ -132,11 +136,11 @@ export async function PUT(request: NextRequest) {
       entityId: adminUser.id,
       metadata: {
         emailUpdated: Boolean(emailInput),
-        passwordUpdated: Boolean(newPassword),
+        passwordUpdated: Boolean(newPasswordResult?.password),
       },
     })
 
-    if (newPassword) {
+    if (newPasswordResult?.password) {
       await prisma.adminSession.deleteMany({
         where: {
           userId: adminUser.id,
@@ -147,7 +151,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: newPassword
+      message: newPasswordResult?.password
         ? 'Profile updated. Password changed successfully.'
         : 'Profile updated successfully.',
     })

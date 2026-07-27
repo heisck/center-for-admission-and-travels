@@ -3,6 +3,7 @@ import { getUserFromSessionToken, getUserSessionCookieName, verifyPassword, hash
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
+import { validatePassword } from '@/lib/password-policy'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,16 +24,19 @@ export async function POST(request: NextRequest) {
     })
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword : ''
-    const newPassword = typeof body?.newPassword === 'string' ? body.newPassword.trim() : ''
+    const passwordResult = validatePassword(body?.newPassword)
 
-    if (!currentPassword || !newPassword) {
+    if (!currentPassword || !body?.newPassword) {
       return NextResponse.json({ error: 'Current password and new password are required' }, { status: 400 })
     }
 
-    if (typeof newPassword !== 'string' || newPassword.length < 8) {
-      return NextResponse.json({ error: 'New password must be at least 8 characters' }, { status: 400 })
+    if (!passwordResult.password) {
+      return NextResponse.json({ error: passwordResult.error }, { status: 400 })
     }
 
     const isValid = await verifyPassword(currentPassword, user.passwordHash)
@@ -40,7 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 })
     }
 
-    const newHash = await hashPassword(newPassword)
+    const newHash = await hashPassword(passwordResult.password)
 
     await prisma.user.update({
       where: { id: user.id },

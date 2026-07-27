@@ -74,7 +74,10 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Invalid page' }, { status: 400 })
     }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { title, content } = body
     const normalizedTitle = typeof title === 'string' ? title.trim().slice(0, 200) : undefined
     const normalizedContent = typeof content === 'string' ? content.trim() : undefined

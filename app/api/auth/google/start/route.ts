@@ -10,6 +10,8 @@ import {
   sanitizeOAuthErrorPath,
 } from '@/lib/google-oauth'
 import { createSessionToken } from '@/lib/user-auth'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +20,12 @@ export async function GET(request: NextRequest) {
   const errorPath = sanitizeOAuthErrorPath(url.searchParams.get('errorPath'))
 
   try {
+    const { allowed, retryAfterMs } = await checkRateLimit(`google-oauth-start:${getClientIp(request)}`, {
+      maxRequests: 20,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
+
     const state = createSessionToken()
     const redirectPath = sanitizeAuthRedirect(url.searchParams.get('redirect'))
     const googleUrl = buildGoogleAuthorizationUrl(request, state)

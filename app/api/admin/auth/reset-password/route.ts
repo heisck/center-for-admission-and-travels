@@ -6,10 +6,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, verifyPassword } from '@/lib/user-auth'
+import { hashPassword } from '@/lib/user-auth'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { hashResetToken } from '@/lib/reset-token'
 import { getClientIp } from '@/lib/security'
+import { validatePassword } from '@/lib/password-policy'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,11 +23,14 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
   try {
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const token = typeof body?.token === 'string' ? body.token.trim() : ''
-    const password = typeof body?.password === 'string' ? body.password.trim() : ''
+    const passwordResult = validatePassword(body?.password)
 
-    if (!token || !password) {
+    if (!token || !body?.password) {
       return NextResponse.json(
         { success: false, error: 'Token and new password are required' },
         { status: 400 }
@@ -39,9 +43,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (password.length < 8) {
+    if (!passwordResult.password) {
       return NextResponse.json(
-        { success: false, error: 'Password must be at least 8 characters' },
+        { success: false, error: passwordResult.error },
         { status: 400 }
       )
     }
@@ -62,32 +66,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const passwordHash = await hashPassword(password)
-
-    // Use raw SQL to ensure the update persists (avoids Prisma/connection pooling issues)
-    await prisma.$executeRaw`
-      UPDATE admin_users
-      SET password = ${passwordHash}, "resetToken" = NULL, "resetTokenExpiry" = NULL, "updatedAt" = NOW()
-      WHERE id = ${adminUser.id}
-    `
-
-    await prisma.adminSession.deleteMany({ where: { userId: adminUser.id } })
-
-    // Verify the update persisted
-    const updated = await prisma.adminUser.findUnique({
-      where: { id: adminUser.id },
-      select: { password: true },
+    const passwordHash = await hashPassword(passwordResult.password)
+    const consumed = await prisma.$transaction(async (tx) => {
+      const result = await tx.adminUser.updateMany({
+        where: {
+          id: adminUser.id,
+          resetToken: tokenHash,
+          resetTokenExpiry: { gt: new Date() },
+        },
+        data: {
+          password: passwordHash,
+          resetToken: null,
+          resetTokenExpiry: null,
+        },
+      })
+      if (result.count !== 1) return false
+      await tx.adminSession.deleteMany({ where: { userId: adminUser.id } })
+      return true
     })
-    if (!updated) {
-      return NextResponse.json({ success: false, error: 'Update failed. Please try again.' }, { status: 500 })
-    }
-    const verified = await verifyPassword(password, updated.password)
-    if (!verified) {
-      console.error('Admin reset password: verification failed after update - possible DB replication/pooling issue')
-      return NextResponse.json({
-        success: false,
-        error: 'Password update did not persist. Please try again in a few seconds.',
-      }, { status: 500 })
+    if (!consumed) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired reset link. Please request a new one.' },
+        { status: 400 }
+      )
     }
 
     return NextResponse.json({

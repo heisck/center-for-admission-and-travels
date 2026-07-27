@@ -35,24 +35,35 @@ export async function GET(request: NextRequest) {
       return redirectWithMessage(request, 'error', 'Invalid or expired email verification link.')
     }
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerifiedAt: new Date(),
-        emailVerificationToken: null,
-        emailVerificationTokenExpiry: null,
-      },
-    })
-
     const sessionToken = createSessionToken()
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
-    await prisma.userSession.create({
-      data: {
-        userId: user.id,
-        token: sessionToken,
-        expiresAt,
-      },
+    const consumed = await prisma.$transaction(async (tx) => {
+      const result = await tx.user.updateMany({
+        where: {
+          id: user.id,
+          emailVerificationToken: tokenHash,
+          emailVerificationTokenExpiry: { gt: new Date() },
+        },
+        data: {
+          emailVerifiedAt: new Date(),
+          emailVerificationToken: null,
+          emailVerificationTokenExpiry: null,
+        },
+      })
+      if (result.count !== 1) return false
+
+      await tx.userSession.create({
+        data: {
+          userId: user.id,
+          token: sessionToken,
+          expiresAt,
+        },
+      })
+      return true
     })
+    if (!consumed) {
+      return redirectWithMessage(request, 'error', 'Invalid or expired email verification link.')
+    }
     await pruneUserSessions(user.id).catch((error) => {
       console.error('[Verify Email] Failed to prune user sessions:', error)
     })

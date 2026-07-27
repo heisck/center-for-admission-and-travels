@@ -9,6 +9,20 @@ import { deleteUnreferencedCloudinaryUrls } from '@/lib/cloudinary-orphans'
 import { normalizeCurrency } from '@/lib/currency'
 import { prisma } from '@/lib/prisma'
 import { contentToSafeHtml } from '@/lib/safe-html'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
+
+function isValidImageUrl(value: string) {
+  return value.startsWith('/') || /^https:\/\/[^\s]+$/i.test(value)
+}
+
+async function enforceServiceWriteLimit(request: NextRequest, userId: string) {
+  const { allowed, retryAfterMs } = await checkRateLimit(
+    `admin-services-write:${userId}:${getClientIp(request)}`,
+    { maxRequests: 30, windowMs: 60_000 }
+  )
+  return allowed ? null : rateLimitResponse(retryAfterMs)
+}
 
 function revalidateServiceSurfaces() {
   revalidatePath('/')
@@ -39,9 +53,17 @@ export async function PUT(
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const limited = await enforceServiceWriteLimit(request, session.userId)
+    if (limited) return limited
 
     const { id } = await params
-    const body = await request.json()
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid service ID' }, { status: 400 })
+    }
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
+    }
     const existing = await prisma.professionalService.findUnique({
       where: { id },
       include: { plans: true },
@@ -67,12 +89,24 @@ export async function PUT(
     })
 
     const incomingPlans = Array.isArray(body?.plans) ? body.plans : []
+    if (incomingPlans.length > 50) {
+      return NextResponse.json(
+        { success: false, error: 'A service cannot contain more than 50 plans' },
+        { status: 400 }
+      )
+    }
     const imageUrl = String(body?.imageUrl || '').trim().slice(0, 2000)
     const published = body?.published !== false
+    if (imageUrl && !isValidImageUrl(imageUrl)) {
+      return NextResponse.json(
+        { success: false, error: 'Image must use an HTTPS URL or a local /public path' },
+        { status: 400 }
+      )
+    }
     const validPlanCount = incomingPlans.filter((plan: any) => {
       const planName = String(plan?.name || '').trim()
       const price = Number(plan?.price)
-      return planName && Number.isFinite(price) && price > 0
+      return planName && Number.isFinite(price) && price > 0 && plan?.published !== false
     }).length
     if (published && !imageUrl) {
       return NextResponse.json(
@@ -181,8 +215,13 @@ export async function DELETE(
     if (!hasAdminPermission(session.role, 'content.write')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
+    const limited = await enforceServiceWriteLimit(request, session.userId)
+    if (limited) return limited
 
     const { id } = await params
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid service ID' }, { status: 400 })
+    }
     const existing = await prisma.professionalService.findUnique({
       where: { id },
       select: { id: true, slug: true, imageUrl: true },
