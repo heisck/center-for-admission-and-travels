@@ -54,6 +54,25 @@ export interface PackageCardContent {
   notIncluded: string[]
 }
 
+export interface ProfessionalServicePlanContent {
+  id: string
+  name: string
+  description: string
+  duration: string
+  price: number
+  currency: string
+}
+
+export interface ProfessionalServiceContent {
+  id: string
+  slug: string
+  name: string
+  summary: string
+  descriptionHtml: string
+  imageUrl: string
+  plans: ProfessionalServicePlanContent[]
+}
+
 export interface AboutFounderContent {
   name: string
   title: string
@@ -346,6 +365,25 @@ function mapPackage(pkg: any): PackageCardContent {
   }
 }
 
+function mapProfessionalService(service: any): ProfessionalServiceContent {
+  return {
+    id: String(service.id || ''),
+    slug: String(service.slug || ''),
+    name: String(service.name || 'Service'),
+    summary: String(service.summary || ''),
+    descriptionHtml: String(service.descriptionHtml || ''),
+    imageUrl: String(service.imageUrl || ''),
+    plans: (service.plans || []).map((plan: any) => ({
+      id: String(plan.id || ''),
+      name: String(plan.name || 'Plan'),
+      description: String(plan.description || ''),
+      duration: String(plan.duration || ''),
+      price: Number(plan.price) || 0,
+      currency: String(plan.currency || 'GHS').toUpperCase(),
+    })),
+  }
+}
+
 function mapBlogPost(post: any): BlogPostSummary {
   return {
     id: post.id,
@@ -493,6 +531,8 @@ const TITLE_TO_ROUTE_MAP: Record<string, string> = {
   'Travel & Tours': '/travel-tours',
   'Travel Tours': '/travel-tours',
   'Global Network': '/global-network',
+  'Professional Services': '/global-network',
+  'Travel Documentation Services': '/global-network',
 }
 
 // Canonical service routes used when matching older home-page cards to service pages.
@@ -718,23 +758,69 @@ export const getHomePageContent = unstable_cache(
 export const getPackagesPageContent = unstable_cache(
   async (): Promise<PackageCardContent[]> => {
     try {
-      const packages = await prisma.package.findMany({
-        orderBy: { order: 'asc' },
-        include: {
-          highlights: { orderBy: { order: 'asc' } },
-          images: { orderBy: { order: 'asc' } },
-          included: { orderBy: { order: 'asc' } },
-          notIncluded: { orderBy: { order: 'asc' } },
-        },
-      })
+      const [packages, travelFeatured] = await Promise.all([
+        prisma.package.findMany({
+          orderBy: { order: 'asc' },
+          include: {
+            highlights: { orderBy: { order: 'asc' } },
+            images: { orderBy: { order: 'asc' } },
+            included: { orderBy: { order: 'asc' } },
+            notIncluded: { orderBy: { order: 'asc' } },
+          },
+        }),
+        prisma.travelToursFeaturedPackage.findMany({
+          orderBy: { order: 'asc' },
+          include: {
+            highlights: { orderBy: { order: 'asc' } },
+          },
+        }),
+      ])
 
-      return packages.map(mapPackage)
+      const featuredAsPackages = travelFeatured.map((item) =>
+        mapPackage({
+          ...item,
+          category: 'travel',
+          images: item.imageUrl ? [{ url: item.imageUrl }] : [],
+          itinerary: '',
+          included: [],
+          notIncluded: [],
+        })
+      )
+
+      return [...packages.map(mapPackage), ...featuredAsPackages]
     } catch (error) {
       logPublicContentError('packages page', error)
       return []
     }
   },
   ['packages-page'],
+  {
+    revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
+    tags: [PUBLIC_CONTENT_TAG],
+  }
+)
+
+export const getProfessionalServices = unstable_cache(
+  async (): Promise<ProfessionalServiceContent[]> => {
+    try {
+      const services = await prisma.professionalService.findMany({
+        where: { published: true },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        include: {
+          plans: {
+            where: { published: true },
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          },
+        },
+      })
+
+      return services.map(mapProfessionalService)
+    } catch (error) {
+      logPublicContentError('professional services', error)
+      return []
+    }
+  },
+  ['professional-services'],
   {
     revalidate: PUBLIC_CONTENT_CACHE_SECONDS,
     tags: [PUBLIC_CONTENT_TAG],

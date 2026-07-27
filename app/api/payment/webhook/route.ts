@@ -201,7 +201,10 @@ export async function POST(request: NextRequest) {
           reference: updatedPayment.reference,
           amount: Number(updatedPayment.amount),
           currency: updatedPayment.currency,
-          packageName: (updatedPayment.metadata as any)?.packageName || 'Booking',
+          itemName:
+            (updatedPayment.metadata as any)?.itemName ||
+            (updatedPayment.metadata as any)?.packageName ||
+            'Booking',
         },
         supportContact
       )

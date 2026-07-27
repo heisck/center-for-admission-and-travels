@@ -124,6 +124,12 @@ function PaymentCallbackContent() {
                         {paymentData.currency} {paymentData.amount?.toLocaleString()}
                       </span>
                     </div>
+                    {paymentData.itemName && (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">Booking:</span>
+                        <span className="text-right font-semibold">{paymentData.itemName}</span>
+                      </div>
+                    )}
                     {paymentData.paidAt && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Paid At:</span>

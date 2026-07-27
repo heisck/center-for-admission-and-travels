@@ -26,10 +26,11 @@ import { cn } from '@/lib/utils'
 import { contentToSafeHtml } from '@/lib/safe-html'
 import { plainTextToHtml } from '@/lib/plain-text-to-html'
 
-type BlogRichTextEditorProps = {
+type RichTextEditorProps = {
   value: string
   onChange: (html: string) => void
   placeholder?: string
+  ariaLabel?: string
 }
 
 type ToolbarButtonProps = {
@@ -151,11 +152,12 @@ function editLink(editor: Editor) {
     .run()
 }
 
-export function BlogRichTextEditor({
+export function RichTextEditor({
   value,
   onChange,
-  placeholder = 'Write or paste the blog post here…',
-}: BlogRichTextEditorProps) {
+  placeholder = 'Write or paste formatted content here…',
+  ariaLabel = 'Rich text content',
+}: RichTextEditorProps) {
   const lastSyncedValue = useRef(value)
 
   const editor = useEditor({
@@ -191,8 +193,8 @@ export function BlogRichTextEditor({
     editorProps: {
       attributes: {
         class:
-          'blog-rich-text-editor min-h-[22rem] px-5 py-4 text-base text-slate-800 focus:outline-none',
-        'aria-label': 'Blog post content',
+          'rich-text-editor blog-rich-text-editor min-h-[22rem] px-5 py-4 text-base text-slate-800 focus:outline-none',
+        'aria-label': ariaLabel,
       },
       handlePaste(view, event) {
         const clipboard = event.clipboardData
@@ -278,7 +280,7 @@ export function BlogRichTextEditor({
       <div
         className="flex min-h-12 items-stretch overflow-x-auto border-b border-border bg-slate-50 p-1.5"
         role="toolbar"
-        aria-label="Blog text formatting"
+        aria-label={`${ariaLabel} formatting`}
       >
         <div className="flex items-center gap-0.5">
           <ToolbarButton
@@ -399,3 +401,5 @@ export function BlogRichTextEditor({
     </div>
   )
 }
+
+export const BlogRichTextEditor = RichTextEditor

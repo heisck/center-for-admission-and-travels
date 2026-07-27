@@ -79,13 +79,13 @@ export default function MyPaymentsClient({ supportWhatsAppNumber }: MyPaymentsCl
   }, [user, authLoading])
 
   const getFollowUpWhatsAppUrl = (payment: Payment) => {
-    const packageName = payment.metadata?.packageName || 'my package'
+    const itemName = payment.metadata?.itemName || payment.metadata?.packageName || 'my booking'
     const message = [
       `Hi, I'd like to follow up on my payment.`,
       ``,
       `*Payment Details:*`,
       `- Reference: ${payment.reference}`,
-      `- Package: ${packageName}`,
+      `- Booking: ${itemName}`,
       `- Amount: ${payment.currency} ${payment.amount.toLocaleString()}`,
       `- Status: ${payment.status}`,
       ``,
@@ -173,7 +173,7 @@ export default function MyPaymentsClient({ supportWhatsAppNumber }: MyPaymentsCl
           <div className="text-center py-20">
             <CreditCard className="w-14 h-14 text-muted-foreground/30 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">No payments yet</h3>
-            <p className="text-muted-foreground mb-6">Once you book a package, your payments will appear here.</p>
+            <p className="text-muted-foreground mb-6">Once you book a package or service, your payments will appear here.</p>
             <Link
               href="/packages"
               className="inline-block px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
@@ -200,7 +200,7 @@ export default function MyPaymentsClient({ supportWhatsAppNumber }: MyPaymentsCl
                       <div className="flex items-center gap-2 mb-1">
                         <Package className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         <h3 className="font-semibold text-foreground truncate">
-                          {payment.metadata?.packageName || 'Payment'}
+                          {payment.metadata?.itemName || payment.metadata?.packageName || 'Payment'}
                         </h3>
                       </div>
                       <p className="text-xs text-muted-foreground font-mono">{payment.reference}</p>

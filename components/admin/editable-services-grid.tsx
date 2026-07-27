@@ -19,7 +19,7 @@ const ROUTE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '/study-abroad', label: 'Study Abroad' },
   { value: '/work-abroad', label: 'Work Abroad' },
   { value: '/travel-tours', label: 'Travel & Tours' },
-  { value: '/global-network', label: 'Global Network' },
+  { value: '/global-network', label: 'Professional Services' },
 ]
 
 const ROUTE_TO_ADMIN: Record<string, string> = {
@@ -36,6 +36,8 @@ const titleToAdminRoute: Record<string, string> = {
   'Travel & Tours': '/admin/travel-tours',
   'Travel Tours': '/admin/travel-tours',
   'Global Network': '/admin/global-network',
+  'Professional Services': '/admin/global-network',
+  'Travel Documentation Services': '/admin/global-network',
 }
 
 function getAdminRouteForService(service: {

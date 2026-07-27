@@ -218,8 +218,10 @@ export default function AdminBookingsEditor() {
                       <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">Booking</p>
                       <p className="text-foreground">Ref: {booking.reference}</p>
                       <p className="text-muted-foreground">Method: {getMethodLabel(booking.paymentMethod)}</p>
-                      {booking.metadata?.packageName && (
-                        <p className="text-muted-foreground">Package: {booking.metadata.packageName}</p>
+                      {(booking.metadata?.itemName || booking.metadata?.packageName) && (
+                        <p className="text-muted-foreground">
+                          Booking: {booking.metadata.itemName || booking.metadata.packageName}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -258,7 +260,7 @@ export default function AdminBookingsEditor() {
                   {booking.customerPhone && (
                     <a
                       href={`https://wa.me/${booking.customerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                        `Hi ${booking.customerName}, regarding your booking (Ref: ${booking.reference}) for ${booking.metadata?.packageName || 'our package'}. `
+                        `Hi ${booking.customerName}, regarding your booking (Ref: ${booking.reference}) for ${booking.metadata?.itemName || booking.metadata?.packageName || 'your selected service or package'}. `
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"

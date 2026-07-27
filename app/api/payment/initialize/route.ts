@@ -5,7 +5,8 @@
  * 
  * Body:
  * {
- *   packageId: string
+ *   packageId?: string
+ *   servicePlanId?: string
  *   amount: number (optional - will use package price if not provided)
  *   email: string
  *   name: string
@@ -64,7 +65,17 @@ export async function POST(request: NextRequest) {
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
     const body = await request.json()
-    const { packageId, amount, email, name, phone, paymentMethod, metadata, idempotencyKey } = body
+    const {
+      packageId,
+      servicePlanId,
+      amount,
+      email,
+      name,
+      phone,
+      paymentMethod,
+      metadata,
+      idempotencyKey,
+    } = body
 
     // Validate required fields
     if (!email || !name) {
@@ -108,15 +119,24 @@ export async function POST(request: NextRequest) {
       : 'card'
 
     const normalizedPackageId = String(packageId || '').trim().slice(0, 128)
-    if (!normalizedPackageId) {
+    const normalizedServicePlanId = String(servicePlanId || '').trim().slice(0, 128)
+    if (normalizedPackageId && normalizedServicePlanId) {
       return NextResponse.json(
-        { success: false, error: 'Package is required for payment' },
+        { success: false, error: 'Choose either a package or a service plan, not both' },
         { status: 400 }
       )
     }
-    if (!/^[A-Za-z0-9_\-]+$/.test(normalizedPackageId)) {
+    const normalizedItemId = normalizedServicePlanId || normalizedPackageId
+    const isServicePlanPayment = Boolean(normalizedServicePlanId)
+    if (!normalizedItemId) {
       return NextResponse.json(
-        { success: false, error: 'Invalid package reference' },
+        { success: false, error: 'A package or service plan is required for payment' },
+        { status: 400 }
+      )
+    }
+    if (!/^[A-Za-z0-9_\-]+$/.test(normalizedItemId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid booking reference' },
         { status: 400 }
       )
     }
@@ -132,43 +152,87 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let packageData: { id: string; name: string; price: number; currency: SupportedCurrency } | null = null
+    let packageData: {
+      id: string
+      name: string
+      price: number
+      currency: SupportedCurrency
+      itemType: 'package' | 'service_plan'
+      serviceId?: string
+      serviceName?: string
+      servicePlanId?: string
+      planName?: string
+      duration?: string
+    } | null = null
 
-    // Try Package table first
-    const pkg = await prisma.package.findUnique({
-      where: { id: normalizedPackageId },
-      select: { id: true, name: true, price: true, currency: true },
-    })
+    if (isServicePlanPayment) {
+      const servicePlan = await prisma.professionalServicePlan.findFirst({
+        where: {
+          id: normalizedServicePlanId,
+          published: true,
+          service: { published: true },
+        },
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          currency: true,
+          duration: true,
+          service: { select: { id: true, name: true } },
+        },
+      })
 
-    if (pkg) {
-      packageData = {
-        id: pkg.id,
-        name: pkg.name,
-        price: pkg.price,
-        currency: normalizeCurrency(pkg.currency),
+      if (servicePlan) {
+        packageData = {
+          id: servicePlan.id,
+          name: `${servicePlan.service.name} — ${servicePlan.name}`,
+          price: Number(servicePlan.price),
+          currency: normalizeCurrency(servicePlan.currency),
+          itemType: 'service_plan',
+          serviceId: servicePlan.service.id,
+          serviceName: servicePlan.service.name,
+          servicePlanId: servicePlan.id,
+          planName: servicePlan.name,
+          duration: servicePlan.duration,
+        }
       }
-    }
-
-    // If not found, try TravelToursFeaturedPackage
-    if (!packageData) {
-      const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
+    } else {
+      const pkg = await prisma.package.findUnique({
         where: { id: normalizedPackageId },
         select: { id: true, name: true, price: true, currency: true },
       })
 
-      if (featuredPkg) {
+      if (pkg) {
         packageData = {
-          id: featuredPkg.id,
-          name: featuredPkg.name,
-          price: featuredPkg.price,
-          currency: normalizeCurrency(featuredPkg.currency),
+          id: pkg.id,
+          name: pkg.name,
+          price: pkg.price,
+          currency: normalizeCurrency(pkg.currency),
+          itemType: 'package',
+        }
+      }
+
+      if (!packageData) {
+        const featuredPkg = await prisma.travelToursFeaturedPackage.findUnique({
+          where: { id: normalizedPackageId },
+          select: { id: true, name: true, price: true, currency: true },
+        })
+
+        if (featuredPkg) {
+          packageData = {
+            id: featuredPkg.id,
+            name: featuredPkg.name,
+            price: featuredPkg.price,
+            currency: normalizeCurrency(featuredPkg.currency),
+            itemType: 'package',
+          }
         }
       }
     }
 
     if (!packageData) {
       return NextResponse.json(
-        { success: false, error: 'Package not found' },
+        { success: false, error: isServicePlanPayment ? 'Service plan not found' : 'Package not found' },
         { status: 404 }
       )
     }
@@ -181,20 +245,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: `Mobile Money is only available for GHS packages. This package is priced in ${currency} — please pay by card.`,
+          error: `Mobile Money is only available for GHS bookings. This item is priced in ${currency} — please pay by card.`,
         },
         { status: 400 }
       )
     }
 
-    // Never trust client amount for package payments.
+    // Never trust client amount for package or service-plan payments.
     const packageAmount = packageData.price
     if (amount !== undefined && amount !== null && Number(amount) > 0) {
       const sentAmountMinor = toMinorUnits(Number(amount), currency)
       const packageAmountMinor = toMinorUnits(packageAmount, currency)
       if (sentAmountMinor !== packageAmountMinor) {
         return NextResponse.json(
-          { success: false, error: 'Amount mismatch for selected package' },
+          { success: false, error: 'Amount mismatch for selected booking' },
           { status: 400 }
         )
       }
@@ -217,21 +281,24 @@ export async function POST(request: NextRequest) {
     // Paystack uses the subunit of the currency (pesewas / cents).
     const amountInMinor = toMinorUnits(finalAmount, currency)
 
-    const completedPayment = await prisma.payment.findFirst({
-      where: {
-        userId: user.id,
-        packageId: packageData.id,
-        status: 'success',
-      },
-      orderBy: { createdAt: 'desc' },
-      select: { reference: true },
-    })
+    const completedPayment =
+      packageData.itemType === 'package'
+        ? await prisma.payment.findFirst({
+            where: {
+              userId: user.id,
+              packageId: packageData.id,
+              status: 'success',
+            },
+            orderBy: { createdAt: 'desc' },
+            select: { reference: true },
+          })
+        : null
 
     if (completedPayment) {
       return NextResponse.json(
         {
           success: false,
-          error: 'You already have a successful payment for this package. Contact support if you need another booking.',
+          error: 'You already have a successful payment for this booking. Contact support if you need another one.',
           reference: completedPayment.reference,
         },
         { status: 409 }
@@ -326,7 +393,14 @@ export async function POST(request: NextRequest) {
     // Prepare metadata for Paystack
     const paystackMetadata: any = {
       packageId: packageData.id,
-      packageName: packageData?.name || null,
+      itemType: packageData.itemType,
+      itemName: packageData.name,
+      packageName: packageData.itemType === 'package' ? packageData.name : null,
+      serviceId: packageData.serviceId || null,
+      serviceName: packageData.serviceName || null,
+      servicePlanId: packageData.servicePlanId || null,
+      planName: packageData.planName || null,
+      duration: packageData.duration || null,
       customerName,
       customerPhone: normalizedPhone,
       paymentMethod: normalizedPaymentMethod,
@@ -370,7 +444,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error:
             typeof message === 'string' && message.toLowerCase().includes('currency')
-              ? `Paystack rejected currency ${currency}. Enable this currency on your Paystack dashboard (Settings → Preferences / multi-currency), or price this package in a supported currency (GHS/USD).`
+              ? `Paystack rejected currency ${currency}. Enable this currency on your Paystack dashboard (Settings → Preferences / multi-currency), or price this booking in a supported currency (GHS/USD).`
               : message,
         },
         { status: 502 }
@@ -406,7 +480,14 @@ export async function POST(request: NextRequest) {
         packageId: packageData.id,
         userId: user.id,
         metadata: {
-          packageName: packageData?.name || null,
+          itemType: packageData.itemType,
+          itemName: packageData.name,
+          packageName: packageData.itemType === 'package' ? packageData.name : null,
+          serviceId: packageData.serviceId || null,
+          serviceName: packageData.serviceName || null,
+          servicePlanId: packageData.servicePlanId || null,
+          planName: packageData.planName || null,
+          duration: packageData.duration || null,
           billingAddress: metadata?.address || null,
           billingCity: metadata?.city || null,
           billingCountry: metadata?.country || null,

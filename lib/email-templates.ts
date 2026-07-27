@@ -102,7 +102,7 @@ export function paymentConfirmationEmail(data: {
   reference: string
   amount: number
   currency: string
-  packageName: string
+  itemName: string
 }, contact?: Partial<SupportContact>) {
   return {
     subject: `Payment Confirmed - ${data.reference}`,
@@ -111,7 +111,7 @@ export function paymentConfirmationEmail(data: {
       <p style="color:#475569;line-height:1.6;">Your payment has been successfully processed. Here are the details:</p>
       <div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;">
         <table style="width:100%;border-collapse:collapse;font-size:14px;">
-          <tr><td style="padding:6px 0;color:#64748b;">Package</td><td style="padding:6px 0;color:#0f172a;font-weight:600;text-align:right;">${data.packageName}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b;">Booking</td><td style="padding:6px 0;color:#0f172a;font-weight:600;text-align:right;">${data.itemName}</td></tr>
           <tr><td style="padding:6px 0;color:#64748b;">Amount</td><td style="padding:6px 0;color:#0f172a;font-weight:600;text-align:right;">${data.currency} ${data.amount.toLocaleString()}</td></tr>
           <tr><td style="padding:6px 0;color:#64748b;">Reference</td><td style="padding:6px 0;color:#0f172a;font-family:monospace;text-align:right;">${data.reference}</td></tr>
         </table>

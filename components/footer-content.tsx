@@ -118,7 +118,7 @@ const DEFAULT_FOOTER_SERVICE_LINKS: FooterServiceLink[] = [
   { href: "/work-abroad", label: "Work Abroad" },
   { href: "/packages", label: "All Packages" },
   { href: "/ghana", label: "CA Travels Ghana" },
-  { href: "/global-network", label: "Global Network" },
+  { href: "/global-network", label: "Professional Services" },
 ]
 
 interface FooterContentViewProps {

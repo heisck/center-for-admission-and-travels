@@ -197,11 +197,11 @@ export default function AdminPaymentsPage() {
   const buildWhatsAppUrl = (p: Payment) => {
     const phone = p.customerPhone?.replace(/\D/g, '')
     if (!phone) return null
-    const packageName = p.metadata?.packageName || 'your booking'
+    const itemName = p.metadata?.itemName || p.metadata?.packageName || 'your booking'
     const message = [
       `Hi ${p.customerName || 'there'},`,
       ``,
-      `This is regarding your payment for *${packageName}*.`,
+      `This is regarding your payment for *${itemName}*.`,
       `Reference: ${p.reference}`,
       `Amount: ${p.currency} ${p.amount.toLocaleString()}`,
       ``,
@@ -453,8 +453,12 @@ export default function AdminPaymentsPage() {
                   label="Method"
                   value={selectedPayment.paymentMethod?.replace('_', ' ') || 'Card'}
                 />
-                {selectedPayment.metadata?.packageName && (
-                  <DetailRow icon={<Package className="w-4 h-4" />} label="Package" value={selectedPayment.metadata.packageName} />
+                {(selectedPayment.metadata?.itemName || selectedPayment.metadata?.packageName) && (
+                  <DetailRow
+                    icon={<Package className="w-4 h-4" />}
+                    label="Booking"
+                    value={selectedPayment.metadata.itemName || selectedPayment.metadata.packageName}
+                  />
                 )}
               </div>
 

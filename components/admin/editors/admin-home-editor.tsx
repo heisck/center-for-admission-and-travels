@@ -23,7 +23,7 @@ export default function AdminHomeEditor() {
     { value: '/study-abroad', label: 'Study Abroad' },
     { value: '/work-abroad', label: 'Work Abroad' },
     { value: '/travel-tours', label: 'Travel & Tours' },
-    { value: '/global-network', label: 'Global Network' },
+    { value: '/global-network', label: 'Professional Services' },
   ] as const
 
   const handleAddService = () => {

@@ -38,7 +38,7 @@ export default function TravelToursFeaturedPackages({
         highlights: pkg.highlights || [],
         image: pkg.image,
         // Travel-tours featured rows may not be checkout packages — send to packages list
-        bookHref: `/packages?q=${encodeURIComponent(pkg.name)}`,
+        bookHref: `/checkout?id=${encodeURIComponent(pkg.id)}`,
       })),
     [packages]
   )

@@ -163,7 +163,10 @@ export async function GET(request: NextRequest) {
         reference: updatedPayment.reference,
         amount: Number(updatedPayment.amount),
         currency: updatedPayment.currency,
-        packageName: (updatedPayment.metadata as any)?.packageName || 'Booking',
+        itemName:
+          (updatedPayment.metadata as any)?.itemName ||
+          (updatedPayment.metadata as any)?.packageName ||
+          'Booking',
       }, supportContact)
       sendEmail({ to: updatedPayment.customerEmail, ...template }).catch((error) => {
         console.error('[Payment Verify] Failed to send payment confirmation email:', error)
@@ -181,6 +184,10 @@ export async function GET(request: NextRequest) {
         reference: updatedPayment.reference,
         amount: Number(updatedPayment.amount),
         currency: updatedPayment.currency,
+        itemName:
+          (updatedPayment.metadata as any)?.itemName ||
+          (updatedPayment.metadata as any)?.packageName ||
+          'Booking',
         paidAt: paymentData.paid_at,
         message: responseMessage,
       },

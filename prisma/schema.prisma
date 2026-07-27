@@ -15,17 +15,17 @@ datasource db {
 // ============================================================================
 
 model AdminUser {
-  id                 String    @id @default(cuid())
-  username           String    @unique
-  password           String    // Hashed
-  email              String?
-  role               AdminRole @default(ADMIN)
-  resetToken         String?   @unique
-  resetTokenExpiry   DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  sessions          AdminSession[]
-  auditLogs         AdminAuditLog[]
+  id               String          @id @default(cuid())
+  username         String          @unique
+  password         String // Hashed
+  email            String?
+  role             AdminRole       @default(ADMIN)
+  resetToken       String?         @unique
+  resetTokenExpiry DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  sessions         AdminSession[]
+  auditLogs        AdminAuditLog[]
 
   @@map("admin_users")
 }
@@ -39,11 +39,11 @@ enum AdminRole {
 }
 
 model AdminSession {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  token     String   @unique
+  token     String    @unique
   expiresAt DateTime
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
@@ -52,7 +52,7 @@ model AdminSession {
 }
 
 model AdminAuditLog {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   adminUserId String?
   action      String
   entityType  String
@@ -60,7 +60,7 @@ model AdminAuditLog {
   metadata    Json?
   ipAddress   String?
   userAgent   String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime   @default(now())
   adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
 
   @@index([adminUserId, createdAt])
@@ -73,23 +73,23 @@ model AdminAuditLog {
 // ============================================================================
 
 model User {
-  id               String    @id @default(cuid())
-  username         String    @unique
-  email            String    @unique
-  passwordHash     String
-  displayName      String?
-  phone            String?
-  emailVerifiedAt  DateTime?
-  emailVerificationToken String?   @unique
+  id                           String    @id @default(cuid())
+  username                     String    @unique
+  email                        String    @unique
+  passwordHash                 String
+  displayName                  String?
+  phone                        String?
+  emailVerifiedAt              DateTime?
+  emailVerificationToken       String?   @unique
   emailVerificationTokenExpiry DateTime?
-  resetToken       String?   @unique
-  resetTokenExpiry DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  resetToken                   String?   @unique
+  resetTokenExpiry             DateTime?
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
 
-  sessions     UserSession[]
+  sessions      UserSession[]
   oauthAccounts UserOAuthAccount[]
-  payments     Payment[]
+  payments      Payment[]
 
   @@index([email])
   @@index([username])
@@ -129,13 +129,13 @@ model UserSession {
 // ============================================================================
 
 model ContentVersion {
-  id          String   @id @default(cuid())
-  entityType  String   // e.g., "home", "about", "package", "servicePage"
-  entityId    String   // ID of the entity being versioned
-  content     Json     // Full content snapshot
-  version     Int      // Version number (1, 2, 3, etc.)
-  createdAt   DateTime @default(now())
-  createdBy   String?  // Admin user ID
+  id         String   @id @default(cuid())
+  entityType String // e.g., "home", "about", "package", "servicePage"
+  entityId   String // ID of the entity being versioned
+  content    Json // Full content snapshot
+  version    Int // Version number (1, 2, 3, etc.)
+  createdAt  DateTime @default(now())
+  createdBy  String? // Admin user ID
 
   @@unique([entityType, entityId, version])
   @@index([entityType, entityId])
@@ -147,44 +147,44 @@ model ContentVersion {
 // ============================================================================
 
 model HomePage {
-  id        String   @id @default(cuid())
-  heroTitle String
-  heroSubtitle String?
-  heroDescription String @default("")
-  heroCta1Text String
-  heroCta2Text String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  heroTitle       String
+  heroSubtitle    String?
+  heroDescription String   @default("")
+  heroCta1Text    String
+  heroCta2Text    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  heroImages        HomeHeroImage[]
-  heroStats         HomeStat[]
-  services          HomeService[]
-  featuredPackages  HomeFeaturedPackage[]
+  heroImages       HomeHeroImage[]
+  heroStats        HomeStat[]
+  services         HomeService[]
+  featuredPackages HomeFeaturedPackage[]
 
   @@map("home_page")
 }
 
 model HomeHeroImage {
-  id        String   @id @default(cuid())
+  id         String   @id @default(cuid())
   homePageId String
-  url       String   // Cloudinary URL
-  order     Int      @default(0)
-  alt       String?  @default("")
-  createdAt DateTime @default(now())
-  homePage  HomePage @relation(fields: [homePageId], references: [id], onDelete: Cascade)
+  url        String // Cloudinary URL
+  order      Int      @default(0)
+  alt        String?  @default("")
+  createdAt  DateTime @default(now())
+  homePage   HomePage @relation(fields: [homePageId], references: [id], onDelete: Cascade)
 
   @@index([homePageId])
   @@map("home_hero_images")
 }
 
 model HomeStat {
-  id        String   @id @default(cuid())
+  id         String   @id @default(cuid())
   homePageId String
-  value     String
-  label     String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  homePage  HomePage @relation(fields: [homePageId], references: [id], onDelete: Cascade)
+  value      String
+  label      String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  homePage   HomePage @relation(fields: [homePageId], references: [id], onDelete: Cascade)
 
   @@index([homePageId])
   @@map("home_stats")
@@ -207,13 +207,13 @@ model HomeService {
 }
 
 model HomeFeaturedPackage {
-  id          String   @id @default(cuid())
-  homePageId  String
-  packageId   String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  homePage    HomePage @relation(fields: [homePageId], references: [id], onDelete: Cascade)
-  package     Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  homePageId String
+  packageId  String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  homePage   HomePage @relation(fields: [homePageId], references: [id], onDelete: Cascade)
+  package    Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
   @@unique([homePageId, packageId])
   @@index([homePageId])
@@ -228,66 +228,66 @@ model AboutPage {
   id           String   @id @default(cuid())
   heroTitle    String
   heroSubtitle String
-  heroImageUrl String   // Cloudinary URL
+  heroImageUrl String // Cloudinary URL
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  mission      AboutMission?
-  vision       AboutVision?
-  coreValues   AboutCoreValue[]
-  founder      AboutFounder?
-  teamMembers  AboutTeamMember[]
+  mission        AboutMission?
+  vision         AboutVision?
+  coreValues     AboutCoreValue[]
+  founder        AboutFounder?
+  teamMembers    AboutTeamMember[]
   successStories AboutSuccessStory[]
 
   @@map("about_page")
 }
 
 model AboutMission {
-  id          String   @id @default(cuid())
-  aboutPageId String   @unique
+  id          String    @id @default(cuid())
+  aboutPageId String    @unique
   title       String
   description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   aboutPage   AboutPage @relation(fields: [aboutPageId], references: [id], onDelete: Cascade)
 
-  points      AboutMissionPoint[]
+  points AboutMissionPoint[]
 
   @@map("about_mission")
 }
 
 model AboutMissionPoint {
-  id          String   @id @default(cuid())
-  missionId   String
-  text        String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  mission     AboutMission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  id        String       @id @default(cuid())
+  missionId String
+  text      String
+  order     Int          @default(0)
+  createdAt DateTime     @default(now())
+  mission   AboutMission @relation(fields: [missionId], references: [id], onDelete: Cascade)
 
   @@index([missionId])
   @@map("about_mission_points")
 }
 
 model AboutVision {
-  id          String   @id @default(cuid())
-  aboutPageId String   @unique
+  id          String    @id @default(cuid())
+  aboutPageId String    @unique
   title       String
   description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   aboutPage   AboutPage @relation(fields: [aboutPageId], references: [id], onDelete: Cascade)
 
-  points      AboutVisionPoint[]
+  points AboutVisionPoint[]
 
   @@map("about_vision")
 }
 
 model AboutVisionPoint {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   visionId  String
   text      String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
   vision    AboutVision @relation(fields: [visionId], references: [id], onDelete: Cascade)
 
   @@index([visionId])
@@ -295,13 +295,13 @@ model AboutVisionPoint {
 }
 
 model AboutCoreValue {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   aboutPageId String
   title       String
   description String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   aboutPage   AboutPage @relation(fields: [aboutPageId], references: [id], onDelete: Cascade)
 
   @@index([aboutPageId])
@@ -309,32 +309,32 @@ model AboutCoreValue {
 }
 
 model AboutFounder {
-  id          String   @id @default(cuid())
-  aboutPageId String   @unique
+  id          String    @id @default(cuid())
+  aboutPageId String    @unique
   name        String
   title       String
   description String
-  imageUrl    String   // Cloudinary URL
+  imageUrl    String // Cloudinary URL
   vision      String
   mission     String
   values      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   aboutPage   AboutPage @relation(fields: [aboutPageId], references: [id], onDelete: Cascade)
 
   @@map("about_founder")
 }
 
 model AboutTeamMember {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   aboutPageId String
   name        String
   role        String
-  imageUrl    String   // Cloudinary URL
-  description String   @default("")
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  imageUrl    String // Cloudinary URL
+  description String    @default("")
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   aboutPage   AboutPage @relation(fields: [aboutPageId], references: [id], onDelete: Cascade)
 
   @@index([aboutPageId])
@@ -342,14 +342,14 @@ model AboutTeamMember {
 }
 
 model AboutSuccessStory {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   aboutPageId String
   name        String
   program     String
   quote       String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   aboutPage   AboutPage @relation(fields: [aboutPageId], references: [id], onDelete: Cascade)
 
   @@index([aboutPageId])
@@ -361,25 +361,25 @@ model AboutSuccessStory {
 // ============================================================================
 
 model Package {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
   category    PackageCategory
   description String
   duration    String
   price       Float
   /// ISO 4217 code charged via Paystack: GHS | USD | EUR | GBP
-  currency    String   @default("GHS")
-  itinerary   String   @default("")
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  currency    String          @default("GHS")
+  itinerary   String          @default("")
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  highlights        PackageHighlight[]
-  images           PackageImage[]
-  included         PackageIncluded[]
-  notIncluded      PackageNotIncluded[]
-  homeFeaturedIn   HomeFeaturedPackage[]
-  blogPosts        BlogPost[]
+  highlights     PackageHighlight[]
+  images         PackageImage[]
+  included       PackageIncluded[]
+  notIncluded    PackageNotIncluded[]
+  homeFeaturedIn HomeFeaturedPackage[]
+  blogPosts      BlogPost[]
 
   @@index([category])
   @@map("packages")
@@ -406,7 +406,7 @@ model PackageHighlight {
 model PackageImage {
   id        String   @id @default(cuid())
   packageId String
-  url       String   // Cloudinary URL
+  url       String // Cloudinary URL
   alt       String?  @default("")
   order     Int      @default(0)
   createdAt DateTime @default(now())
@@ -445,13 +445,13 @@ model PackageNotIncluded {
 // ============================================================================
 
 model TravelToursPage {
-  id          String   @id @default(cuid())
-  heroTitle   String
+  id              String   @id @default(cuid())
+  heroTitle       String
   heroDescription String
-  heroParagraph String
-  heroImageUrl String  // Cloudinary URL
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  heroParagraph   String
+  heroImageUrl    String // Cloudinary URL
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   featuredPackages TravelToursFeaturedPackage[]
   benefits         TravelToursBenefit[]
@@ -461,46 +461,46 @@ model TravelToursPage {
 }
 
 model TravelToursGalleryImage {
-  id          String   @id @default(cuid())
-  pageId      String
-  url         String   // Cloudinary URL
-  alt         String?  @default("")
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  page        TravelToursPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  id        String          @id @default(cuid())
+  pageId    String
+  url       String // Cloudinary URL
+  alt       String?         @default("")
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  page      TravelToursPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@index([pageId])
   @@map("travel_tours_gallery_images")
 }
 
 model TravelToursFeaturedPackage {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   pageId      String
   name        String
   description String
   duration    String
   price       Float
   /// ISO 4217 code charged via Paystack: GHS | USD | EUR | GBP
-  currency    String   @default("GHS")
-  imageUrl    String   // Cloudinary URL
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  currency    String          @default("GHS")
+  imageUrl    String // Cloudinary URL
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   page        TravelToursPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
-  highlights  TravelToursHighlight[]
+  highlights TravelToursHighlight[]
 
   @@index([pageId])
   @@map("travel_tours_featured_packages")
 }
 
 model TravelToursHighlight {
-  id        String   @id @default(cuid())
+  id        String                     @id @default(cuid())
   packageId String
   text      String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
+  order     Int                        @default(0)
+  createdAt DateTime                   @default(now())
   package   TravelToursFeaturedPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
   @@index([packageId])
@@ -508,14 +508,14 @@ model TravelToursHighlight {
 }
 
 model TravelToursBenefit {
-  id        String   @id @default(cuid())
-  pageId    String
-  title     String
+  id          String          @id @default(cuid())
+  pageId      String
+  title       String
   description String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  page      TravelToursPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  page        TravelToursPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@index([pageId])
   @@map("travel_tours_benefits")
@@ -526,21 +526,21 @@ model TravelToursBenefit {
 // ============================================================================
 
 model ServicePage {
-  id            String   @id @default(cuid())
-  serviceId     String   @unique // e.g., "study-abroad", "work-abroad", "global-network"
-  title         String
-  description   String
-  icon          String
-  route         String
-  heroImageUrl  String   // Cloudinary URL
-  heroImagePositionX Float @default(50)
-  heroImagePositionY Float @default(50)
-  bannerTitle   String
-  bannerSubtitle String
-  overview      String?  // Optional
-  visaGuidance  String   @default("")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  serviceId          String   @unique // e.g., "study-abroad", "work-abroad", "global-network"
+  title              String
+  description        String
+  icon               String
+  route              String
+  heroImageUrl       String // Cloudinary URL
+  heroImagePositionX Float    @default(50)
+  heroImagePositionY Float    @default(50)
+  bannerTitle        String
+  bannerSubtitle     String
+  overview           String? // Optional
+  visaGuidance       String   @default("")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   whyStudySection ServiceWhyStudySection?
   benefits        ServiceBenefit[]
@@ -553,24 +553,24 @@ model ServicePage {
 }
 
 model ServiceWhyStudySection {
-  id          String   @id @default(cuid())
-  servicePageId String @unique
-  title       String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  servicePage ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  servicePageId String      @unique
+  title         String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  servicePage   ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
 
-  highlights  ServiceWhyStudyHighlight[]
+  highlights ServiceWhyStudyHighlight[]
 
   @@map("service_why_study_sections")
 }
 
 model ServiceWhyStudyHighlight {
-  id        String   @id @default(cuid())
+  id        String                 @id @default(cuid())
   sectionId String
   text      String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
+  order     Int                    @default(0)
+  createdAt DateTime               @default(now())
   section   ServiceWhyStudySection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@index([sectionId])
@@ -578,72 +578,112 @@ model ServiceWhyStudyHighlight {
 }
 
 model ServiceBenefit {
-  id          String   @id @default(cuid())
+  id            String      @id @default(cuid())
   servicePageId String
-  text        String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  servicePage ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
+  text          String
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  servicePage   ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
 
   @@index([servicePageId])
   @@map("service_benefits")
 }
 
 model ServiceRequirement {
-  id          String   @id @default(cuid())
+  id            String      @id @default(cuid())
   servicePageId String
-  text        String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  servicePage ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
+  text          String
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  servicePage   ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
 
   @@index([servicePageId])
   @@map("service_requirements")
 }
 
 model ServiceCountry {
-  id          String   @id @default(cuid())
+  id            String      @id @default(cuid())
   servicePageId String
-  name        String
-  description String
-  imageUrl    String   // Cloudinary URL
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  servicePage ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
+  name          String
+  description   String
+  imageUrl      String // Cloudinary URL
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  servicePage   ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
 
   @@index([servicePageId])
   @@map("service_countries")
 }
 
 model ServiceSuccessStory {
-  id          String   @id @default(cuid())
+  id            String      @id @default(cuid())
   servicePageId String
-  name        String
-  program     String
-  quote       String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  servicePage ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
+  name          String
+  program       String
+  quote         String
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  servicePage   ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
 
   @@index([servicePageId])
   @@map("service_success_stories")
 }
 
 model ServiceScholarship {
-  id          String   @id @default(cuid())
+  id            String      @id @default(cuid())
   servicePageId String
-  name        String
-  amount      String
-  description String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  servicePage ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
+  name          String
+  amount        String
+  description   String
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  servicePage   ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
 
   @@index([servicePageId])
   @@map("service_scholarships")
+}
+
+// ============================================================================
+// PROFESSIONAL SERVICES (Travel documents, registrations, certificates, etc.)
+// ============================================================================
+
+model ProfessionalService {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  summary         String   @default("")
+  descriptionHtml String   @default("") @db.Text
+  imageUrl        String   @default("")
+  published       Boolean  @default(true)
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  plans ProfessionalServicePlan[]
+
+  @@index([published, order])
+  @@map("professional_services")
+}
+
+model ProfessionalServicePlan {
+  id          String              @id @default(cuid())
+  serviceId   String
+  name        String
+  description String              @default("")
+  duration    String              @default("")
+  price       Decimal             @db.Decimal(12, 2)
+  currency    String              @default("GHS")
+  published   Boolean             @default(true)
+  order       Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  service     ProfessionalService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, published, order])
+  @@map("professional_service_plans")
 }
 
 // ============================================================================
@@ -651,41 +691,41 @@ model ServiceScholarship {
 // ============================================================================
 
 model ContactInfo {
-  id            String   @id @default(cuid())
-  phone         String
-  email         String
+  id             String   @id @default(cuid())
+  phone          String
+  email          String
   whatsappNumber String
-  addressStreet String
-  addressCity   String
-  addressRegion String
+  addressStreet  String
+  addressCity    String
+  addressRegion  String
   addressCountry String
-  mapLatitude   Float?
-  mapLongitude  Float?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  mapLatitude    Float?
+  mapLongitude   Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("contact_info")
 }
 
 model FooterInfo {
-  id                String   @id @default(cuid())
+  id                 String   @id @default(cuid())
   companyDescription String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  socialLinks       FooterSocialLink[]
+  socialLinks FooterSocialLink[]
 
   @@map("footer_info")
 }
 
 model FooterSocialLink {
-  id          String   @id @default(cuid())
+  id           String     @id @default(cuid())
   footerInfoId String
-  platform    String
-  url         String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  footerInfo  FooterInfo @relation(fields: [footerInfoId], references: [id], onDelete: Cascade)
+  platform     String
+  url          String
+  order        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  footerInfo   FooterInfo @relation(fields: [footerInfoId], references: [id], onDelete: Cascade)
 
   @@index([footerInfoId])
   @@map("footer_social_links")
@@ -696,25 +736,25 @@ model FooterSocialLink {
 // ============================================================================
 
 model Payment {
-  id              String        @id @default(cuid())
-  reference       String        @unique
-  amount          Decimal       @db.Decimal(12, 2)
-  amountMinor     Int           @default(0)
-  currency        String        @default("GHS")
-  status          PaymentStatus
-  paymentMethod   String?
-  customerEmail   String
-  customerName    String?
-  customerPhone   String?
-  packageId       String?
-  userId          String?
-  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  metadata        Json?
-  paystackData    Json?
-  adminNote       String?
-  adminViewedAt   DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  reference     String        @unique
+  amount        Decimal       @db.Decimal(12, 2)
+  amountMinor   Int           @default(0)
+  currency      String        @default("GHS")
+  status        PaymentStatus
+  paymentMethod String?
+  customerEmail String
+  customerName  String?
+  customerPhone String?
+  packageId     String?
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  metadata      Json?
+  paystackData  Json?
+  adminNote     String?
+  adminViewedAt DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([reference])
   @@index([status])
@@ -774,8 +814,8 @@ model BlogPost {
   title       String
   excerpt     String    @default("")
   content     String    @db.Text
-  imageUrl    String?   // Cloudinary URL
-  packageId   String?   // Optional link to a package this post explains
+  imageUrl    String? // Cloudinary URL
+  packageId   String? // Optional link to a package this post explains
   published   Boolean   @default(false)
   publishedAt DateTime?
   order       Int       @default(0)

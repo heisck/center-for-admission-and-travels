@@ -39,6 +39,7 @@ export async function collectReferencedCloudinaryIds(): Promise<Set<string>> {
     servicePages,
     serviceCountries,
     blogPosts,
+    professionalServices,
   ] = await Promise.all([
     prisma.packageImage.findMany({ select: { url: true } }),
     prisma.homeHeroImage.findMany({ select: { url: true } }),
@@ -51,6 +52,7 @@ export async function collectReferencedCloudinaryIds(): Promise<Set<string>> {
     prisma.servicePage.findMany({ select: { heroImageUrl: true } }),
     prisma.serviceCountry.findMany({ select: { imageUrl: true } }),
     prisma.blogPost.findMany({ select: { imageUrl: true } }),
+    prisma.professionalService.findMany({ select: { imageUrl: true } }),
   ])
 
   for (const row of packageImages) addUrl(referenced, row.url)
@@ -64,6 +66,7 @@ export async function collectReferencedCloudinaryIds(): Promise<Set<string>> {
   for (const row of servicePages) addUrl(referenced, row.heroImageUrl)
   for (const row of serviceCountries) addUrl(referenced, row.imageUrl)
   for (const row of blogPosts) addUrl(referenced, row.imageUrl)
+  for (const row of professionalServices) addUrl(referenced, row.imageUrl)
 
   return referenced
 }

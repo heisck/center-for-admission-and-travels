@@ -27,6 +27,9 @@ interface PackageData {
   category: string
   highlights: string[]
   images: string[]
+  serviceId?: string
+  serviceName?: string
+  planName?: string
 }
 
 interface FormErrors {
@@ -44,6 +47,14 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
   const router = useRouter()
   const searchParams = useSearchParams()
   const packageId = searchParams.get("id")
+  const servicePlanId = searchParams.get("servicePlanId")
+  const selectedItemId = servicePlanId || packageId
+  const isServicePlan = Boolean(servicePlanId)
+  const checkoutQuery = servicePlanId
+    ? `servicePlanId=${encodeURIComponent(servicePlanId)}`
+    : `id=${encodeURIComponent(packageId || "")}`
+  const browseHref = isServicePlan ? "/global-network" : "/packages"
+  const itemTypeLabel = isServicePlan ? "service plan" : "package"
   const { user, isLoading: authLoading } = useCurrentUser()
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -73,39 +84,42 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
   }, [user])
 
   useEffect(() => {
-    if (!packageId) {
-      setError("No package selected")
+    if (!selectedItemId) {
+      setError("No service or package selected")
       setLoading(false)
       return
     }
 
     const fetchPackage = async () => {
       try {
-        const response = await fetch(`/api/packages/${packageId}`)
+        const endpoint = isServicePlan
+          ? `/api/services/plans/${selectedItemId}`
+          : `/api/packages/${selectedItemId}`
+        const response = await fetch(endpoint)
         const result = await response.json()
         if (result.success) {
           setPackageData(result.data)
         } else {
-          setError(result.error || "Package not found")
+          setError(result.error || "Selected service or package was not found")
         }
       } catch {
-        setError("Failed to load package details")
+        setError("Failed to load booking details")
       } finally {
         setLoading(false)
       }
     }
 
     fetchPackage()
-  }, [packageId])
+  }, [isServicePlan, selectedItemId])
 
   useEffect(() => {
-    if (!user?.id || !packageId) {
+    if (!user?.id || !selectedItemId) {
       setPendingPayment(null)
       return
     }
 
-    setPendingPayment(readPendingPayment(user.id, packageId))
-  }, [user?.id, packageId])
+    setPendingPayment(readPendingPayment(user.id, selectedItemId))
+  }, [user?.id, selectedItemId])
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target
@@ -146,7 +160,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
 
     if (!validateForm()) return
     if (!packageData) {
-      setError("Package information is missing")
+      setError("Booking information is missing")
       return
     }
 
@@ -154,11 +168,12 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
 
     try {
       if (paymentMethod === "whatsapp") {
-        await fetch("/api/bookings", {
+        const bookingResponse = await fetch("/api/bookings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            packageId: packageData.id,
+            packageId: isServicePlan ? undefined : packageData.id,
+            servicePlanId: isServicePlan ? packageData.id : undefined,
             fullName: formData.fullName,
             email: formData.email,
             phone: formData.phone,
@@ -166,15 +181,21 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
             method: "whatsapp",
           }),
         })
+        const bookingResult = await bookingResponse.json()
+        if (!bookingResponse.ok || !bookingResult.success) {
+          setError(bookingResult.error || "Could not save your booking request")
+          setProcessing(false)
+          return
+        }
 
         const packageCurrency = normalizeCurrency(packageData.currency)
         const message = [
-          `Hi, I'd like to book the *${packageData.name}* package.`,
+          `Hi, I'd like to book *${packageData.name}*.`,
           ``,
-          `*Package Details:*`,
+          `*Booking Details:*`,
           `- Price: ${formatMoney(packageData.price, packageCurrency)}`,
           `- Duration: ${packageData.duration}`,
-          `- Category: ${packageData.category}`,
+          `- Type: ${isServicePlan ? "Professional service" : packageData.category}`,
           ``,
           `*My Details:*`,
           `- Name: ${formData.fullName}`,
@@ -207,7 +228,8 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          packageId: packageData.id,
+          packageId: isServicePlan ? undefined : packageData.id,
+          servicePlanId: isServicePlan ? packageData.id : undefined,
           email: formData.email,
           name: formData.fullName,
           phone: formData.phone,
@@ -252,7 +274,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
   const momoAvailable = supportsMobileMoney(packageCurrency)
 
   useEffect(() => {
-    // Mobile Money is only available for GHS packages on Paystack (Ghana)
+    // Mobile Money is only available for GHS bookings on Paystack (Ghana)
     if (paymentMethod === "momo" && !momoAvailable) {
       setPaymentMethod("card")
     }
@@ -272,13 +294,13 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
             </p>
             <div className="flex gap-4 justify-center">
               <Link
-                href={`/signin?redirect=/checkout?id=${packageId}`}
+                href={`/signin?redirect=${encodeURIComponent(`/checkout?${checkoutQuery}`)}`}
                 className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
               >
                 Sign In
               </Link>
               <Link
-                href={`/signup?redirect=/checkout?id=${packageId}`}
+                href={`/signup?redirect=${encodeURIComponent(`/checkout?${checkoutQuery}`)}`}
                 className="px-6 py-3 border border-border rounded-lg font-semibold hover:bg-slate-50 transition"
               >
                 Create Account
@@ -295,7 +317,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
       <section className="py-32">
         <div className="max-w-md mx-auto text-center">
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading package...</p>
+          <p className="text-muted-foreground">Loading booking details...</p>
         </div>
       </section>
     )
@@ -306,13 +328,13 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
       <section className="py-32">
         <div className="max-w-md mx-auto text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-foreground mb-2">Package Not Found</h2>
+          <h2 className="text-xl font-bold text-foreground mb-2">Selection Not Found</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
           <button
-            onClick={() => router.push("/packages")}
+            onClick={() => router.push(browseHref)}
             className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition"
           >
-            Browse Packages
+            Browse {isServicePlan ? "Services" : "Packages"}
           </button>
         </div>
       </section>
@@ -335,10 +357,10 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
           </p>
           <div className="flex gap-4 justify-center">
             <button
-              onClick={() => router.push("/packages")}
+              onClick={() => router.push(browseHref)}
               className="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition"
             >
-              Browse More Packages
+              Browse More {isServicePlan ? "Services" : "Packages"}
             </button>
             <button
               onClick={() => router.push("/")}
@@ -394,7 +416,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
                 <button
                   type="button"
                   onClick={() => {
-                    if (user?.id && packageId) clearPendingPayment(user.id, packageId)
+                    if (user?.id && selectedItemId) clearPendingPayment(user.id, selectedItemId)
                     setPendingPayment(null)
                   }}
                   className="inline-flex items-center justify-center rounded-lg border border-yellow-300 bg-white px-4 py-2 text-sm font-semibold text-yellow-900 transition hover:bg-yellow-100"
@@ -497,7 +519,7 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
                       <div className="ml-3 flex-1">
                         <span className="font-semibold text-muted-foreground">Mobile Money</span>
                         <p className="text-xs text-muted-foreground">
-                          Available only for GHS packages. This package is priced in {packageCurrency} — pay by card.
+                          Available only for GHS bookings. This {itemTypeLabel} is priced in {packageCurrency} — pay by card.
                         </p>
                       </div>
                     </div>
@@ -643,7 +665,9 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4" />
-                      <span className="capitalize">{packageData.category}</span>
+                      <span className="capitalize">
+                        {isServicePlan ? "Professional service" : packageData.category}
+                      </span>
                     </div>
                   </div>
 
@@ -663,7 +687,9 @@ export default function CheckoutClient({ supportWhatsAppNumber }: CheckoutClient
 
                   <div className="border-t border-border pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Package Price</span>
+                      <span className="text-muted-foreground">
+                        {isServicePlan ? "Service Plan Price" : "Package Price"}
+                      </span>
                       <span className="font-semibold text-foreground">
                         {formatMoney(packagePrice, packageCurrency)}
                       </span>

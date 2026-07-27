@@ -8,9 +8,16 @@ import { toast } from 'sonner'
 interface BlogImageUploadProps {
   value: string
   onChange: (url: string) => void
+  folder?: string
+  alt?: string
 }
 
-export function BlogImageUpload({ value, onChange }: BlogImageUploadProps) {
+export function BlogImageUpload({
+  value,
+  onChange,
+  folder = 'blog',
+  alt = 'Uploaded image',
+}: BlogImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -31,7 +38,7 @@ export function BlogImageUpload({ value, onChange }: BlogImageUploadProps) {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('folder', 'blog')
+      formData.append('folder', folder)
 
       const res = await fetch('/api/admin/images/upload', {
         method: 'POST',
@@ -63,7 +70,7 @@ export function BlogImageUpload({ value, onChange }: BlogImageUploadProps) {
         <div className="relative aspect-video max-w-md rounded-lg overflow-hidden border border-border bg-slate-100">
           <Image
             src={value}
-            alt="Blog post"
+            alt={alt}
             fill
             className="object-contain"
           />

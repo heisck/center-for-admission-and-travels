@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { BlogImageUpload } from '@/components/admin/blog-image-upload'
-import { BlogRichTextEditor } from '@/components/admin/blog-rich-text-editor'
+import { RichTextEditor } from '@/components/admin/rich-text-editor'
 
 interface Package {
   id: string
@@ -108,9 +108,10 @@ export default function AdminBlogNewPage() {
 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Content</label>
-            <BlogRichTextEditor
+            <RichTextEditor
               value={form.content}
               onChange={(content) => setForm((current) => ({ ...current, content }))}
+              ariaLabel="Blog post content"
               placeholder="Write or paste the blog post here. Formatting appears as you type."
             />
             <p className="mt-2 text-xs text-muted-foreground">

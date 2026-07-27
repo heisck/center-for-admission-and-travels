@@ -161,8 +161,7 @@ export default function AdminHomePage() {
 
             <p className="text-center text-sm text-muted-foreground mb-8 max-w-xl mx-auto">
               Edit titles freely. Public page links stay stable via the route selector — not the title.
-              Card images come from each service page hero (Study / Work / Travel / Network admin). Upload
-              those heroes to change home service visuals safely.
+              Card images come from each service route (Study / Work / Travel / Professional Services).
             </p>
             <div className="grid md:grid-cols-2 gap-8">
               {services.map((service, idx) => {
@@ -170,7 +169,7 @@ export default function AdminHomePage() {
                   { value: '/study-abroad', label: 'Study Abroad' },
                   { value: '/work-abroad', label: 'Work Abroad' },
                   { value: '/travel-tours', label: 'Travel & Tours' },
-                  { value: '/global-network', label: 'Global Network' },
+                  { value: '/global-network', label: 'Professional Services' },
                 ]
                 const linkedRoute =
                   service.route || routeOptions[idx]?.value || routeOptions[0].value

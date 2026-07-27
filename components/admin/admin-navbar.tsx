@@ -22,7 +22,7 @@ const ADMIN_NAV_LINKS: NavLink[] = [
   { href: '/admin/study-abroad', label: 'Study', mobileLabel: 'Study Abroad' },
   { href: '/admin/work-abroad', label: 'Work', mobileLabel: 'Work Abroad' },
   { href: '/admin/travel-tours', label: 'Travel', mobileLabel: 'Travel & Tours' },
-  { href: '/admin/global-network', label: 'Network', mobileLabel: 'Global Network' },
+  { href: '/admin/global-network', label: 'Services', mobileLabel: 'Professional Services' },
   { href: '/admin/contact', label: 'Contact & Links', mobileLabel: 'Contact & Social Links' },
   { href: '/admin/contact-messages', label: 'Messages', mobileLabel: 'Contact Messages', badgeKey: 'messages' },
   { href: '/admin/legal', label: 'Legal', mobileLabel: 'Legal Pages' },
