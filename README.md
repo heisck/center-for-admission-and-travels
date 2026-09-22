@@ -39,10 +39,15 @@ are applied automatically after the database health check succeeds.
 docker compose up --build
 ```
 
-Open `http://localhost:3000`. Application source is bind-mounted for hot reload;
+Open `http://localhost:3002` (the port selected in the included local `.env` to avoid other local services). Application source is bind-mounted for hot reload;
 PostgreSQL data and container dependencies live in named volumes and are not
 tracked by Git. Optional integrations can be added to a local `.env` file or a
 Compose override without committing secrets.
+
+The development stack applies migrations and idempotently seeds representative
+content on startup. The default local admin login is `admin@localhost.test` /
+`ChangeMe123!`; change `DEV_ADMIN_EMAIL` and `DEV_ADMIN_PASSWORD` in `.env` for
+any shared environment.
 
 Run unit and browser tests with:
 

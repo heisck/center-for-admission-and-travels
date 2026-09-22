@@ -314,18 +314,29 @@ type AdminSaveQueue = {
 }
 
 async function sendAdminJson(url: string, body: unknown, method = 'PUT') {
-  const response = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
-  const result = await response.json().catch(() => null)
-  if (!response.ok || !result?.success) {
-    throw new Error(result?.error || `Request failed with status ${response.status}`)
+  let lastError: Error | undefined
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok || !result?.success) {
+        const error = new Error(result?.error || `Request failed with status ${response.status}`)
+        if (response.status < 500 || attempt === 3) throw error
+        lastError = error
+      } else {
+        return result
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Network request failed')
+      if (attempt === 3) throw lastError
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300 * 2 ** (attempt - 1)))
   }
-
-  return result
+  throw lastError || new Error('Save failed after three attempts')
 }
 
 // Helper function to check if value is an object

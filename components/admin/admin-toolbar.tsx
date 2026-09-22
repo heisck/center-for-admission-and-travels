@@ -4,12 +4,24 @@ import { useAdmin } from '@/context/admin-context'
 import { Undo2, Redo2, Save, Eye, LogOut, ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export function AdminToolbar() {
   const { undo, redo, canUndo, canRedo, saveAll, isSaving } = useAdmin()
   const router = useRouter()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
+
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine)
+    update()
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => {
+      window.removeEventListener('online', update)
+      window.removeEventListener('offline', update)
+    }
+  }, [])
 
   const handleSave = async () => {
     await saveAll()
@@ -38,6 +50,7 @@ export function AdminToolbar() {
         {/* Left: Branding */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="font-semibold text-foreground hidden sm:inline">Admin Panel</span>
+          <span className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red-500'}`} title={isOnline ? 'Online' : 'Offline — edits remain on screen until saved'} />
         </div>
 
         {/* Middle: Undo/Redo Controls */}

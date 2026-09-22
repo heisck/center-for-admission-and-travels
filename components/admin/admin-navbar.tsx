@@ -141,7 +141,8 @@ export function AdminNavbar() {
 
           {/* Mobile Menu */}
           {isOpen && (
-            <div className="xl:hidden pb-4 space-y-2">
+            <div className="xl:hidden max-h-[calc(100vh-8rem)] overflow-y-auto pb-4">
+              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
               {ADMIN_NAV_LINKS.map((link) => {
                 const count = getBadgeCount(link)
                 return (
@@ -149,10 +150,10 @@ export function AdminNavbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center justify-between px-3 py-2 text-sm font-medium ${
+                    className={`flex min-h-11 items-center justify-between rounded-lg px-3 py-2 text-sm font-medium ${
                       isActive(link.href, link.exact)
-                        ? 'text-orange-600 font-semibold'
-                        : 'text-foreground hover:text-orange-600'
+                        ? 'bg-orange-50 text-orange-600 font-semibold'
+                        : 'text-foreground hover:bg-slate-50 hover:text-orange-600'
                     }`}
                   >
                     {link.mobileLabel}
@@ -164,6 +165,7 @@ export function AdminNavbar() {
                   </Link>
                 )
               })}
+              </div>
               <div className="border-t pt-4 space-y-2 mt-4">
                 <Link
                   href="/"

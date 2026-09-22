@@ -21,7 +21,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
-    "db:setup": "prisma generate && prisma migrate deploy"
+    "db:setup": "prisma generate && prisma migrate deploy && npm run db:seed",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -82,9 +83,9 @@
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "motion": "^12.23.24",
-    "next": "16.2.12",
+    "next": "^16.3.5",
     "next-themes": "^0.4.6",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.0.10",
     "postcss": "^8.5.23",
     "prisma": "^6.19.2",
     "react": "19.2.0",

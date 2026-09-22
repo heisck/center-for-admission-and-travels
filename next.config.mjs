@@ -16,12 +16,14 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline' https:",
   "connect-src 'self' https: wss:",
   "frame-src 'self' https://js.paystack.co https://*.paystack.co",
-  "frame-ancestors 'none'",
+  // Admin uses a same-origin iframe for the authoritative public-page preview.
+  "frame-ancestors 'self'",
   "form-action 'self'",
   isProduction ? 'upgrade-insecure-requests' : '',
 ].filter(Boolean).join('; ')
 
 const nextConfig = {
+  allowedDevOrigins: ['localhost', '127.0.0.1'],
   turbopack: {
     // Keep tracing/build resolution inside this repository when parent folders
     // contain unrelated lockfiles.
@@ -48,7 +50,7 @@ const nextConfig = {
         source: '/:path*',
         headers: [
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },

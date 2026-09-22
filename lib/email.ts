@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import type { Transporter } from 'nodemailer'
 
 const SMTP_HOST = process.env.SMTP_HOST
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587')
@@ -8,7 +9,7 @@ const SMTP_FROM = process.env.SMTP_FROM || 'info@catravels.com'
 
 const isConfigured = SMTP_HOST && SMTP_USER && SMTP_PASS
 
-let transporter: nodemailer.Transporter | null = null
+let transporter: Transporter | null = null
 
 function getTransporter() {
   if (!isConfigured) return null

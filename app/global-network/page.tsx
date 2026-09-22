@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle2, Clock3, FileCheck2 } from 'lucide-react'
+import { ArrowRight, Clock3 } from 'lucide-react'
 
 import Footer from '@/components/footer-server'
 import PublicNavbar from '@/components/public-navbar'
@@ -22,8 +22,8 @@ export default async function ProfessionalServicesPage() {
 
       <section className="bg-gradient-to-br from-orange-50 to-red-50 py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-            <div className="relative order-2 min-h-80 overflow-hidden rounded-2xl shadow-xl md:order-1 md:min-h-96">
+          <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
+            <div className="relative min-h-80 overflow-hidden rounded-2xl md:min-h-96">
               <Image
                 src="/images/services/documentation.jpg"
                 alt="Travel documentation and professional support"
@@ -35,48 +35,44 @@ export default async function ProfessionalServicesPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
             </div>
 
-            <div className="order-1 md:order-2">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-orange-600">
-                Travel documentation services
-              </p>
-              <h1 className="mt-4 text-4xl font-bold leading-tight text-foreground sm:text-5xl md:text-6xl">
-                Documentation support for your next journey
+            <div>
+              <h1 className="text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
+                <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  Travel Documentation Services
+                </span>
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
-                Get clear requirements, dependable processing support, and a turnaround option
-                suited to your travel plans.
+                Get clear document requirements, dependable processing support, and turnaround
+                options suited to your travel plans.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-700">
-                {['Clear requirements', 'Transparent pricing', 'Secure online checkout'].map((benefit) => (
-                  <span key={benefit} className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-white px-4 py-2 shadow-sm">
-                    <CheckCircle2 className="h-4 w-4 text-orange-600" />
-                    {benefit}
-                  </span>
-                ))}
-              </div>
+              <p className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
+                Select a published service plan for transparent pricing and secure checkout, or
+                contact our team when your request needs a custom timeline.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-14 md:py-20">
+      <section className="bg-white py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <h2 className="text-4xl font-bold md:text-5xl">
+              <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Available Services
+              </span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-xl text-muted-foreground">
+              Choose the documentation service and turnaround time that fits your needs.
+            </p>
+          </div>
           {services.length === 0 ? (
-            <div className="grid items-center gap-8 overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-sm md:grid-cols-2">
-              <div className="relative min-h-64 md:min-h-80">
-                <Image src="/images/services/documentation.jpg" alt="Travel documentation consultation" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
-              </div>
-              <div className="p-8 md:pr-12">
-              <FileCheck2 className="h-10 w-10 text-orange-600" />
-              <h2 className="mt-4 text-2xl font-bold text-foreground">Service plans are being prepared</h2>
-              <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            <div className="rounded-2xl border border-orange-100 bg-orange-50/50 p-8 text-center sm:p-10">
+              <h3 className="text-2xl font-bold text-foreground">Service plans are being prepared</h3>
+              <p className="mx-auto mt-3 max-w-2xl text-lg text-muted-foreground">
                 Our team is updating the online catalog with current prices, document requirements,
-                and turnaround times. Use the contact page for help in the meantime.
+                and turnaround times.
               </p>
-              <Link href="/contact" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 px-6 py-3 font-semibold text-white transition hover:shadow-lg">
-                Contact Our Team <ArrowRight className="h-4 w-4" />
-              </Link>
-              </div>
             </div>
           ) : (
             <div className="space-y-10">
@@ -185,13 +181,13 @@ export default async function ProfessionalServicesPage() {
 
       <section className="pb-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-gradient-to-r from-slate-950 to-slate-800 p-8 text-white sm:p-10">
-            <h2 className="text-2xl font-bold sm:text-3xl">Need a custom service or timeline?</h2>
-            <p className="mt-3 max-w-2xl text-slate-300">
+          <div className="rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 p-8 text-center text-white sm:p-12">
+            <h2 className="text-3xl font-bold sm:text-4xl">Need a custom service or timeline?</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/90">
               Send the details to our team. We can confirm availability, required documents, and
               the appropriate service plan before you pay.
             </p>
-            <Link href="/contact" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100">
+            <Link href="/contact" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-8 py-4 font-bold text-primary transition hover:shadow-lg">
               Contact Our Team <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
