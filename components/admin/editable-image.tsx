@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Edit2, Trash2, Upload } from 'lucide-react'
 import { SingleImageUpload } from './single-image-upload'
 import { toast } from 'sonner'
+import { useAdminWorkspace } from '@/context/admin-workspace-context'
 
 interface EditableImageProps {
   src: string
@@ -35,6 +36,14 @@ export function EditableImage({
 }: EditableImageProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+
+  let isLivePreview = false
+  try {
+    const workspace = useAdminWorkspace()
+    isLivePreview = workspace.mode === 'preview'
+  } catch {
+    // outside provider
+  }
 
   const handleDelete = async () => {
     // If image is a Cloudinary URL, delete it from Cloudinary
@@ -118,7 +127,7 @@ export function EditableImage({
       )}
 
       {/* Edit Controls Overlay */}
-      {(isHovered || !src) && (
+      {!isLivePreview && (isHovered || !src) && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => setIsEditing(true)}
@@ -140,7 +149,7 @@ export function EditableImage({
       )}
 
       {/* Click to edit if no image */}
-      {!src && (
+      {!isLivePreview && !src && (
         <button
           onClick={() => setIsEditing(true)}
           className="absolute inset-0 w-full h-full"

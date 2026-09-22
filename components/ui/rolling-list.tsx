@@ -7,6 +7,7 @@
  */
 
 import Link from 'next/link'
+import { Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type RollingListItem = {
@@ -23,6 +24,8 @@ export type RollingListItem = {
   alt?: string
   href?: string
   color?: 'blue' | 'orange' | 'red' | 'green' | 'neutral'
+  onClick?: () => void
+  showEditPencil?: boolean
 }
 
 const colorClass: Record<NonNullable<RollingListItem['color']>, string> = {
@@ -201,6 +204,35 @@ export function RollingTextItem({ item }: { item: RollingListItem }) {
 
   const className =
     'group relative w-full min-w-0 cursor-pointer border-b border-neutral-200 py-5 sm:py-6 dark:border-neutral-800 block'
+
+  const editIndicator = item.showEditPencil ? (
+    <span className="absolute right-4 top-1/2 -translate-y-1/2 z-30 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-600 text-white text-xs font-semibold shadow-md opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all">
+      <Pencil className="w-3.5 h-3.5" /> Edit
+    </span>
+  ) : null
+
+  if (item.onClick) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.preventDefault()
+          item.onClick?.()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            item.onClick?.()
+          }
+        }}
+        className={className}
+      >
+        {content}
+        {editIndicator}
+      </div>
+    )
+  }
 
   if (href) {
     return (

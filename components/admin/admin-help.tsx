@@ -10,7 +10,7 @@ export function AdminHelp() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-50 p-3 rounded-full bg-primary text-white shadow-lg hover:shadow-xl transition group"
+        className="fixed bottom-6 left-6 z-30 p-3 rounded-full bg-primary text-white shadow-lg hover:shadow-xl transition group"
         title="Help"
       >
         <HelpCircle size={20} />
@@ -22,7 +22,7 @@ export function AdminHelp() {
   }
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 w-96 max-h-96 bg-white rounded-xl shadow-2xl border border-border overflow-hidden flex flex-col">
+    <div className="fixed bottom-6 left-6 z-30 w-96 max-h-96 bg-white rounded-xl shadow-2xl border border-border overflow-hidden flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 flex justify-between items-center">
         <h3 className="font-bold flex items-center gap-2">

@@ -21,9 +21,15 @@ const FILTERS: Array<{ value: PackageFilter; label: string }> = [
 
 interface PackagesPageClientProps {
   packages: PackageCardContent[]
+  onEditPackage?: (pkg: PackageDestinationItem) => void
+  isEditable?: boolean
 }
 
-export default function PackagesPageClient({ packages }: PackagesPageClientProps) {
+export default function PackagesPageClient({
+  packages,
+  onEditPackage,
+  isEditable = false,
+}: PackagesPageClientProps) {
   const searchParams = useSearchParams()
   const [filter, setFilter] = useState<PackageFilter>('all')
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '')
@@ -237,6 +243,8 @@ export default function PackagesPageClient({ packages }: PackagesPageClientProps
               packages={gridItems}
               selectedId={selectedId}
               onSelect={setSelectedId}
+              onEditPackage={onEditPackage}
+              isEditable={isEditable}
               bookLabel="Book Now"
             />
           )}

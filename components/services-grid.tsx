@@ -3,6 +3,8 @@ import { RollingTextList, type RollingListItem } from '@/components/ui/rolling-l
 
 interface ServicesGridProps {
   services: HomeServiceContent[]
+  onEditService?: (service: HomeServiceContent) => void
+  isEditable?: boolean
 }
 
 /**
@@ -126,7 +128,11 @@ function displayTitle(title?: string | null): string {
   return t || 'Service'
 }
 
-export default function ServicesGrid({ services }: ServicesGridProps) {
+export default function ServicesGrid({
+  services,
+  onEditService,
+  isEditable = false,
+}: ServicesGridProps) {
   // Keep slots even if title is temporarily empty so admin renames don't drop the row/URL.
   const cards = (services || []).filter((s) => s && (s.id || s.title || s.href))
   if (cards.length === 0) return null
@@ -152,6 +158,7 @@ export default function ServicesGrid({ services }: ServicesGridProps) {
   const items: RollingListItem[] = resolved.map((r, i) => {
     const alt =
       (r.service.description || '').replace(/\s+/g, ' ').trim() || r.title
+    const onClick = onEditService ? () => onEditService(r.service) : undefined
 
     if (r.docParts) {
       return {
@@ -161,7 +168,9 @@ export default function ServicesGrid({ services }: ServicesGridProps) {
         suffix: r.docParts.suffix || undefined,
         src: uniqueSrcs[i] || FALLBACK_SRC,
         alt,
-        href: r.media.href,
+        href: onEditService ? undefined : r.media.href,
+        onClick,
+        showEditPencil: isEditable,
         color: 'orange' as const,
       }
     }
@@ -173,7 +182,9 @@ export default function ServicesGrid({ services }: ServicesGridProps) {
       suffix: undefined,
       src: uniqueSrcs[i] || FALLBACK_SRC,
       alt,
-      href: r.media.href,
+      href: onEditService ? undefined : r.media.href,
+      onClick,
+      showEditPencil: isEditable,
       color: 'orange' as const,
     }
   })

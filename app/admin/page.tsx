@@ -1,28 +1,146 @@
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
+
 import { useAdmin } from '@/context/admin-context'
-import {
-  EditableTextWrapper,
-  EditableTextareaWrapper,
-} from '@/components/admin/editable-content'
-import { EditableServicesGrid } from '@/components/admin/editable-services-grid'
+import { useAdminWorkspace } from '@/context/admin-workspace-context'
+import { MinimalistHero } from '@/components/ui/minimalist-hero'
+import ServicesGrid from '@/components/services-grid'
+import HomeFeaturedPackages from '@/components/home-featured-packages'
+import HomeLatestBlog from '@/components/home-latest-blog'
 import CTASection from '@/components/cta-section'
 import Footer from '@/components/footer'
-import { EditableMasonry } from '@/components/admin/editable-masonry'
-import { useState, useEffect } from 'react'
+import { EditableTextareaWrapper } from '@/components/admin/editable-content'
+import { ServiceEditOverlay } from '@/components/admin/overlays/service-edit-overlay'
+import { PackageEditOverlay } from '@/components/admin/overlays/package-edit-overlay'
+import { BlogPostEditOverlay } from '@/components/admin/overlays/blog-post-edit-overlay'
+import type { PackageDestinationItem } from '@/components/package-destination-grid'
+import type { BlogPostSummary, PackageCardContent, HomeServiceContent } from '@/lib/public-content'
+
+const HERO_IMAGE = '/images/hero/ca-travels-hero-portrait.png'
+
+const DEFAULT_SERVICE_ROUTES = [
+  '/study-abroad',
+  '/work-abroad',
+  '/travel-tours',
+  '/global-network',
+]
 
 export default function AdminHomePage() {
-  const { content, updateHomeHero, isLoading } = useAdmin()
-  const { hero } = content.home
-  const [masonryLoaded, setMasonryLoaded] = useState(false)
+  const { content, updateHomeHero, updateServices, updatePackage, deletePackage, isLoading } = useAdmin()
+  const { mode } = useAdminWorkspace()
+  const { hero, services } = content.home
+  const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([])
 
-  // All hooks must be called before any conditional returns
+  const [selectedServiceForEdit, setSelectedServiceForEdit] = useState<HomeServiceContent | null>(null)
+  const [selectedPackageForEdit, setSelectedPackageForEdit] = useState<PackageDestinationItem | null>(null)
+  const [selectedPostForEdit, setSelectedPostForEdit] = useState<BlogPostSummary | null>(null)
+  const [isCreatingNewPost, setIsCreatingNewPost] = useState(false)
+
   useEffect(() => {
-    const timer = setTimeout(() => setMasonryLoaded(true), 500)
-    return () => clearTimeout(timer)
+    let isMounted = true
+    async function fetchBlog() {
+      try {
+        const res = await fetch('/api/blog')
+        const data = await res.json()
+        if (isMounted && data.success && Array.isArray(data.data)) {
+          setBlogPosts(data.data.slice(0, 3))
+        }
+      } catch {
+        // Silent catch
+      }
+    }
+    fetchBlog()
+    return () => {
+      isMounted = false
+    }
   }, [])
 
-  // Show loading state while content is being fetched (AFTER all hooks)
+  const heroDescription = useMemo(() => {
+    const text =
+      hero.description?.trim() ||
+      hero.subtitle?.trim() ||
+      'Study abroad, work abroad, and travel packages from Ghana — guided with honesty and care.'
+
+    return (
+      <EditableTextareaWrapper
+        value={text}
+        onChange={(value) => updateHomeHero({ description: value })}
+        rows={3}
+        className="text-sm sm:text-base leading-relaxed text-neutral-600 max-w-sm bg-transparent"
+        placeholder="Edit hero description..."
+      />
+    )
+  }, [hero.description, hero.subtitle, updateHomeHero])
+
+  const mappedServices: HomeServiceContent[] = useMemo(() => {
+    const rawServices = (services || []) as any[]
+    return rawServices.map((s, idx) => {
+      const canonicalRoute = s.route || s.href || DEFAULT_SERVICE_ROUTES[idx % DEFAULT_SERVICE_ROUTES.length]
+      return {
+        id: s.id,
+        title: s.title,
+        description: s.description || '',
+        icon: s.icon || 'Globe',
+        href: canonicalRoute,
+        image: s.image,
+      }
+    })
+  }, [services])
+
+  const featuredPackagesList: PackageCardContent[] = useMemo(() => {
+    const all = content.packages || []
+    if (content.home.featuredPackages && content.home.featuredPackages.length > 0) {
+      return content.home.featuredPackages.map((fp) => {
+        const full = all.find((p) => p.id === fp.id)
+        if (full) return full as PackageCardContent
+        return {
+          id: fp.id,
+          name: fp.name,
+          description: fp.description,
+          category: (fp.category || 'travel') as 'travel' | 'study' | 'work',
+          duration: fp.duration,
+          price: fp.price,
+          currency: 'GHS',
+          highlights: fp.highlights || [],
+          itinerary: '',
+          images: fp.images || [],
+          included: [],
+          notIncluded: [],
+        }
+      })
+    }
+    return all.slice(0, 4) as PackageCardContent[]
+  }, [content.packages, content.home.featuredPackages])
+
+  const handleSaveService = (serviceId: string, updates: Partial<HomeServiceContent>) => {
+    const rawServices = (services || []) as any[]
+    const updated = rawServices.map((s) => {
+      if (s.id === serviceId) {
+        return {
+          ...s,
+          title: updates.title ?? s.title,
+          description: updates.description ?? s.description,
+          route: updates.href ?? s.route ?? s.href,
+          image: updates.image !== undefined ? updates.image : s.image,
+        }
+      }
+      return s
+    })
+    updateServices(updated)
+    setSelectedServiceForEdit(null)
+  }
+
+  const handleSavePackage = (pkgId: string, updates: Partial<PackageDestinationItem>) => {
+    updatePackage(pkgId, updates as any)
+    setSelectedPackageForEdit(null)
+  }
+
+  const handleDeletePackage = (pkgId: string) => {
+    deletePackage(pkgId)
+    setSelectedPackageForEdit(null)
+  }
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
@@ -36,165 +154,130 @@ export default function AdminHomePage() {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Hero Section - mirrors main home hero */}
-      <section className="relative overflow-hidden md:py-22">
-        <div className="hidden md:block absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-red-50 -z-30"></div>
+      {/* 1. Minimalist Hero — exact public hero UI */}
+      <div className="relative">
+        <MinimalistHero
+          hideNav
+          logoText="CA Travels"
+          mainText={heroDescription}
+          readMoreLink="/contact"
+          readMoreLabel="Get Started"
+          imageSrc={HERO_IMAGE}
+          imageAlt="Young woman traveler with a bag — Center for Admission and Travels"
+          overlayText={{
+            part1: 'looking to\ntravel &',
+            part2: 'study\nabroad?',
+          }}
+          socialLinks={[]}
+          locationText=""
+        />
+      </div>
 
-        {/* Mobile: Full-width hero with Masonry background */}
-        <div className="md:hidden relative w-full" style={{ minHeight: '420px', zIndex: 10 }}>
-          <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 5 }}>
-            <div style={{ width: '100%', height: '100%' }}>
-              <EditableMasonry
-                images={hero.images}
-                onChange={(images) => updateHomeHero({ images })}
-              />
-            </div>
-          </div>
-          <div className="hero-content-wrapper" style={{ zIndex: 20, position: 'relative', backgroundColor: masonryLoaded ? 'rgba(0, 0, 0, 0.25)' : 'transparent', paddingBottom: '24px', backdropFilter: masonryLoaded ? 'blur(4px)' : 'none', transition: 'all 0.5s ease-in' }}>
-            <div className="px-4">
-              <EditableTextWrapper
-                value={hero.title}
-                onChange={(value) => updateHomeHero({ title: value })}
-                variant="title"
-                className="text-4xl sm:text-5xl font-bold leading-tight mb-4"
-              />
-              <EditableTextareaWrapper
-                value={hero.description}
-                onChange={(value) => updateHomeHero({ description: value })}
-                rows={3}
-                className={`text-lg mt-6 leading-relaxed transition-colors duration-500 ${masonryLoaded ? 'text-white' : 'text-muted-foreground'}`}
-              />
-            </div>
+      {/* 2. Services Grid — exact public RollingTextList UI */}
+      <div className="relative">
+        <ServicesGrid
+          services={mappedServices}
+          isEditable={mode === 'edit'}
+          onEditService={
+            mode === 'edit'
+              ? (service) => setSelectedServiceForEdit(service)
+              : undefined
+          }
+        />
+      </div>
 
-            <div className="flex gap-4 flex-wrap px-4">
-              <div className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105">
-                <EditableTextWrapper
-                  value={hero.cta1Text}
-                  onChange={(value) => updateHomeHero({ cta1Text: value })}
-                  variant="body"
-                  className="text-white font-semibold"
-                />
-              </div>
-              <div className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition">
-                <EditableTextWrapper
-                  value={hero.cta2Text}
-                  onChange={(value) => updateHomeHero({ cta2Text: value })}
-                  variant="body"
-                  className="text-primary font-semibold"
-                />
-              </div>
-            </div>
+      {/* 3. Featured Packages — exact public PackageDestinationGrid UI */}
+      <div className="relative">
+        <HomeFeaturedPackages
+          featuredPackages={featuredPackagesList}
+          isEditable={mode === 'edit'}
+          onEditPackage={
+            mode === 'edit'
+              ? (pkg) => setSelectedPackageForEdit(pkg)
+              : undefined
+          }
+        />
+      </div>
 
-            <div className="grid grid-cols-3 gap-6 pt-8 px-4">
-              {hero.stats.map((stat, idx) => (
-                <div key={idx}>
-                  <EditableTextWrapper
-                    value={stat.value}
-                    onChange={(value) => {
-                      const newStats = [...hero.stats]
-                      newStats[idx] = { ...stat, value }
-                      updateHomeHero({ stats: newStats })
-                    }}
-                    variant="title"
-                    className="text-3xl font-bold text-primary"
-                  />
-                  <EditableTextWrapper
-                    value={stat.label}
-                    onChange={(value) => {
-                      const newStats = [...hero.stats]
-                      newStats[idx] = { ...stat, label: value }
-                      updateHomeHero({ stats: newStats })
-                    }}
-                    variant="body"
-                    className={`text-sm transition-colors duration-500 ${masonryLoaded ? 'text-white' : 'text-muted-foreground'}`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* 4. Latest Blog Posts — exact public HomeLatestBlog UI */}
+      <div className="relative">
+        <HomeLatestBlog
+          posts={blogPosts}
+          isEditable={mode === 'edit'}
+          onEditPost={(post) => {
+            if (mode === 'edit') {
+              setIsCreatingNewPost(false)
+              setSelectedPostForEdit(post)
+            }
+          }}
+          onAddPost={() => {
+            if (mode === 'edit') {
+              setSelectedPostForEdit(null)
+              setIsCreatingNewPost(true)
+            }
+          }}
+        />
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Desktop: Grid layout */}
-          <div className="hidden md:grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative md:space-y-8 space-y-4 animate-fade-in">
-              <div className="relative z-20">
-                <EditableTextWrapper
-                  value={hero.title}
-                  onChange={(value) => updateHomeHero({ title: value })}
-                  variant="title"
-                  className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-4"
-                />
-                <EditableTextareaWrapper
-                  value={hero.description}
-                  onChange={(value) => updateHomeHero({ description: value })}
-                  rows={4}
-                  className="text-lg text-muted-foreground mt-6 leading-relaxed"
-                />
-              </div>
-
-              <div className="relative z-20 flex gap-4 flex-wrap">
-                <div className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-xl transition transform hover:scale-105">
-                  <EditableTextWrapper
-                    value={hero.cta1Text}
-                    onChange={(value) => updateHomeHero({ cta1Text: value })}
-                    variant="body"
-                    className="text-white font-semibold"
-                  />
-                </div>
-                <div className="px-8 py-3 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary hover:text-white transition">
-                  <EditableTextWrapper
-                    value={hero.cta2Text}
-                    onChange={(value) => updateHomeHero({ cta2Text: value })}
-                    variant="body"
-                    className="text-primary font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div className="relative z-20 grid grid-cols-3 md:gap-6 pt-8">
-                {hero.stats.map((stat, idx) => (
-                  <div key={idx}>
-                    <EditableTextWrapper
-                      value={stat.value}
-                      onChange={(value) => {
-                        const newStats = [...hero.stats]
-                        newStats[idx] = { ...stat, value }
-                        updateHomeHero({ stats: newStats })
-                      }}
-                      variant="title"
-                      className="text-3xl font-bold text-primary"
-                    />
-                    <EditableTextWrapper
-                      value={stat.label}
-                      onChange={(value) => {
-                        const newStats = [...hero.stats]
-                        newStats[idx] = { ...stat, label: value }
-                        updateHomeHero({ stats: newStats })
-                      }}
-                      variant="body"
-                      className="text-sm text-muted-foreground"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative h-full">
-              <div className="relative w-full h-96 rounded-2xl">
-                <EditableMasonry
-                  images={hero.images}
-                  onChange={(images) => updateHomeHero({ images })}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <EditableServicesGrid />
+      {/* 5. CTA Section — exact public CTA UI */}
       <CTASection />
+
+      {/* 6. Footer — exact public Footer UI */}
       <Footer />
+
+      {/* In-place Service Edit Overlay (Drawer on mobile, Dialog on desktop) */}
+      {selectedServiceForEdit && (
+        <ServiceEditOverlay
+          open={Boolean(selectedServiceForEdit)}
+          onOpenChange={(open) => !open && setSelectedServiceForEdit(null)}
+          service={selectedServiceForEdit}
+          onSave={handleSaveService}
+        />
+      )}
+
+      {/* In-place Package Edit Overlay (Drawer on mobile, Dialog on desktop) */}
+      {selectedPackageForEdit && (
+        <PackageEditOverlay
+          open={Boolean(selectedPackageForEdit)}
+          onOpenChange={(open) => !open && setSelectedPackageForEdit(null)}
+          packageData={selectedPackageForEdit}
+          onSave={handleSavePackage}
+          onDelete={handleDeletePackage}
+        />
+      )}
+
+      {/* In-place Blog Post Edit Overlay (Drawer on mobile, Dialog on desktop) */}
+      {(selectedPostForEdit || isCreatingNewPost) && (
+        <BlogPostEditOverlay
+          open={Boolean(selectedPostForEdit || isCreatingNewPost)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedPostForEdit(null)
+              setIsCreatingNewPost(false)
+            }
+          }}
+          post={selectedPostForEdit}
+          isNew={isCreatingNewPost}
+          onSaved={(savedPost) => {
+            setBlogPosts((prev) => {
+              const idx = prev.findIndex((p) => p.id === savedPost.id)
+              if (idx >= 0) {
+                const next = [...prev]
+                next[idx] = savedPost
+                return next
+              }
+              return [savedPost, ...prev].slice(0, 3)
+            })
+            setSelectedPostForEdit(null)
+            setIsCreatingNewPost(false)
+          }}
+          onDeleted={(postId) => {
+            setBlogPosts((prev) => prev.filter((p) => p.id !== postId))
+            setSelectedPostForEdit(null)
+            setIsCreatingNewPost(false)
+          }}
+        />
+      )}
     </main>
   )
 }

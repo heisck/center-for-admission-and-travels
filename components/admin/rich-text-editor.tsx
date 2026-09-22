@@ -8,6 +8,7 @@ import TextAlign from '@tiptap/extension-text-align'
 import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import UnderlineExtension from '@tiptap/extension-underline'
 import {
   AlignCenter,
   AlignLeft,
@@ -188,6 +189,7 @@ export function RichTextEditor({
         alignments: ['left', 'center', 'right'],
       }),
       Placeholder.configure({ placeholder }),
+      UnderlineExtension,
     ],
     content: contentToSafeHtml(value),
     editorProps: {

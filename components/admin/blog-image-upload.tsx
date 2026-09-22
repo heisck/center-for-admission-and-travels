@@ -74,24 +74,24 @@ export function BlogImageUpload({
             fill
             className="object-contain"
           />
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition flex items-center justify-center gap-2 opacity-0 hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="px-4 py-2 bg-white rounded-lg font-medium hover:bg-slate-100 shadow disabled:opacity-50"
-            >
-              {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Replace'}
-            </button>
-            <button
-              type="button"
-              onClick={handleRemove}
-              disabled={isUploading}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 shadow disabled:opacity-50"
-            >
-              <X size={18} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleRemove}
+            disabled={isUploading}
+            className="absolute top-2.5 right-2.5 z-10 inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-md transition active:scale-95 disabled:opacity-50"
+            title="Remove image"
+            aria-label="Remove image"
+          >
+            <X size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="absolute bottom-2.5 right-2.5 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/75 hover:bg-black/90 text-white text-xs font-semibold backdrop-blur-xs transition shadow disabled:opacity-50"
+          >
+            {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Replace'}
+          </button>
           <input
             ref={fileInputRef}
             type="file"

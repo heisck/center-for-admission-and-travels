@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Loader2, Mail, MapPin, Phone } from "lucide-react"
+import { Loader2, Mail, MapPin, Phone, Pencil } from "lucide-react"
 import { toast } from "sonner"
 
 import { buildWhatsAppUrl, normalizePhoneForTel } from "@/lib/contact-utils"
@@ -10,9 +10,15 @@ import type { ContactContent } from "@/lib/public-content"
 
 interface ContactPageClientProps {
   contact: ContactContent
+  onEditContact?: () => void
+  isEditable?: boolean
 }
 
-export default function ContactPageClient({ contact }: ContactPageClientProps) {
+export default function ContactPageClient({
+  contact,
+  onEditContact,
+  isEditable = false,
+}: ContactPageClientProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -166,8 +172,17 @@ export default function ContactPageClient({ contact }: ContactPageClientProps) {
             </div>
 
             <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-8 text-foreground">Contact Information</h2>
+              <div className="flex items-center justify-between gap-4 mb-8">
+                <h2 className="text-3xl font-bold text-foreground">Contact Information</h2>
+                {isEditable && onEditContact && (
+                  <button
+                    type="button"
+                    onClick={onEditContact}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold shadow hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit Details
+                  </button>
+                )}
               </div>
 
               <div className="space-y-6">

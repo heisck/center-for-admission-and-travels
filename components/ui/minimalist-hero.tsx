@@ -26,7 +26,7 @@ export type MinimalistHeroSocialLink = {
 export type MinimalistHeroProps = {
   logoText?: string
   navLinks?: MinimalistHeroNavLink[]
-  mainText?: string
+  mainText?: React.ReactNode
   readMoreLink?: string
   readMoreLabel?: string
   imageSrc: string
@@ -172,14 +172,14 @@ export function MinimalistHero({
               </Link>
             </div>
           ) : null}
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="text-sm sm:text-base leading-relaxed text-neutral-600 max-w-sm bg-transparent"
           >
             {mainText}
-          </motion.p>
+          </motion.div>
           {readMoreLink ? (
             <motion.div
               initial={{ opacity: 0, y: 12 }}

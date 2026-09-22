@@ -2,19 +2,22 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 const STORAGE_KEY = "cookie_consent"
 
 export default function CookieConsent() {
+  const pathname = usePathname()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    if (pathname.startsWith('/admin')) return
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) return
 
     const timer = setTimeout(() => setVisible(true), 1000)
     return () => clearTimeout(timer)
-  }, [])
+  }, [pathname])
 
   function handleAccept() {
     localStorage.setItem(STORAGE_KEY, "accepted")
@@ -26,7 +29,7 @@ export default function CookieConsent() {
     setVisible(false)
   }
 
-  if (!visible) return null
+  if (!visible || pathname.startsWith('/admin')) return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up">

@@ -11,9 +11,15 @@ import type { PackageCardContent } from '@/lib/public-content'
 
 interface HomeFeaturedPackagesProps {
   featuredPackages: PackageCardContent[]
+  onEditPackage?: (pkg: PackageDestinationItem) => void
+  isEditable?: boolean
 }
 
-export default function HomeFeaturedPackages({ featuredPackages }: HomeFeaturedPackagesProps) {
+export default function HomeFeaturedPackages({
+  featuredPackages,
+  onEditPackage,
+  isEditable = false,
+}: HomeFeaturedPackagesProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const items: PackageDestinationItem[] = useMemo(
@@ -57,6 +63,8 @@ export default function HomeFeaturedPackages({ featuredPackages }: HomeFeaturedP
           packages={items}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          onEditPackage={onEditPackage}
+          isEditable={isEditable}
           bookLabel="Book Now"
         />
 

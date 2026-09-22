@@ -4,6 +4,7 @@ import { ReactNode, useState } from 'react'
 import { EditableText } from './editable-text'
 import { ImageEditor } from './image-editor'
 import { Edit2, X, Check } from 'lucide-react'
+import { useAdminWorkspace } from '@/context/admin-workspace-context'
 
 /**
  * Unified EditableContent wrapper component
@@ -62,6 +63,14 @@ export function EditableTextareaWrapper({
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value)
 
+  let isLivePreview = false
+  try {
+    const workspace = useAdminWorkspace()
+    isLivePreview = workspace.mode === 'preview'
+  } catch {
+    // outside provider
+  }
+
   const handleSave = () => {
     onChange(editValue)
     setIsEditing(false)
@@ -69,6 +78,14 @@ export function EditableTextareaWrapper({
 
   const handleCancel = () => {
     setIsEditing(false)
+  }
+
+  if (isLivePreview) {
+    return (
+      <div className={`p-3 ${className}`}>
+        <p className="whitespace-pre-wrap text-foreground leading-relaxed">{value || placeholder}</p>
+      </div>
+    )
   }
 
   if (isEditing) {

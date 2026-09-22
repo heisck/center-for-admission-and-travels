@@ -22,7 +22,7 @@ export default async function PublicNavbar({ currentPath }: PublicNavbarProps) {
   const headerNavLinks = getHeaderNavLinks(navLinks)
   return (
     <>
-      <nav className="fixed inset-x-0 top-0 z-[100] border-b border-black/5 bg-white/90 shadow-sm backdrop-blur-md">
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-black/5 bg-white/90 shadow-sm backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center gap-3 h-16 min-[1920px]:h-20 min-[2560px]:h-24">
             <Link href="/" className="flex items-center flex-shrink-0">

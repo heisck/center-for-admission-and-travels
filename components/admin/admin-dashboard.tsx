@@ -145,7 +145,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Mobile Preview Toggle */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-50">
+      <div className="lg:hidden fixed bottom-6 right-6 z-30">
         <button
           onClick={() => setShowPreview(!showPreview)}
           className="p-3 rounded-full bg-primary text-white shadow-lg hover:shadow-xl transition"

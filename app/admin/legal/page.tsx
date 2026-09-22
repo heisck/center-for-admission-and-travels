@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Footer from '@/components/footer'
 import { FileText, Save, Loader2 } from 'lucide-react'
+import { RichTextEditor } from '@/components/admin/rich-text-editor'
 
 const LEGAL_PAGES = [
   { slug: 'privacy', title: 'Privacy Policy', route: '/privacy' },
@@ -73,14 +74,7 @@ export default function AdminLegalPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <section className="py-16 md:py-24 bg-gradient-to-br from-orange-50 to-red-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Legal Pages</h1>
-          <p className="text-muted-foreground">Edit Privacy Policy, Terms & Conditions, and Refund Policy</p>
-        </div>
-      </section>
-
-      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - page selector */}
           <div className="lg:w-56 flex-shrink-0">
@@ -145,19 +139,21 @@ export default function AdminLegalPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">
-                      Content (plain text)
-                    </label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Use plain text. Blank lines create new paragraphs. Links: paste the full URL (e.g. https://example.com).
-                    </p>
-                    <textarea
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-sm font-semibold text-foreground mb-1">
+                        Page Content
+                      </label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Use the formatting toolbar to format headings, bullet points, numbered lists, bold text, italics, underline, links, and alignments.
+                      </p>
+                    </div>
+                    <RichTextEditor
+                      key={activeSlug}
                       value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      rows={24}
-                      className="w-full px-3 py-2 border border-border rounded-lg text-sm text-foreground whitespace-pre-wrap"
-                      placeholder="Write the legal page content here..."
+                      onChange={setContent}
+                      placeholder="Write or paste the legal page content here..."
+                      ariaLabel={`${currentPage?.title || 'Legal'} page content`}
                     />
                   </div>
 

@@ -39,7 +39,8 @@ export default async function LegalPageContent({
 
             {htmlContent ? (
               <div
-                className="space-y-8 text-muted-foreground leading-relaxed prose prose-slate max-w-none prose-headings:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline"
+                className="legal-post-content blog-post-content text-slate-700 leading-relaxed max-w-none"
+                suppressHydrationWarning
                 dangerouslySetInnerHTML={{
                   __html: htmlContent,
                 }}

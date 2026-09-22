@@ -238,27 +238,32 @@
 
 /* Blog rich-text editor and public article typography */
 .blog-rich-text-editor,
-.blog-post-content {
+.blog-post-content,
+.legal-post-content {
   line-height: 1.8;
 }
 
 .blog-rich-text-editor > *:first-child,
-.blog-post-content > *:first-child {
+.blog-post-content > *:first-child,
+.legal-post-content > *:first-child {
   margin-top: 0;
 }
 
 .blog-rich-text-editor > *:last-child,
-.blog-post-content > *:last-child {
+.blog-post-content > *:last-child,
+.legal-post-content > *:last-child {
   margin-bottom: 0;
 }
 
 .blog-rich-text-editor p,
-.blog-post-content p {
+.blog-post-content p,
+.legal-post-content p {
   margin: 0 0 1.25rem;
 }
 
 .blog-rich-text-editor h2,
-.blog-post-content h2 {
+.blog-post-content h2,
+.legal-post-content h2 {
   margin: 2.25rem 0 0.85rem;
   color: var(--foreground);
   font-size: clamp(1.5rem, 1.25rem + 0.8vw, 2rem);
@@ -268,7 +273,8 @@
 }
 
 .blog-rich-text-editor h3,
-.blog-post-content h3 {
+.blog-post-content h3,
+.legal-post-content h3 {
   margin: 1.75rem 0 0.7rem;
   color: var(--foreground);
   font-size: clamp(1.2rem, 1.05rem + 0.45vw, 1.5rem);
@@ -279,40 +285,48 @@
 .blog-rich-text-editor ul,
 .blog-rich-text-editor ol,
 .blog-post-content ul,
-.blog-post-content ol {
+.blog-post-content ol,
+.legal-post-content ul,
+.legal-post-content ol {
   margin: 0.85rem 0 1.5rem;
   padding-left: 1.75rem;
 }
 
 .blog-rich-text-editor ul,
-.blog-post-content ul {
+.blog-post-content ul,
+.legal-post-content ul {
   list-style-type: disc;
 }
 
 .blog-rich-text-editor ul[data-list-style="circle"],
-.blog-post-content ul[data-list-style="circle"] {
+.blog-post-content ul[data-list-style="circle"],
+.legal-post-content ul[data-list-style="circle"] {
   list-style-type: circle;
 }
 
 .blog-rich-text-editor ol,
-.blog-post-content ol {
+.blog-post-content ol,
+.legal-post-content ol {
   list-style-type: decimal;
 }
 
 .blog-rich-text-editor li,
-.blog-post-content li {
+.blog-post-content li,
+.legal-post-content li {
   margin: 0.35rem 0;
   padding-left: 0.3rem;
 }
 
 .blog-rich-text-editor li::marker,
-.blog-post-content li::marker {
+.blog-post-content li::marker,
+.legal-post-content li::marker {
   color: var(--primary);
   font-weight: 700;
 }
 
 .blog-rich-text-editor a,
-.blog-post-content a {
+.blog-post-content a,
+.legal-post-content a {
   color: var(--primary);
   font-style: italic;
   font-weight: 600;
@@ -322,13 +336,34 @@
 }
 
 .blog-rich-text-editor strong,
-.blog-post-content strong {
+.blog-post-content strong,
+.legal-post-content strong,
+.blog-rich-text-editor b,
+.blog-post-content b,
+.legal-post-content b {
   color: var(--foreground);
   font-weight: 800;
 }
 
+.blog-rich-text-editor em,
+.blog-post-content em,
+.legal-post-content em,
+.blog-rich-text-editor i,
+.blog-post-content i,
+.legal-post-content i {
+  font-style: italic !important;
+}
+
+.blog-rich-text-editor u,
+.blog-post-content u,
+.legal-post-content u {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .blog-rich-text-editor blockquote,
-.blog-post-content blockquote {
+.blog-post-content blockquote,
+.legal-post-content blockquote {
   margin: 1.5rem 0;
   border-left: 4px solid var(--primary);
   border-radius: 0 0.75rem 0.75rem 0;
@@ -377,3 +412,24 @@
 .animate-slide-up {
   animation: slideUp 0.4s ease-out;
 }
+
+/* Admin Workspace Live Mode vs Edit Mode */
+.admin-live-mode svg.lucide-pen,
+.admin-live-mode svg.lucide-edit-2,
+.admin-live-mode svg.lucide-edit {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+.admin-live-mode .group {
+  cursor: default !important;
+}
+
+.admin-live-mode [class*="hover:bg-orange-50"]:hover {
+  background-color: transparent !important;
+}
+
+.admin-live-mode [class*="hover:border-orange-200"]:hover {
+  border-color: transparent !important;
+}
+

@@ -1,20 +1,55 @@
 'use client'
 
-import AdminContactEditor from '@/components/admin/editors/admin-contact-editor'
+import { useState } from 'react'
+
+import { useAdmin } from '@/context/admin-context'
+import { useAdminWorkspace } from '@/context/admin-workspace-context'
+import ContactPageClient from '@/app/contact/contact-page-client'
+import Footer from '@/components/footer'
+import { ContactEditOverlay } from '@/components/admin/overlays/contact-edit-overlay'
 
 export default function AdminContactPage() {
-  return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Contact & Social Links</h1>
-          <p className="text-muted-foreground mt-2">
-            Edit contact information, office address, and social media links shown in the footer
-          </p>
-        </div>
+  const { content, updateContact, updateFooter, isLoading } = useAdmin()
+  const { mode } = useAdminWorkspace()
+  const [isEditingContact, setIsEditingContact] = useState(false)
 
-        <AdminContactEditor />
-      </div>
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading contact details...</p>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-background">
+      {/* Main Contact Page — exact public layout and form */}
+      <ContactPageClient
+        contact={content.contact as any}
+        isEditable={mode === 'edit'}
+        onEditContact={() => setIsEditingContact(true)}
+      />
+
+      <Footer />
+
+      {/* Adaptive In-place Overlay (Drawer on mobile, Dialog on desktop) */}
+      {isEditingContact && (
+        <ContactEditOverlay
+          open={isEditingContact}
+          onOpenChange={setIsEditingContact}
+          contact={content.contact}
+          footer={content.footer}
+          onSave={(contactUpdates, footerUpdates) => {
+            updateContact(contactUpdates)
+            if (footerUpdates) {
+              updateFooter(footerUpdates)
+            }
+          }}
+        />
+      )}
     </main>
   )
 }

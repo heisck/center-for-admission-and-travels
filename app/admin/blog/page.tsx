@@ -1,14 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { FileText, Plus, Pencil, Trash2, Eye, Loader2 } from 'lucide-react'
+import { BlogPostEditOverlay } from '@/components/admin/overlays/blog-post-edit-overlay'
 
 interface BlogPost {
   id: string
   slug: string
   title: string
   excerpt: string
+  content?: string
+  imageUrl?: string
+  packageId?: string
   published: boolean
   publishedAt: string | null
   package: { id: string; name: string } | null
@@ -17,6 +20,8 @@ interface BlogPost {
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
+  const [isCreatingNewPost, setIsCreatingNewPost] = useState(false)
 
   const fetchPosts = async () => {
     try {
@@ -52,7 +57,7 @@ export default function AdminBlogPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
@@ -61,12 +66,16 @@ export default function AdminBlogPage() {
               Create posts to explain packages and help visitors find what they need. Link posts to packages for better discoverability.
             </p>
           </div>
-          <Link
-            href="/admin/blog/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition"
+          <button
+            type="button"
+            onClick={() => {
+              setEditingPost(null)
+              setIsCreatingNewPost(true)
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition shadow-sm"
           >
             <Plus size={18} /> New Post
-          </Link>
+          </button>
         </div>
 
         {loading ? (
@@ -80,15 +89,19 @@ export default function AdminBlogPage() {
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               Create posts to explain your packages, share tips, and help visitors discover what you offer. Posts can be linked to specific packages.
             </p>
-            <Link
-              href="/admin/blog/new"
+            <button
+              type="button"
+              onClick={() => {
+                setEditingPost(null)
+                setIsCreatingNewPost(true)
+              }}
               className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition"
             >
               <Plus size={18} /> Create your first post
-            </Link>
+            </button>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="bg-white rounded-xl border border-border overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-border">
@@ -131,14 +144,19 @@ export default function AdminBlogPage() {
                           >
                             <Eye size={18} />
                           </a>
-                          <Link
-                            href={`/admin/blog/${post.id}`}
-                            className="p-2 hover:bg-slate-100 rounded-lg transition"
-                            title="Edit"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCreatingNewPost(false)
+                              setEditingPost(post)
+                            }}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition text-slate-700"
+                            title="Edit with overlay"
                           >
                             <Pencil size={18} />
-                          </Link>
+                          </button>
                           <button
+                            type="button"
                             onClick={() => handleDelete(post.id, post.title)}
                             className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
                             title="Delete"
@@ -155,6 +173,31 @@ export default function AdminBlogPage() {
           </div>
         )}
       </div>
+
+      {/* Adaptive In-place Overlay for Blog Post Editing / Creation */}
+      {(editingPost || isCreatingNewPost) && (
+        <BlogPostEditOverlay
+          open={Boolean(editingPost || isCreatingNewPost)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingPost(null)
+              setIsCreatingNewPost(false)
+            }
+          }}
+          post={editingPost as any}
+          isNew={isCreatingNewPost}
+          onSaved={() => {
+            fetchPosts()
+            setEditingPost(null)
+            setIsCreatingNewPost(false)
+          }}
+          onDeleted={(id) => {
+            setPosts((prev) => prev.filter((p) => p.id !== id))
+            setEditingPost(null)
+            setIsCreatingNewPost(false)
+          }}
+        />
+      )}
     </main>
   )
 }

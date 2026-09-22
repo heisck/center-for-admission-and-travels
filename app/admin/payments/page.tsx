@@ -394,7 +394,7 @@ export default function AdminPaymentsPage() {
 
       {/* Detail Modal */}
       {selectedPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedPayment(null)}>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedPayment(null)}>
           <div
             className="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-xl"
             onClick={(e) => e.stopPropagation()}

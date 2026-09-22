@@ -7,7 +7,7 @@
 
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle, Clock, X } from 'lucide-react'
+import { ArrowRight, CheckCircle, Clock, X, Pencil } from 'lucide-react'
 
 import { DestinationCard } from '@/components/ui/card-21'
 import { formatMoney } from '@/lib/currency'
@@ -75,6 +75,9 @@ export type PackageDestinationGridProps = {
   /** Currently open package id (controlled) */
   selectedId: string | null
   onSelect: (id: string | null) => void
+  /** Optional edit callback for admin edit overlay */
+  onEditPackage?: (pkg: PackageDestinationItem) => void
+  isEditable?: boolean
   /** Grid columns */
   className?: string
   gridClassName?: string
@@ -86,6 +89,8 @@ export function PackageDestinationGrid({
   packages,
   selectedId,
   onSelect,
+  onEditPackage,
+  isEditable = false,
   className,
   gridClassName,
   bookLabel = 'Book Now',
@@ -137,8 +142,21 @@ export function PackageDestinationGrid({
               if (node) cardRefs.current.set(pkg.id, node)
               else cardRefs.current.delete(pkg.id)
             }}
-            className="h-[380px] sm:h-[420px] md:h-[450px] w-full scroll-mt-28"
+            className="relative h-[380px] sm:h-[420px] md:h-[450px] w-full scroll-mt-28 group"
           >
+            {isEditable && onEditPackage && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEditPackage(pkg)
+                }}
+                className="absolute top-4 right-4 z-40 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-600 text-white text-xs font-semibold shadow-lg hover:bg-orange-700 hover:scale-105 transition-all"
+                title="Edit package"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </button>
+            )}
             <DestinationCard
               imageUrl={imageFor(pkg)}
               location={pkg.name}
@@ -146,7 +164,13 @@ export function PackageDestinationGrid({
               stats={statsFor(pkg)}
               themeColor={themeFor(pkg.category)}
               selected={selectedId === pkg.id}
-              onClick={() => onSelect(selectedId === pkg.id ? null : pkg.id)}
+              onClick={() => {
+                if (isEditable && onEditPackage) {
+                  onEditPackage(pkg)
+                } else {
+                  onSelect(selectedId === pkg.id ? null : pkg.id)
+                }
+              }}
             />
           </div>
         ))}
@@ -279,6 +303,15 @@ export function PackageDestinationGrid({
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
+                    {onEditPackage && (
+                      <button
+                        type="button"
+                        onClick={() => onEditPackage(selected)}
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-orange-600 text-white text-sm font-semibold shadow-sm hover:bg-orange-700 transition"
+                      >
+                        <Pencil className="w-4 h-4" /> Edit Package
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={handleClose}

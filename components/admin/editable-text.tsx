@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Edit2, Check, X } from 'lucide-react'
+import { useAdminWorkspace } from '@/context/admin-workspace-context'
 
 interface EditableTextProps {
   value: string
@@ -65,7 +66,16 @@ export function EditableText({
     }
   }, [isEditing])
 
+  let isLivePreview = false
+  try {
+    const workspace = useAdminWorkspace()
+    isLivePreview = workspace.mode === 'preview'
+  } catch {
+    // outside provider
+  }
+
   const handleStart = () => {
+    if (isLivePreview) return
     setInternalIsEditing(true)
     setEditValue(value)
     onEditStart?.()
@@ -88,6 +98,14 @@ export function EditableText({
     } else if (e.key === 'Escape') {
       handleCancel()
     }
+  }
+
+  if (isLivePreview) {
+    return (
+      <div className={`inline-block ${fontSizeMap[fontSize]} ${variantClasses[variant]} ${className}`}>
+        {value || placeholder}
+      </div>
+    )
   }
 
   if (isEditing) {
