@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "loadtest:smoke": "k6 run load-tests/k6/smoke.js",
     "loadtest:peak": "k6 run load-tests/k6/peak-5k.js",
     "loadtest:writes": "k6 run load-tests/k6/write-guardrails.js",
@@ -103,6 +105,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@playwright/test": "^1.63.0",
     "baseline-browser-mapping": "latest",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.12",

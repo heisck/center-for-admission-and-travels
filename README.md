@@ -29,3 +29,24 @@ The core feature of this application is its custom Admin System, which is built 
 Please refer to the following retained documents for more detailed information:
 - **`QUICK_START.md`**: Guide for initial database (Supabase/Neon) and environment setup.
 - **`ARCHITECTURE_OVERVIEW.md`**: Deep dive into the system's structural design and admin implementation phases.
+
+## Docker development
+
+Docker Compose runs both the Next.js development server and PostgreSQL. Migrations
+are applied automatically after the database health check succeeds.
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:3000`. Application source is bind-mounted for hot reload;
+PostgreSQL data and container dependencies live in named volumes and are not
+tracked by Git. Optional integrations can be added to a local `.env` file or a
+Compose override without committing secrets.
+
+Run unit and browser tests with:
+
+```bash
+npm test
+npm run test:e2e
+```

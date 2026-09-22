@@ -8,3 +8,12 @@ node_modules/
 .env*.local
 .vercel
 .env*
+
+# Local browser-test output (reports, traces, screenshots, videos)
+playwright-report/
+test-results/
+blob-report/
+
+# Local development database / container overrides
+postgres-data/
+compose.override.yml

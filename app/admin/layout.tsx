@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { AdminNavbar } from '@/components/admin/admin-navbar'
 import { AdminProvider } from '@/context/admin-context'
+import { AdminPageWorkspace } from '@/components/admin/admin-page-workspace'
 
 export default function AdminLayout({
   children,
@@ -69,7 +70,7 @@ export default function AdminLayout({
       <div className="min-h-screen bg-background overflow-x-hidden">
         <AdminNavbar />
         <main className="w-full">
-          {children}
+          <AdminPageWorkspace>{children}</AdminPageWorkspace>
         </main>
       </div>
     </AdminProvider>
