@@ -38,8 +38,6 @@ export async function GET(request: NextRequest) {
         customerPhone: true,
         packageId: true,
         metadata: true,
-        adminNote: true,
-        adminViewedAt: true,
         createdAt: true,
         updatedAt: true,
       },

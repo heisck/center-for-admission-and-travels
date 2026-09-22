@@ -757,10 +757,10 @@ model Payment {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  @@index([reference])
-  @@index([status])
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
   @@index([customerEmail])
-  @@index([userId])
+  @@index([createdAt])
   @@map("payments")
 }
 
@@ -786,7 +786,7 @@ model ContactMessage {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  @@index([read])
+  @@index([read, createdAt])
   @@index([createdAt])
   @@map("contact_messages")
 }
@@ -838,7 +838,6 @@ model NewsletterSubscriber {
   email     String   @unique
   createdAt DateTime @default(now())
 
-  @@index([email])
   @@map("newsletter_subscribers")
 }
 

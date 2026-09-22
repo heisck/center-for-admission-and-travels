@@ -69,8 +69,8 @@ export function sanitizeHtmlBasic(dirty: string): string {
     .replace(/<embed[\s\S]*?>/gi, '')
     .replace(/<link[\s\S]*?>/gi, '')
     .replace(/<meta[\s\S]*?>/gi, '')
-    // Strip inline event handlers and javascript: URLs
-    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    // Strip inline event handlers and javascript: URLs (handling whitespace, slashes, or quotes)
+    .replace(/[\s\/]on[a-zA-Z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     .replace(/(href|src)\s*=\s*(['"])\s*javascript:[\s\S]*?\2/gi, '$1="#"')
     .replace(/(href|src)\s*=\s*javascript:[^\s>]*/gi, '$1="#"')
 
@@ -94,8 +94,8 @@ export function sanitizeHtmlBasic(dirty: string): string {
       if (!href || /^javascript:/i.test(href) || /^data:/i.test(href)) {
         return '<a>'
       }
-      // Only allow http(s), mailto, relative, anchor
-      if (!/^(https?:|mailto:|\/|#)/i.test(href)) {
+      // Only allow http(s), mailto, relative paths (not protocol-relative //), anchor
+      if (href.startsWith('//') || !/^(https?:|mailto:|\/[^\/]|#)/i.test(href)) {
         return '<a>'
       }
       const safeHref = escapeHtml(href)
@@ -106,7 +106,7 @@ export function sanitizeHtmlBasic(dirty: string): string {
       const srcMatch = attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i)
       let src = srcMatch ? srcMatch[2] || srcMatch[3] || srcMatch[4] || '' : ''
       src = src.trim()
-      if (!src || /^javascript:/i.test(src) || !/^(https?:|\/)/i.test(src)) {
+      if (!src || /^javascript:/i.test(src) || src.startsWith('//') || !/^(https?:|\/[^\/])/i.test(src)) {
         return ''
       }
       const altMatch = attrs.match(/alt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i)

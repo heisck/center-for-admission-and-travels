@@ -16,11 +16,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const packageId = id
+    const packageId = String(id || '').trim()
 
-    if (!packageId) {
+    if (!packageId || !/^[A-Za-z0-9_-]{1,128}$/.test(packageId)) {
       return NextResponse.json(
-        { success: false, error: 'Package ID is required' },
+        { success: false, error: 'Invalid or missing package ID' },
         { status: 400 }
       )
     }

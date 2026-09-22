@@ -11,9 +11,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const planId = String(id || '').trim()
+    if (!planId || !/^[A-Za-z0-9_-]{1,128}$/.test(planId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or missing service plan ID' },
+        { status: 400 }
+      )
+    }
+
     const plan = await prisma.professionalServicePlan.findFirst({
       where: {
-        id,
+        id: planId,
         published: true,
         service: { published: true },
       },

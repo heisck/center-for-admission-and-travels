@@ -26,6 +26,15 @@ describe('safe HTML rendering', () => {
     )
   })
 
+  it('rejects protocol-relative URLs and delimiterless event handlers', () => {
+    const linkResult = sanitizeHtmlBasic('<a href="//attacker.com/steal">evil link</a>')
+    expect(linkResult).toBe('<a>evil link</a>')
+
+    const imgResult = sanitizeHtmlBasic('<img/onerror=alert(1) src="/valid.jpg">')
+    expect(imgResult).not.toMatch(/onerror/i)
+    expect(imgResult).toContain('<img src="/valid.jpg" alt="" loading="lazy" />')
+  })
+
   it('preserves supported editor formatting while stripping arbitrary styles', () => {
     const result = contentToSafeHtml(
       '<h2 style="color:red;text-align:center">Heading</h2><ul data-list-style="circle"><li><strong>Item</strong></li></ul>'

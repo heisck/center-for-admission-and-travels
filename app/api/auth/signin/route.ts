@@ -38,7 +38,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!user) {
+    const DUMMY_HASH = '$2a$12$e8kZ1f0q.O0k6b9b2Z.z..rK6mZq0l8g7s1W9y2Z0z1W9y2Z0z1W9'
+    step = 'verify-password'
+    const passwordHashToVerify = user?.passwordHash || DUMMY_HASH
+    const ok = await verifyPassword(passwordResult.password, passwordHashToVerify)
+
+    if (!user || !ok) {
       return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }
 
@@ -47,12 +52,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Please verify your email before signing in. Check your inbox for the verification link.' },
         { status: 403 }
       )
-    }
-
-    step = 'verify-password'
-    const ok = await verifyPassword(passwordResult.password, user.passwordHash)
-    if (!ok) {
-      return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 })
     }
 
     step = 'create-token'

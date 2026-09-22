@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
-    if (!hasAdminPermission(session.role, 'dashboard.read')) {
+    if (!hasAdminPermission(session.role, 'support.manage')) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }
 

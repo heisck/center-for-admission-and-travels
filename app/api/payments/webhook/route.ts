@@ -1,11 +1,1 @@
-import { NextResponse } from 'next/server'
-
-export async function POST() {
-  return NextResponse.json(
-    {
-      success: false,
-      error: 'Deprecated endpoint. Use /api/payment/webhook instead.',
-    },
-    { status: 410 }
-  )
-}
+export { POST } from '@/app/api/payment/webhook/route'

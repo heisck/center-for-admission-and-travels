@@ -23,7 +23,10 @@ export async function getUserFromSessionToken(token: string) {
   })
 
   if (!session) return null
-  if (session.expiresAt.getTime() <= Date.now()) return null
+  if (session.expiresAt.getTime() <= Date.now()) {
+    prisma.userSession.delete({ where: { id: session.id } }).catch(() => {})
+    return null
+  }
 
   return session.user
 }

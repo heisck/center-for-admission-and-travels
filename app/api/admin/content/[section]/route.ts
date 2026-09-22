@@ -369,8 +369,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true, message: `${section} updated` })
   } catch (error: any) {
-    const resolvedParams = await Promise.resolve(params)
-    console.error(`Error updating ${resolvedParams.section}:`, error)
+    console.error('Error updating content section:', error)
     return NextResponse.json({ success: false, error: 'Failed to update content section' }, { status: 500 })
   }
 }

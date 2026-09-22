@@ -1,15 +1,25 @@
 import { NextRequest } from 'next/server'
 
-const IP_HEADER_NAMES = ['x-forwarded-for', 'cf-connecting-ip', 'x-real-ip'] as const
+const EDGE_IP_HEADERS = ['cf-connecting-ip', 'x-real-ip', 'x-vercel-ip'] as const
 const SESSION_COOKIE_NAMES = ['admin_session', 'user_session'] as const
 
 export function getClientIp(request: NextRequest): string {
-  for (const headerName of IP_HEADER_NAMES) {
+  for (const headerName of EDGE_IP_HEADERS) {
     const raw = request.headers.get(headerName)
-    if (!raw) continue
-    const first = raw.split(',')[0]?.trim()
-    if (first) return first
+    if (raw) {
+      const trimmed = raw.trim()
+      if (trimmed) return trimmed
+    }
   }
+
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  if (forwardedFor) {
+    const parts = forwardedFor.split(',').map((ip) => ip.trim()).filter(Boolean)
+    if (parts.length > 0) {
+      return parts[parts.length - 1]
+    }
+  }
+
   return 'unknown'
 }
 
@@ -27,11 +37,13 @@ export function getRequestOrigin(request: NextRequest): string {
 
 export function isSameOriginRequest(request: NextRequest): boolean {
   const originHeader = request.headers.get('origin')
-  if (!originHeader) return false
+  const refererHeader = request.headers.get('referer')
+  const candidate = originHeader || refererHeader
+  if (!candidate) return false
 
   let origin: string
   try {
-    origin = new URL(originHeader).origin
+    origin = new URL(candidate).origin
   } catch {
     return false
   }

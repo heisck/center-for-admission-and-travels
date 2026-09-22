@@ -19,8 +19,9 @@ function JsonLd({ data }: { data: Record<string, unknown> | Record<string, unkno
   return (
     <script
       type="application/ld+json"
-      // JSON-LD must be raw JSON in a script tag (Google recommendation)
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      // JSON-LD must be raw JSON in a script tag (Google recommendation).
+      // Escape '<' to '\u003c' to prevent script breakout / stored XSS while preserving valid JSON.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
     />
   )
 }

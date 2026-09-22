@@ -80,13 +80,13 @@ export default function SharedBookingForm({ serviceType: initialServiceType, onS
   return (
     <div className="w-full">
       {submitted && (
-        <div className="mb-6 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg animate-fade-in">
+        <div role="status" aria-live="polite" className="mb-6 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg animate-fade-in">
           Thank you! Your booking request has been received. We'll contact you within 24 hours to confirm your details.
         </div>
       )}
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-300 text-red-700 rounded-lg">
+        <div role="alert" aria-live="assertive" className="mb-6 p-4 bg-red-50 border border-red-300 text-red-700 rounded-lg">
           {error}
         </div>
       )}

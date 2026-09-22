@@ -6,6 +6,7 @@ import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
 import { pruneAdminSessions } from '@/lib/auth-helpers'
 import { validatePassword } from '@/lib/password-policy'
+import { logAdminAudit } from '@/lib/admin-audit'
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
@@ -44,15 +45,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!adminUser) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
+    const DUMMY_HASH = '$2a$12$e8kZ1f0q.O0k6b9b2Z.z..rK6mZq0l8g7s1W9y2Z0z1W9y2Z0z1W9'
+    const passwordHashToCompare = adminUser ? adminUser.password : DUMMY_HASH
+    const isValid = await compare(passwordResult.password, passwordHashToCompare)
 
-    const isValid = await compare(passwordResult.password, adminUser.password)
-    if (!isValid) {
+    if (!adminUser || !isValid) {
       return NextResponse.json(
         { success: false, error: 'Invalid credentials' },
         { status: 401 }
@@ -72,6 +69,21 @@ export async function POST(request: NextRequest) {
     await pruneAdminSessions(adminUser.id).catch((error) => {
       console.error('[Admin Auth] Failed to prune admin sessions:', error)
     })
+
+    await logAdminAudit({
+      request,
+      session: {
+        userId: adminUser.id,
+        username: adminUser.username,
+        email: adminUser.email,
+        role: adminUser.role,
+        token: '',
+        expiresAt,
+      },
+      action: 'auth.login.success',
+      entityType: 'admin_user',
+      entityId: adminUser.id,
+    }).catch(() => {})
 
     const response = NextResponse.json({
       success: true,

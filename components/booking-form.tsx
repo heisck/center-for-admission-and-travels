@@ -49,7 +49,7 @@ export default function BookingForm({ serviceType }: BookingFormProps) {
   return (
     <div className="max-w-2xl mx-auto">
       {submitted && (
-        <div className="mb-6 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg animate-fade-in">
+        <div role="status" aria-live="polite" className="mb-6 p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg animate-fade-in">
           Thank you! Your booking request has been received. We'll contact you within 24 hours to confirm your details.
         </div>
       )}

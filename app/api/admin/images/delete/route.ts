@@ -53,7 +53,7 @@ export async function DELETE(request: NextRequest) {
       idToDelete = url || publicId || ''
     }
 
-    if (!idToDelete) {
+    if (!idToDelete || idToDelete.includes('..') || /^[a-zA-Z]+:\/\//.test(idToDelete)) {
       return NextResponse.json(
         { success: false, error: 'Invalid URL or publicId' },
         { status: 400 }

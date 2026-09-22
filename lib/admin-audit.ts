@@ -14,6 +14,7 @@ interface AdminAuditInput {
 
 export async function logAdminAudit(input: AdminAuditInput): Promise<void> {
   try {
+    if (!prisma?.adminAuditLog?.create) return
     await prisma.adminAuditLog.create({
       data: {
         adminUserId: input.session.userId,

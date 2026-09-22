@@ -52,11 +52,25 @@ export function getGoogleOAuthConfig() {
   return { clientId, clientSecret }
 }
 
-export function sanitizeAuthRedirect(value: string | null | undefined) {
+export function sanitizeAuthRedirect(value: string | null | undefined): string {
   const redirect = value?.trim() || '/'
-  if (!redirect.startsWith('/') || redirect.startsWith('//')) return '/'
-  if (redirect.startsWith('/api/auth')) return '/'
-  return redirect
+  // Prevent protocol-relative URLs, Windows backslash bypasses, or external schemes
+  if (!redirect.startsWith('/') || redirect.startsWith('//') || redirect.includes('\\')) {
+    return '/'
+  }
+  // Block auth loops or redirection into internal auth routes
+  if (redirect.startsWith('/api/auth') || redirect.startsWith('/api/admin/auth')) {
+    return '/'
+  }
+  try {
+    const resolved = new URL(redirect, 'https://catravels.com')
+    if (resolved.origin !== 'https://catravels.com') {
+      return '/'
+    }
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`
+  } catch {
+    return '/'
+  }
 }
 
 export function sanitizeOAuthErrorPath(value: string | null | undefined) {

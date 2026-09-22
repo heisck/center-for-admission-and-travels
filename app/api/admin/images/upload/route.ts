@@ -64,8 +64,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Sanitize folder path parameter to prevent directory traversal
+    let safeFolder: string | undefined = undefined
+    if (folder && typeof folder === 'string') {
+      const sanitized = folder
+        .replace(/[^a-zA-Z0-9_\-\/]/g, '')
+        .split('/')
+        .filter(Boolean)
+        .filter((part) => part !== '.' && part !== '..')
+        .join('/')
+      if (sanitized) {
+        safeFolder = `center-for-admission-and-travels/${sanitized}`
+      }
+    }
+
     // Upload to Cloudinary
-    const url = await uploadImage(file, folder || undefined)
+    const url = await uploadImage(file, safeFolder)
     
     // Extract public ID from URL
     const publicId = extractPublicId(url)

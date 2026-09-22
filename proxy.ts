@@ -8,7 +8,7 @@ function ensureRequestId(request: NextRequest): string {
 }
 
 function addSecurityHeaders(response: NextResponse, requestId: string) {
-  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
@@ -21,6 +21,14 @@ function addSecurityHeaders(response: NextResponse, requestId: string) {
   return response
 }
 
+const PUBLIC_ADMIN_AUTH_PATHS = new Set([
+  '/api/admin/auth/login',
+  '/api/admin/auth/forgot-password',
+  '/api/admin/auth/reset-password',
+  '/api/admin/auth/google/start',
+  '/api/admin/auth/google/callback',
+])
+
 export function proxy(request: NextRequest) {
   const requestId = ensureRequestId(request)
   const isMutation = MUTATING_METHODS.has(request.method.toUpperCase())
@@ -32,6 +40,44 @@ export function proxy(request: NextRequest) {
     loginUrl.pathname = '/admin-login'
     loginUrl.search = ''
     return addSecurityHeaders(NextResponse.redirect(loginUrl), requestId)
+  }
+
+  const isProtectedUserPage =
+    pathname === '/profile' ||
+    pathname.startsWith('/profile/') ||
+    pathname === '/my-payments' ||
+    pathname.startsWith('/my-payments/')
+
+  if (isProtectedUserPage && !request.cookies.get('user_session')?.value) {
+    const signinUrl = request.nextUrl.clone()
+    signinUrl.pathname = '/signin'
+    signinUrl.search = ''
+    signinUrl.searchParams.set('redirect', pathname)
+    return addSecurityHeaders(NextResponse.redirect(signinUrl), requestId)
+  }
+
+  if (pathname.startsWith('/api/user/') && !request.cookies.get('user_session')?.value) {
+    return addSecurityHeaders(
+      NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      ),
+      requestId
+    )
+  }
+
+  if (
+    pathname.startsWith('/api/admin/') &&
+    !PUBLIC_ADMIN_AUTH_PATHS.has(pathname) &&
+    !request.cookies.get('admin_session')?.value
+  ) {
+    return addSecurityHeaders(
+      NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      ),
+      requestId
+    )
   }
 
   if (isMutation && hasSession && !isSameOriginRequest(request)) {
@@ -53,6 +99,16 @@ export function proxy(request: NextRequest) {
   return addSecurityHeaders(response, requestId)
 }
 
+export const middleware = proxy
+
 export const config = {
-  matcher: ['/api/:path*', '/admin/:path*', '/admin'],
+  matcher: [
+    '/api/:path*',
+    '/admin',
+    '/admin/:path*',
+    '/profile',
+    '/profile/:path*',
+    '/my-payments',
+    '/my-payments/:path*',
+  ],
 }

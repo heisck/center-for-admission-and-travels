@@ -95,16 +95,21 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        if (plan) {
-          itemType = 'service_plan'
-          serviceId = plan.service.id
-          serviceName = plan.service.name
-          planName = plan.name
-          duration = plan.duration
-          packageName = `${plan.service.name} — ${plan.name}`
-          packagePrice = Number(plan.price)
-          packageCurrency = normalizeCurrency(plan.currency)
+        if (!plan) {
+          return NextResponse.json(
+            { success: false, error: 'Service plan not found' },
+            { status: 404 }
+          )
         }
+
+        itemType = 'service_plan'
+        serviceId = plan.service.id
+        serviceName = plan.service.name
+        planName = plan.name
+        duration = plan.duration
+        packageName = `${plan.service.name} — ${plan.name}`
+        packagePrice = Math.max(0, Number(plan.price) || 0)
+        packageCurrency = normalizeCurrency(plan.currency)
       } else {
         const pkg = await prisma.package.findUnique({
           where: { id: packageId },
@@ -124,15 +129,13 @@ export async function POST(request: NextRequest) {
             packageName = featuredPkg.name
             packagePrice = featuredPkg.price
             packageCurrency = normalizeCurrency(featuredPkg.currency)
+          } else {
+            return NextResponse.json(
+              { success: false, error: 'Package not found' },
+              { status: 404 }
+            )
           }
         }
-      }
-
-      if (!packagePrice || packagePrice <= 0) {
-        return NextResponse.json(
-          { success: false, error: servicePlanId ? 'Service plan not found' : 'Package not found' },
-          { status: 404 }
-        )
       }
     }
 

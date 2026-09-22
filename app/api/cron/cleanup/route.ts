@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +9,10 @@ export const revalidate = 0
 function isAuthorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret) return process.env.NODE_ENV !== 'production'
-  return request.headers.get('authorization') === `Bearer ${secret}`
+  const authHeader = request.headers.get('authorization') || ''
+  const expectedHeader = `Bearer ${secret}`
+  if (authHeader.length !== expectedHeader.length) return false
+  return crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedHeader))
 }
 
 export async function GET(request: NextRequest) {

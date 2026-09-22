@@ -32,7 +32,11 @@ export default function CookieConsent() {
   if (!visible || pathname.startsWith('/admin')) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up">
+    <div
+      role="region"
+      aria-label="Cookie consent banner"
+      className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up"
+    >
       <div className="mx-auto max-w-7xl px-4 pb-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center gap-4 rounded-xl bg-slate-900 p-4 sm:p-5 shadow-2xl border border-slate-700">
           <p className="flex-1 text-sm text-slate-300 text-center sm:text-left">
@@ -47,12 +51,14 @@ export default function CookieConsent() {
           </p>
           <div className="flex gap-3 shrink-0">
             <button
+              type="button"
               onClick={handleDecline}
               className="px-5 py-2 text-sm font-semibold text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-800 transition"
             >
               Decline
             </button>
             <button
+              type="button"
               onClick={handleAccept}
               className="px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-lg hover:shadow-lg transition"
             >
