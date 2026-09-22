@@ -15,3 +15,10 @@ test('booking country picker contains the complete country list', async ({ page 
   await expect(countries.filter({ hasText: 'Ghana' })).toHaveCount(1)
   await expect(countries.filter({ hasText: 'Vatican City' })).toHaveCount(1)
 })
+
+test('documentation page uses an image-led layout without duplicate WhatsApp prompts', async ({ page }) => {
+  await page.goto('/global-network')
+  await expect(page.getByRole('heading', { name: /Documentation support for your next journey/i })).toBeVisible()
+  await expect(page.getByRole('img', { name: /Travel documentation and professional support/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Ask on WhatsApp|Chat on WhatsApp/i })).toHaveCount(0)
+})

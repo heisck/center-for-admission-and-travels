@@ -1,10 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle2, Clock3, MessageCircle, ShieldCheck } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Clock3, FileCheck2 } from 'lucide-react'
 
 import Footer from '@/components/footer-server'
 import PublicNavbar from '@/components/public-navbar'
-import { buildWhatsAppUrl } from '@/lib/contact-utils'
 import { formatMoney } from '@/lib/currency'
 import { getProfessionalServices, getSiteChromeContent } from '@/lib/public-content'
 import { contentToSafeHtml } from '@/lib/safe-html'
@@ -17,43 +16,45 @@ export default async function ProfessionalServicesPage() {
     getSiteChromeContent(),
   ])
 
-  const whatsappUrl = buildWhatsAppUrl(
-    chrome.contact.whatsappNumber,
-    'Hi, I would like help choosing a documentation or professional service.'
-  )
-
   return (
-    <main className="min-h-screen bg-transparent">
+    <main className="min-h-screen bg-background">
       <PublicNavbar currentPath="/global-network" />
 
-      <section className="relative overflow-hidden py-16 md:py-24">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/90 via-white/60 to-red-50/80" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-orange-600">
-              Documentation and professional support
-            </p>
-            <h1 className="mt-4 text-4xl font-bold leading-tight text-foreground sm:text-5xl md:text-6xl">
-              Select the service and turnaround time that fits your needs
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Choose from the available service plans, pay securely online, or continue the
-              conversation with our team on WhatsApp.
-            </p>
-          </div>
+      <section className="bg-gradient-to-br from-orange-50 to-red-50 py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 md:grid-cols-2">
+            <div className="relative order-2 min-h-80 overflow-hidden rounded-2xl shadow-xl md:order-1 md:min-h-96">
+              <Image
+                src="/images/services/documentation.jpg"
+                alt="Travel documentation and professional support"
+                fill
+                loading="eager"
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+            </div>
 
-          <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-700">
-            {['Clear pricing', 'Secure Paystack checkout', 'Direct WhatsApp follow-up'].map(
-              (benefit) => (
-                <span
-                  key={benefit}
-                  className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-white/90 px-4 py-2 shadow-sm"
-                >
-                  <CheckCircle2 className="h-4 w-4 text-orange-600" />
-                  {benefit}
-                </span>
-              )
-            )}
+            <div className="order-1 md:order-2">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-orange-600">
+                Travel documentation services
+              </p>
+              <h1 className="mt-4 text-4xl font-bold leading-tight text-foreground sm:text-5xl md:text-6xl">
+                Documentation support for your next journey
+              </h1>
+              <p className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
+                Get clear requirements, dependable processing support, and a turnaround option
+                suited to your travel plans.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-700">
+                {['Clear requirements', 'Transparent pricing', 'Secure online checkout'].map((benefit) => (
+                  <span key={benefit} className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-white px-4 py-2 shadow-sm">
+                    <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                    {benefit}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -61,34 +62,21 @@ export default async function ProfessionalServicesPage() {
       <section className="py-14 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {services.length === 0 ? (
-            <div className="rounded-3xl border border-orange-100 bg-white p-8 text-center shadow-sm sm:p-12">
-              <ShieldCheck className="mx-auto h-12 w-12 text-orange-600" />
-              <h2 className="mt-4 text-2xl font-bold text-foreground">
-                Tell us which service you need
-              </h2>
+            <div className="grid items-center gap-8 overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-sm md:grid-cols-2">
+              <div className="relative min-h-64 md:min-h-80">
+                <Image src="/images/services/documentation.jpg" alt="Travel documentation consultation" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+              </div>
+              <div className="p-8 md:pr-12">
+              <FileCheck2 className="h-10 w-10 text-orange-600" />
+              <h2 className="mt-4 text-2xl font-bold text-foreground">Service plans are being prepared</h2>
               <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-                The online service catalog is being updated. Contact our team for current pricing,
-                document requirements, and turnaround times.
+                Our team is updating the online catalog with current prices, document requirements,
+                and turnaround times. Use the contact page for help in the meantime.
               </p>
-              {whatsappUrl ? (
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Ask on WhatsApp
-                </a>
-              ) : (
-                <Link
-                  href="/contact"
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-white transition hover:bg-primary/90"
-                >
-                  Contact Our Team
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
+              <Link href="/contact" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 px-6 py-3 font-semibold text-white transition hover:shadow-lg">
+                Contact Our Team <ArrowRight className="h-4 w-4" />
+              </Link>
+              </div>
             </div>
           ) : (
             <div className="space-y-10">
@@ -111,9 +99,7 @@ export default async function ProfessionalServicesPage() {
                             sizes="(max-width: 1024px) 100vw, 42vw"
                           />
                         ) : (
-                          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-100 to-red-100">
-                            <ShieldCheck className="h-20 w-20 text-orange-500/70" />
-                          </div>
+                          <Image src="/images/services/documentation.jpg" alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 42vw" />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-transparent to-transparent" />
                         <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
@@ -205,25 +191,9 @@ export default async function ProfessionalServicesPage() {
               Send the details to our team. We can confirm availability, required documents, and
               the appropriate service plan before you pay.
             </p>
-            {whatsappUrl ? (
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
-              >
-                <MessageCircle className="h-5 w-5" />
-                Chat on WhatsApp
-              </a>
-            ) : (
-              <Link
-                href="/contact"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100"
-              >
-                Contact Our Team
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            )}
+            <Link href="/contact" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-slate-900 transition hover:bg-slate-100">
+              Contact Our Team <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
