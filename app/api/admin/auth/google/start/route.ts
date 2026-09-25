@@ -35,6 +35,9 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error: any) {
     console.error('Admin Google OAuth start error:', error)
-    return buildAdminOAuthErrorRedirect(request, error?.message || 'Google admin sign-in is unavailable right now.')
+    const safeError = process.env.NODE_ENV === 'production'
+      ? 'Google admin sign-in is unavailable right now.'
+      : (error?.message || 'Google admin sign-in is unavailable right now.')
+    return buildAdminOAuthErrorRedirect(request, safeError)
   }
 }

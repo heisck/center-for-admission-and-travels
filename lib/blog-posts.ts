@@ -37,6 +37,9 @@ export async function findBlogPostByParam(param: string) {
   // Drop accidental query/hash fragments if a full path was pasted
   raw = raw.split('?')[0].split('#')[0].trim()
   if (!raw) return null
+  if (raw.length > 150) {
+    raw = raw.slice(0, 150).trim()
+  }
 
   try {
     // 1) Exact slug (canonical path)

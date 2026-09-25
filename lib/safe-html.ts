@@ -61,6 +61,8 @@ export function sanitizeHtmlBasic(dirty: string): string {
   if (!dirty) return ''
 
   let html = String(dirty)
+    // Strip HTML comments to prevent mXSS comment smuggling
+    .replace(/<!--[\s\S]*?-->/g, '')
     // Remove dangerous blocks entirely
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
@@ -69,13 +71,20 @@ export function sanitizeHtmlBasic(dirty: string): string {
     .replace(/<embed[\s\S]*?>/gi, '')
     .replace(/<link[\s\S]*?>/gi, '')
     .replace(/<meta[\s\S]*?>/gi, '')
+    .replace(/<base[\s\S]*?>/gi, '')
+    .replace(/<svg[\s\S]*?>[\s\S]*?<\/svg>/gi, '')
+    .replace(/<math[\s\S]*?>[\s\S]*?<\/math>/gi, '')
+    .replace(/<template[\s\S]*?>[\s\S]*?<\/template>/gi, '')
+    .replace(/<form[\s\S]*?>[\s\S]*?<\/form>/gi, '')
+    .replace(/<noscript[\s\S]*?>[\s\S]*?<\/noscript>/gi, '')
     // Strip inline event handlers and javascript: URLs (handling whitespace, slashes, or quotes)
     .replace(/[\s\/]on[a-zA-Z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     .replace(/(href|src)\s*=\s*(['"])\s*javascript:[\s\S]*?\2/gi, '$1="#"')
     .replace(/(href|src)\s*=\s*javascript:[^\s>]*/gi, '$1="#"')
 
   // Drop tags that are not in the allowlist (keep their text content for closings we remove)
-  html = html.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g, (full, rawTag: string, attrs: string) => {
+  // Match tags while safely respecting quoted strings inside attributes
+  html = html.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g, (full, rawTag: string, attrs: string) => {
     const tag = rawTag.toLowerCase()
     const isClosing = full.startsWith('</')
     if (!ALLOWED_TAGS.has(tag)) {
@@ -91,14 +100,16 @@ export function sanitizeHtmlBasic(dirty: string): string {
       const hrefMatch = attrs.match(/href\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i)
       let href = hrefMatch ? hrefMatch[2] || hrefMatch[3] || hrefMatch[4] || '' : ''
       href = href.trim()
-      if (!href || /^javascript:/i.test(href) || /^data:/i.test(href)) {
+      // Clean non-printable / control chars that can smuggle schemes
+      const cleanedHref = href.replace(/[\x00-\x1f\x7f\s]+/g, '')
+      if (!cleanedHref || /^javascript:/i.test(cleanedHref) || /^data:/i.test(cleanedHref)) {
         return '<a>'
       }
       // Only allow http(s), mailto, relative paths (not protocol-relative //), anchor
-      if (href.startsWith('//') || !/^(https?:|mailto:|\/[^\/]|#)/i.test(href)) {
+      if (cleanedHref.startsWith('//') || !/^(https?:|mailto:|\/[^\/]|#)/i.test(cleanedHref)) {
         return '<a>'
       }
-      const safeHref = escapeHtml(href)
+      const safeHref = escapeHtml(cleanedHref)
       return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">`
     }
 
@@ -106,12 +117,13 @@ export function sanitizeHtmlBasic(dirty: string): string {
       const srcMatch = attrs.match(/src\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i)
       let src = srcMatch ? srcMatch[2] || srcMatch[3] || srcMatch[4] || '' : ''
       src = src.trim()
-      if (!src || /^javascript:/i.test(src) || src.startsWith('//') || !/^(https?:|\/[^\/])/i.test(src)) {
+      const cleanedSrc = src.replace(/[\x00-\x1f\x7f\s]+/g, '')
+      if (!cleanedSrc || /^javascript:/i.test(cleanedSrc) || cleanedSrc.startsWith('//') || !/^(https?:|\/[^\/])/i.test(cleanedSrc)) {
         return ''
       }
       const altMatch = attrs.match(/alt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i)
       const alt = escapeHtml((altMatch ? altMatch[2] || altMatch[3] || altMatch[4] || '' : '').trim())
-      return `<img src="${escapeHtml(src)}" alt="${alt}" loading="lazy" />`
+      return `<img src="${escapeHtml(cleanedSrc)}" alt="${alt}" loading="lazy" />`
     }
 
     if (tag === 'ul') {

@@ -44,4 +44,17 @@ describe('safe HTML rendering', () => {
     expect(result).toContain('<ul data-list-style="circle">')
     expect(result).not.toContain('color:red')
   })
+
+  it('strips HTML comments, SVG, MathML, and handles attributes with literal angle brackets', () => {
+    const commentResult = sanitizeHtmlBasic('<p>Hello<!-- comment --> World</p>')
+    expect(commentResult).toBe('<p>Hello World</p>')
+
+    const svgResult = sanitizeHtmlBasic('<svg><script>alert(1)</script><circle r="10"/></svg><p>Safe</p>')
+    expect(svgResult).not.toContain('<svg')
+    expect(svgResult).not.toContain('circle')
+    expect(svgResult).toBe('<p>Safe</p>')
+
+    const quoteResult = sanitizeHtmlBasic('<p title="1 > 0">Math</p>')
+    expect(quoteResult).toContain('<p>Math</p>')
+  })
 })

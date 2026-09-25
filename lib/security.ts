@@ -28,11 +28,7 @@ export function hasAuthSessionCookie(request: NextRequest): boolean {
 }
 
 export function getRequestOrigin(request: NextRequest): string {
-  const forwardedProto = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim()
-  const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
-  const host = forwardedHost || request.headers.get('host') || request.nextUrl.host
-  const protocol = forwardedProto || request.nextUrl.protocol.replace(':', '')
-  return `${protocol}://${host}`
+  return request.nextUrl.origin
 }
 
 export function isSameOriginRequest(request: NextRequest): boolean {
@@ -48,5 +44,12 @@ export function isSameOriginRequest(request: NextRequest): boolean {
     return false
   }
 
-  return origin === getRequestOrigin(request)
+  const expectedOrigins = new Set<string>([request.nextUrl.origin])
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    try {
+      expectedOrigins.add(new URL(process.env.NEXT_PUBLIC_BASE_URL).origin)
+    } catch {}
+  }
+
+  return expectedOrigins.has(origin)
 }

@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
     const status = searchParams.get('status') || undefined
-    const search = searchParams.get('search') || undefined
+    const rawSearch = searchParams.get('search')?.trim() || ''
+    const search = rawSearch ? rawSearch.slice(0, 100) : undefined
 
     const where: any = {}
     const validStatuses = new Set(['pending', 'processing', 'success', 'failed', 'cancelled'])
@@ -72,9 +73,28 @@ export async function GET(request: NextRequest) {
 
     const paymentsWithNewsletter = payments.map((p: any) => {
       const email = p.user?.email || p.customerEmail
+      let safePaystackData = p.paystackData
+      if (p.paystackData && typeof p.paystackData === 'object') {
+        const { authorization, ...rest } = p.paystackData
+        safePaystackData = {
+          ...rest,
+          authorization: authorization
+            ? {
+                bin: authorization.bin,
+                last4: authorization.last4,
+                brand: authorization.brand || authorization.card_type,
+                bank: authorization.bank,
+                exp_month: authorization.exp_month,
+                exp_year: authorization.exp_year,
+              }
+            : undefined,
+        }
+      }
+
       return {
         ...p,
         amount: Number(p.amount),
+        paystackData: safePaystackData,
         newsletterSubscribed: email ? newsletterSet.has(email.toLowerCase()) : null,
       }
     })

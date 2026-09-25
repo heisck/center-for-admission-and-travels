@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import crypto from 'crypto'
 
 import {
   ADMIN_GOOGLE_OAUTH_CALLBACK_PATH,
@@ -11,6 +12,13 @@ import { exchangeGoogleCodeForTokens, fetchGoogleProfile } from '@/lib/google-oa
 
 export const dynamic = 'force-dynamic'
 
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
@@ -18,7 +26,7 @@ export async function GET(request: NextRequest) {
   const expectedState = request.cookies.get(ADMIN_GOOGLE_OAUTH_STATE_COOKIE)?.value
 
   try {
-    if (!code || !state || !expectedState || state !== expectedState) {
+    if (!code || !state || !expectedState || !timingSafeEqualStr(state, expectedState)) {
       throw new Error('Google admin sign-in expired. Please try again.')
     }
 
@@ -38,10 +46,10 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error: any) {
     console.error('Admin Google OAuth callback error:', error)
-    const response = buildAdminOAuthErrorRedirect(
-      request,
-      error?.message || 'Google admin sign-in failed. Please try again.'
-    )
+    const safeError = process.env.NODE_ENV === 'production'
+      ? 'Google admin sign-in failed. Please try again.'
+      : (error?.message || 'Google admin sign-in failed. Please try again.')
+    const response = buildAdminOAuthErrorRedirect(request, safeError)
     response.cookies.set(ADMIN_GOOGLE_OAUTH_STATE_COOKIE, '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

@@ -98,26 +98,22 @@ export async function GET(request: NextRequest) {
 
     const paymentData = response.data
 
-    // Determine payment status
-    let status: 'pending' | 'processing' | 'success' | 'failed' | 'cancelled' = 'pending'
-    if (paymentData.status === 'success') {
-      status = 'success'
-    } else if (paymentData.status === 'failed') {
-      status = 'failed'
-    } else if (paymentData.status === 'abandoned') {
-      status = 'cancelled'
-    } else {
-      status = 'processing'
-    }
-
     const paidAmountKobo = Number(paymentData.amount || 0)
     const expectedAmountKobo = payment.amountMinor || Math.round(Number(payment.amount) * 100)
     const verifiedCurrency = String(paymentData.currency || '').toUpperCase()
     const expectedCurrency = payment.currency.toUpperCase()
     const amountAndCurrencyMatch = paidAmountKobo === expectedAmountKobo && verifiedCurrency === expectedCurrency
 
-    if (!amountAndCurrencyMatch) {
+    // Determine payment status - only evaluate amount/currency mismatch when Paystack confirms charge success
+    let status: 'pending' | 'processing' | 'success' | 'failed' | 'cancelled' = 'pending'
+    if (paymentData.status === 'success') {
+      status = amountAndCurrencyMatch ? 'success' : 'failed'
+    } else if (paymentData.status === 'failed') {
       status = 'failed'
+    } else if (paymentData.status === 'abandoned') {
+      status = 'cancelled'
+    } else {
+      status = 'processing'
     }
 
     if (payment.status === 'success' && status !== 'success') {
@@ -139,6 +135,7 @@ export async function GET(request: NextRequest) {
     const updatedPayment = await prisma.payment.findUnique({
       where: { id: payment.id },
       select: {
+        status: true,
         reference: true,
         amount: true,
         currency: true,
@@ -173,14 +170,14 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const responseMessage = !amountAndCurrencyMatch && status === 'failed'
+    const responseMessage = !amountAndCurrencyMatch && status === 'failed' && paymentData.status === 'success'
       ? 'Payment verification failed: amount or currency mismatch'
       : undefined
 
     return NextResponse.json({
       success: true,
       data: {
-        status,
+        status: updatedPayment.status ?? status,
         reference: updatedPayment.reference,
         amount: Number(updatedPayment.amount),
         currency: updatedPayment.currency,

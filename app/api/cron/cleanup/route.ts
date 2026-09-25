@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import crypto from 'crypto'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -16,6 +18,13 @@ function isAuthorized(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`cron-cleanup:${ip}`, {
+    maxRequests: 10,
+    windowMs: 60_000,
+  })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   if (!isAuthorized(request)) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }

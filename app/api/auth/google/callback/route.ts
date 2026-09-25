@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import crypto from 'crypto'
 
 import {
   GOOGLE_OAUTH_ERROR_PATH_COOKIE,
@@ -15,6 +16,13 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  if (bufA.length !== bufB.length) return false
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
@@ -24,7 +32,7 @@ export async function GET(request: NextRequest) {
   const errorPath = sanitizeOAuthErrorPath(request.cookies.get(GOOGLE_OAUTH_ERROR_PATH_COOKIE)?.value)
 
   try {
-    if (!code || !state || !expectedState || state !== expectedState) {
+    if (!code || !state || !expectedState || !timingSafeEqualStr(state, expectedState)) {
       throw new Error('Google sign-in expired. Please try again.')
     }
 
@@ -58,9 +66,12 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error: any) {
     console.error('Google OAuth callback error:', error)
+    const safeError = process.env.NODE_ENV === 'production'
+      ? 'Google sign-in failed. Please try again.'
+      : (error?.message || 'Google sign-in failed. Please try again.')
     const response = buildOAuthErrorRedirect(
       request,
-      error?.message || 'Google sign-in failed. Please try again.',
+      safeError,
       errorPath
     )
     response.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, '', {

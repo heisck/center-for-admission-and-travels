@@ -29,7 +29,6 @@ const ROLE_PERMISSIONS: Record<AdminRole, Set<AdminPermission>> = {
     'payments.manage',
     'media.manage',
     'settings.manage',
-    'security.manage',
   ]),
   EDITOR: new Set<AdminPermission>([
     'dashboard.read',

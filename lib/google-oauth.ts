@@ -58,8 +58,8 @@ export function sanitizeAuthRedirect(value: string | null | undefined): string {
   if (!redirect.startsWith('/') || redirect.startsWith('//') || redirect.includes('\\')) {
     return '/'
   }
-  // Block auth loops or redirection into internal auth routes
-  if (redirect.startsWith('/api/auth') || redirect.startsWith('/api/admin/auth')) {
+  // Block redirection into internal API routes or auth loops
+  if (redirect.startsWith('/api/') || redirect === '/api') {
     return '/'
   }
   try {
@@ -213,13 +213,18 @@ export async function findOrCreateGoogleUser(profile: GoogleProfile) {
 
   if (existingUser) {
     if (!existingUser.emailVerifiedAt) {
+      const freshPasswordHash = await hashPassword(createSessionToken())
       await prisma.user.update({
         where: { id: existingUser.id },
         data: {
           emailVerifiedAt: new Date(),
+          passwordHash: freshPasswordHash,
           emailVerificationToken: null,
           emailVerificationTokenExpiry: null,
         },
+      })
+      await prisma.userSession.deleteMany({
+        where: { userId: existingUser.id },
       })
     }
     await attachGoogleAccount(existingUser.id, profile)

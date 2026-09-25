@@ -69,6 +69,11 @@ export async function PUT(
     })
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
+    const contentLength = Number(request.headers.get('content-length') || 0)
+    if (contentLength > 262_144) {
+      return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+    }
+
     const { slug } = await Promise.resolve(params)
     if (!VALID_SLUGS.includes(slug as any)) {
       return NextResponse.json({ success: false, error: 'Invalid page' }, { status: 400 })

@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { connection } from 'next/server'
+import { cookies } from 'next/headers'
 
 import PublicNavbar from '@/components/public-navbar'
 import Footer from '@/components/footer-server'
@@ -14,6 +15,7 @@ import { createMetadata } from '@/lib/metadata'
 import { findBlogPostByParam, listPublishedBlogSlugs } from '@/lib/blog-posts'
 import { getSiteChromeContent } from '@/lib/public-content'
 import { contentToSafeHtml } from '@/lib/safe-html'
+import { verifyAdminSessionFromToken } from '@/lib/auth-helpers'
 
 /**
  * Always resolve posts from the live DB (same path as /api/blog/[slug]).
@@ -144,8 +146,15 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const chrome = await getSiteChromeContent()
 
-  // Draft: not public
+  // Draft: only visible to authenticated admins
   if (!post.published) {
+    const cookieStore = await cookies()
+    const adminToken = cookieStore.get('admin_session')?.value
+    const adminSession = await verifyAdminSessionFromToken(adminToken)
+    if (!adminSession) {
+      notFound()
+    }
+
     return (
       <main className="min-h-screen bg-background">
         <PublicNavbar currentPath="/blog" />

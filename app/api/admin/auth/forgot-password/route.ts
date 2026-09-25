@@ -21,6 +21,11 @@ export async function POST(request: NextRequest) {
   })
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
+  const contentLength = Number(request.headers.get('content-length') || 0)
+  if (contentLength > 16384) {
+    return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+  }
+
   try {
     const body = await request.json().catch(() => null)
     if (!body || typeof body !== 'object') {
@@ -75,7 +80,11 @@ export async function POST(request: NextRequest) {
     const supportContact = await getSupportContact()
     const template = adminPasswordResetEmail(adminUser.username, resetUrl, supportContact)
 
-    await sendEmailOrThrow({ to: targetEmail, ...template })
+    try {
+      await sendEmailOrThrow({ to: targetEmail, ...template })
+    } catch (emailError) {
+      console.error('[Admin Forgot Password] Email delivery error:', emailError)
+    }
 
     return NextResponse.json({
       success: true,

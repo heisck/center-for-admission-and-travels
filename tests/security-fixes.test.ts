@@ -59,4 +59,90 @@ describe('Security & Architecture Hardening Tests', () => {
       expect(typeof paymentWebhookPost).toBe('function')
     })
   })
+
+  describe('OAuth redirect sanitization', () => {
+    it('blocks internal /api routes from OAuth redirect', async () => {
+      const { sanitizeAuthRedirect } = await import('@/lib/google-oauth')
+      expect(sanitizeAuthRedirect('/api/cron/cleanup')).toBe('/')
+      expect(sanitizeAuthRedirect('/api/user/profile')).toBe('/')
+      expect(sanitizeAuthRedirect('/api/admin/payments')).toBe('/')
+      expect(sanitizeAuthRedirect('/api')).toBe('/')
+      expect(sanitizeAuthRedirect('/profile')).toBe('/profile')
+      expect(sanitizeAuthRedirect('/my-payments?page=2')).toBe('/my-payments?page=2')
+    })
+  })
+
+  describe('File upload and media security', () => {
+    it('rejects files with invalid extensions or spoofed MIME types', async () => {
+      const { validateImageFile, validateImageFileBytes } = await import('@/lib/cloudinary')
+      
+      // Fake JPEG with .exe extension
+      const exeFile = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])], 'malware.exe', { type: 'image/jpeg' })
+      expect(validateImageFile(exeFile).valid).toBe(false)
+      expect(validateImageFile(exeFile).error).toMatch(/extension/i)
+
+      // Fake JPEG extension with text content (spoofed magic bytes)
+      const fakeJpg = new File([Buffer.from('not an image header')], 'photo.jpg', { type: 'image/jpeg' })
+      expect(validateImageFile(fakeJpg).valid).toBe(true)
+      const byteCheck = await validateImageFileBytes(fakeJpg)
+      expect(byteCheck.valid).toBe(false)
+      expect(byteCheck.error).toMatch(/signature|format/i)
+
+      // Valid PNG header with .png extension
+      const validPngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0])
+      const validPng = new File([validPngBytes], 'diagram.png', { type: 'image/png' })
+      expect(validateImageFile(validPng).valid).toBe(true)
+      const validPngCheck = await validateImageFileBytes(validPng)
+      expect(validPngCheck.valid).toBe(true)
+    })
+  })
+
+  describe('Email header and body injection defenses', () => {
+    it('escapes HTML in contact notifications and cleans CRLF in email subjects', async () => {
+      const { contactNotificationEmail } = await import('@/lib/email-templates')
+      const result = contactNotificationEmail({
+        name: 'Attacker <script>alert(1)</script>',
+        email: 'attacker@example.com',
+        phone: '+123456789',
+        subject: 'Inquiry\r\nBcc: victim@example.com',
+        message: '<b>Hello</b><iframe src="evil.com"></iframe>',
+      })
+
+      // Subject has CRLF stripped
+      expect(result.subject).not.toContain('\r')
+      expect(result.subject).not.toContain('\n')
+      expect(result.subject).toBe('New Contact: Inquiry Bcc: victim@example.com')
+
+      // HTML body escapes tags in name and message
+      expect(result.html).not.toContain('<script>')
+      expect(result.html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+      expect(result.html).not.toContain('<iframe')
+      expect(result.html).toContain('&lt;iframe')
+    })
+  })
+
+  describe('DoS and Payload Limiting protections', () => {
+    it('blocks unauthenticated access to cron cleanup', async () => {
+      const { GET: cronGet } = await import('@/app/api/cron/cleanup/route')
+      const req = new NextRequest('http://localhost:3000/api/cron/cleanup', {
+        headers: { authorization: 'Bearer invalid-secret' },
+      })
+      const res = await cronGet(req)
+      expect(res.status).toBe(401)
+    })
+
+    it('rejects oversize payloads with HTTP 413 in payment webhook', async () => {
+      const { POST: webhookPost } = await import('@/app/api/payment/webhook/route')
+      process.env.PAYSTACK_SECRET_KEY = 'sk_test_1234567890'
+      const req = new NextRequest('http://localhost:3000/api/payment/webhook', {
+        method: 'POST',
+        headers: {
+          'content-length': '2000000',
+        },
+      })
+      const res = await webhookPost(req)
+      expect(res.status).toBe(413)
+    })
+  })
 })
+

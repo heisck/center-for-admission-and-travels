@@ -53,9 +53,17 @@ export async function DELETE(request: NextRequest) {
       idToDelete = url || publicId || ''
     }
 
-    if (!idToDelete || idToDelete.includes('..') || /^[a-zA-Z]+:\/\//.test(idToDelete)) {
+    if (!idToDelete || !/^[a-zA-Z0-9_\-\/]{1,256}$/.test(idToDelete)) {
       return NextResponse.json(
         { success: false, error: 'Invalid URL or publicId' },
+        { status: 400 }
+      )
+    }
+
+    const segments = idToDelete.split('/')
+    if (segments.some((part) => part === '.' || part === '..')) {
+      return NextResponse.json(
+        { success: false, error: 'Path traversal is not permitted' },
         { status: 400 }
       )
     }

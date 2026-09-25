@@ -64,6 +64,11 @@ export async function POST(request: NextRequest) {
     })
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
+    const contentLength = Number(request.headers.get('content-length') || 0)
+    if (contentLength > 65536) {
+      return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+    }
+
     const body = await request.json().catch(() => null)
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })
@@ -281,18 +286,15 @@ export async function POST(request: NextRequest) {
     // Paystack uses the subunit of the currency (pesewas / cents).
     const amountInMinor = toMinorUnits(finalAmount, currency)
 
-    const completedPayment =
-      packageData.itemType === 'package'
-        ? await prisma.payment.findFirst({
-            where: {
-              userId: user.id,
-              packageId: packageData.id,
-              status: 'success',
-            },
-            orderBy: { createdAt: 'desc' },
-            select: { reference: true },
-          })
-        : null
+    const completedPayment = await prisma.payment.findFirst({
+      where: {
+        userId: user.id,
+        packageId: packageData.id,
+        status: 'success',
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { reference: true },
+    })
 
     if (completedPayment) {
       return NextResponse.json(

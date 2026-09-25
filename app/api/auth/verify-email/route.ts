@@ -5,6 +5,8 @@ import { hashResetToken } from '@/lib/reset-token'
 import { createSessionToken, pruneUserSessions } from '@/lib/user-auth'
 import { getUserSessionCookieName, getUserSessionHintCookieName } from '@/lib/user-session-cookies'
 import { getBaseUrl } from '@/lib/url'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +17,10 @@ function redirectWithMessage(request: NextRequest, type: 'error' | 'notice', mes
 }
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = await checkRateLimit(`verify-email:${ip}`, { maxRequests: 10, windowMs: 60_000 })
+  if (!allowed) return rateLimitResponse(retryAfterMs)
+
   const token = request.nextUrl.searchParams.get('token')?.trim() || ''
 
   if (!/^[a-f0-9]{64}$/i.test(token)) {

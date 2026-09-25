@@ -11,16 +11,14 @@ export interface AdminSession {
   expiresAt: Date
 }
 
-export async function verifyAdminSession(request: NextRequest): Promise<AdminSession | null> {
-  const sessionCookie = request.cookies.get('admin_session')
-
-  if (!sessionCookie) {
+export async function verifyAdminSessionFromToken(token: string | null | undefined): Promise<AdminSession | null> {
+  if (!token || typeof token !== 'string') {
     return null
   }
 
   try {
     const session = await prisma.adminSession.findUnique({
-      where: { token: sessionCookie.value },
+      where: { token },
       include: { user: true },
     })
 
@@ -44,6 +42,14 @@ export async function verifyAdminSession(request: NextRequest): Promise<AdminSes
   } catch {
     return null
   }
+}
+
+export async function verifyAdminSession(request: NextRequest): Promise<AdminSession | null> {
+  const sessionCookie = request.cookies.get('admin_session')
+  if (!sessionCookie?.value) {
+    return null
+  }
+  return verifyAdminSessionFromToken(sessionCookie.value)
 }
 
 export async function pruneAdminSessions(userId: string, keepLatest = 3): Promise<void> {

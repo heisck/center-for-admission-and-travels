@@ -12,6 +12,11 @@ export async function POST(request: NextRequest) {
   const { allowed, retryAfterMs } = await checkRateLimit(`forgot:${ip}`, { maxRequests: 3, windowMs: 60_000 })
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
+  const contentLength = Number(request.headers.get('content-length') || 0)
+  if (contentLength > 16384) {
+    return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+  }
+
   try {
     const body = await request.json().catch(() => null)
     if (!body || typeof body !== 'object') {
@@ -51,7 +56,11 @@ export async function POST(request: NextRequest) {
     const supportContact = await getSupportContact()
     const template = passwordResetEmail(user.displayName || user.username, resetUrl, supportContact)
 
-    await sendEmailOrThrow({ to: user.email, ...template })
+    try {
+      await sendEmailOrThrow({ to: user.email, ...template })
+    } catch (emailError) {
+      console.error('[Forgot Password] Email delivery error:', emailError)
+    }
 
     return NextResponse.json({ success: true, message: 'If an account with that email exists, a reset link has been sent.' })
   } catch (error) {

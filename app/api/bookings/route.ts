@@ -21,6 +21,11 @@ export async function POST(request: NextRequest) {
   })
   if (!allowed) return rateLimitResponse(retryAfterMs)
 
+  const contentLength = Number(request.headers.get('content-length') || 0)
+  if (contentLength > 65536) {
+    return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+  }
+
   try {
     const body = await request.json().catch(() => ({}))
     const website = normalizeText(body?.website, 200)

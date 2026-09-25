@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth-helpers'
-import { uploadImage, validateImageFile, isCloudinaryConfigured, extractPublicId } from '@/lib/cloudinary'
+import { uploadImage, validateImageFileBytes, isCloudinaryConfigured, extractPublicId } from '@/lib/cloudinary'
 import { hasAdminPermission } from '@/lib/admin-permissions'
 import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/security'
@@ -32,13 +32,22 @@ export async function POST(request: NextRequest) {
     })
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
+    // Bound multipart payload size to prevent memory exhaustion
+    const contentLength = Number(request.headers.get('content-length') || 0)
+    if (contentLength > 6 * 1024 * 1024) {
+      return NextResponse.json(
+        { success: false, error: 'Payload too large (max 5MB)' },
+        { status: 413 }
+      )
+    }
+
     const formData = await request.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('file')
     const folder = formData.get('folder') as string | null
 
-    if (!file) {
+    if (!file || !(file instanceof File)) {
       return NextResponse.json(
-        { success: false, error: 'No file provided' },
+        { success: false, error: 'No file provided or invalid file format' },
         { status: 400 }
       )
     }
@@ -55,8 +64,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file
-    const validation = validateImageFile(file)
+    // Validate file type, extension, size, and magic bytes
+    const validation = await validateImageFileBytes(file, 5)
     if (!validation.valid) {
       return NextResponse.json(
         { success: false, error: validation.error },

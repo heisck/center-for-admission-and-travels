@@ -181,6 +181,11 @@ export async function PUT(
     // Handle both Promise and direct params (Next.js 15+ vs 14)
     const resolvedParams = await Promise.resolve(params)
     const { section } = resolvedParams
+    const contentLength = Number(request.headers.get('content-length') || 0)
+    if (contentLength > 1_000_000) {
+      return NextResponse.json({ success: false, error: 'Content payload is too large' }, { status: 413 })
+    }
+
     const body = await request.json().catch(() => null)
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 })

@@ -34,8 +34,9 @@ export function proxy(request: NextRequest) {
   const isMutation = MUTATING_METHODS.has(request.method.toUpperCase())
   const hasSession = hasAuthSessionCookie(request)
   const pathname = request.nextUrl.pathname
+  const normalizedPath = pathname.toLowerCase().replace(/\/+/g, '/')
 
-  if ((pathname === '/admin' || pathname.startsWith('/admin/')) && !request.cookies.get('admin_session')?.value) {
+  if ((normalizedPath === '/admin' || normalizedPath.startsWith('/admin/')) && !request.cookies.get('admin_session')?.value) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/admin-login'
     loginUrl.search = ''
@@ -43,10 +44,10 @@ export function proxy(request: NextRequest) {
   }
 
   const isProtectedUserPage =
-    pathname === '/profile' ||
-    pathname.startsWith('/profile/') ||
-    pathname === '/my-payments' ||
-    pathname.startsWith('/my-payments/')
+    normalizedPath === '/profile' ||
+    normalizedPath.startsWith('/profile/') ||
+    normalizedPath === '/my-payments' ||
+    normalizedPath.startsWith('/my-payments/')
 
   if (isProtectedUserPage && !request.cookies.get('user_session')?.value) {
     const signinUrl = request.nextUrl.clone()
@@ -56,7 +57,10 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(signinUrl), requestId)
   }
 
-  if (pathname.startsWith('/api/user/') && !request.cookies.get('user_session')?.value) {
+  if (
+    (normalizedPath === '/api/user' || normalizedPath.startsWith('/api/user/')) &&
+    !request.cookies.get('user_session')?.value
+  ) {
     return addSecurityHeaders(
       NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -67,8 +71,22 @@ export function proxy(request: NextRequest) {
   }
 
   if (
-    pathname.startsWith('/api/admin/') &&
-    !PUBLIC_ADMIN_AUTH_PATHS.has(pathname) &&
+    (normalizedPath === '/api/admin' || normalizedPath.startsWith('/api/admin/')) &&
+    !PUBLIC_ADMIN_AUTH_PATHS.has(normalizedPath) &&
+    !request.cookies.get('admin_session')?.value
+  ) {
+    return addSecurityHeaders(
+      NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      ),
+      requestId
+    )
+  }
+
+  if (
+    normalizedPath.startsWith('/api/legal/') &&
+    isMutation &&
     !request.cookies.get('admin_session')?.value
   ) {
     return addSecurityHeaders(

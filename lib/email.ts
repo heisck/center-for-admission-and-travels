@@ -34,9 +34,14 @@ interface EmailOptions {
 export async function sendEmail({ to, replyTo, subject, html }: EmailOptions): Promise<boolean> {
   const transport = getTransporter()
 
+  // Prevent SMTP header injection by stripping CR and LF from header fields
+  const safeSubject = String(subject || '').replace(/[\r\n]+/g, ' ').trim()
+  const safeTo = String(to || '').replace(/[\r\n]+/g, '').trim()
+  const safeReplyTo = replyTo ? String(replyTo).replace(/[\r\n]+/g, '').trim() : undefined
+
   if (!transport) {
-    console.log(`[Email] SMTP not configured. Would have sent to ${to}:`)
-    console.log(`[Email] Subject: ${subject}`)
+    console.log(`[Email] SMTP not configured. Would have sent to ${safeTo}:`)
+    console.log(`[Email] Subject: ${safeSubject}`)
     console.log(`[Email] Body preview: ${html.slice(0, 200)}...`)
     return false
   }
@@ -44,15 +49,15 @@ export async function sendEmail({ to, replyTo, subject, html }: EmailOptions): P
   try {
     await transport.sendMail({
       from: `"Center for Admission & Travels" <${SMTP_FROM}>`,
-      to,
-      replyTo,
-      subject,
+      to: safeTo,
+      replyTo: safeReplyTo,
+      subject: safeSubject,
       html,
     })
-    console.log(`[Email] Sent to ${to}: ${subject}`)
+    console.log(`[Email] Sent to ${safeTo}: ${safeSubject}`)
     return true
   } catch (error) {
-    console.error(`[Email] Failed to send to ${to}:`, error)
+    console.error(`[Email] Failed to send to ${safeTo}:`, error)
     return false
   }
 }

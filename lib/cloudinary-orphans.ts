@@ -21,6 +21,16 @@ function addUrl(set: Set<string>, value: string | null | undefined) {
   if (publicId) set.add(publicId)
 }
 
+function extractCloudinaryUrlsFromText(set: Set<string>, text: string | null | undefined) {
+  if (!text || typeof text !== 'string') return
+  const matches = text.match(/https?:\/\/[^\s"'<>]*cloudinary\.com\/[^\s"'<>]+/gi)
+  if (matches) {
+    for (const match of matches) {
+      addUrl(set, match)
+    }
+  }
+}
+
 /**
  * All Cloudinary URLs / public IDs still referenced in the database.
  */
@@ -40,6 +50,7 @@ export async function collectReferencedCloudinaryIds(): Promise<Set<string>> {
     serviceCountries,
     blogPosts,
     professionalServices,
+    legalPages,
   ] = await Promise.all([
     prisma.packageImage.findMany({ select: { url: true } }),
     prisma.homeHeroImage.findMany({ select: { url: true } }),
@@ -51,8 +62,9 @@ export async function collectReferencedCloudinaryIds(): Promise<Set<string>> {
     prisma.travelToursPage.findFirst({ select: { heroImageUrl: true } }),
     prisma.servicePage.findMany({ select: { heroImageUrl: true } }),
     prisma.serviceCountry.findMany({ select: { imageUrl: true } }),
-    prisma.blogPost.findMany({ select: { imageUrl: true } }),
-    prisma.professionalService.findMany({ select: { imageUrl: true } }),
+    prisma.blogPost.findMany({ select: { imageUrl: true, content: true } }),
+    prisma.professionalService.findMany({ select: { imageUrl: true, descriptionHtml: true } }),
+    prisma.legalPage.findMany({ select: { content: true } }),
   ])
 
   for (const row of packageImages) addUrl(referenced, row.url)
@@ -65,8 +77,17 @@ export async function collectReferencedCloudinaryIds(): Promise<Set<string>> {
   if (travelPage) addUrl(referenced, travelPage.heroImageUrl)
   for (const row of servicePages) addUrl(referenced, row.heroImageUrl)
   for (const row of serviceCountries) addUrl(referenced, row.imageUrl)
-  for (const row of blogPosts) addUrl(referenced, row.imageUrl)
-  for (const row of professionalServices) addUrl(referenced, row.imageUrl)
+  for (const row of blogPosts) {
+    addUrl(referenced, row.imageUrl)
+    extractCloudinaryUrlsFromText(referenced, row.content)
+  }
+  for (const row of professionalServices) {
+    addUrl(referenced, row.imageUrl)
+    extractCloudinaryUrlsFromText(referenced, row.descriptionHtml)
+  }
+  for (const row of legalPages) {
+    extractCloudinaryUrlsFromText(referenced, row.content)
+  }
 
   return referenced
 }

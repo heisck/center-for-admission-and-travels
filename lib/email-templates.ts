@@ -1,4 +1,5 @@
 import type { SupportContact } from '@/lib/support-contact'
+import { escapeHtml } from '@/lib/safe-html'
 
 const BRAND = 'Center for Admission & Travels'
 const BRAND_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://catravels.com'
@@ -8,7 +9,7 @@ function layout(title: string, body: string, contact?: Partial<SupportContact>) 
   const phone = contact?.phone?.trim() || ''
   const contactFooter = [phone, supportEmail]
     .filter(Boolean)
-    .map((item) => `<p>${item}</p>`)
+    .map((item) => `<p>${escapeHtml(item)}</p>`)
     .join('')
 
   return `
@@ -21,7 +22,7 @@ function layout(title: string, body: string, contact?: Partial<SupportContact>) 
       <a href="${BRAND_URL}" style="font-size:20px;font-weight:bold;color:#ea580c;text-decoration:none;">${BRAND}</a>
     </div>
     <div style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;">
-      <h1 style="font-size:22px;color:#0f172a;margin:0 0 16px;">${title}</h1>
+      <h1 style="font-size:22px;color:#0f172a;margin:0 0 16px;">${escapeHtml(title)}</h1>
       ${body}
     </div>
     <div style="text-align:center;margin-top:24px;font-size:12px;color:#94a3b8;">
@@ -34,10 +35,11 @@ function layout(title: string, body: string, contact?: Partial<SupportContact>) 
 }
 
 export function welcomeEmail(name: string, contact?: Partial<SupportContact>) {
+  const safeName = escapeHtml(name)
   return {
     subject: `Welcome to ${BRAND}!`,
     html: layout('Welcome!', `
-      <p style="color:#475569;line-height:1.6;">Hi ${name},</p>
+      <p style="color:#475569;line-height:1.6;">Hi ${safeName},</p>
       <p style="color:#475569;line-height:1.6;">Thank you for creating an account with us. You now have access to:</p>
       <ul style="color:#475569;line-height:1.8;">
         <li>Book travel packages and study/work abroad programmes</li>
@@ -53,46 +55,52 @@ export function welcomeEmail(name: string, contact?: Partial<SupportContact>) {
 }
 
 export function emailVerificationEmail(name: string, verificationUrl: string, contact?: Partial<SupportContact>) {
+  const safeName = escapeHtml(name)
+  const safeUrl = escapeHtml(verificationUrl)
   return {
     subject: `Verify your ${BRAND} email`,
     html: layout('Verify Your Email', `
-      <p style="color:#475569;line-height:1.6;">Hi ${name},</p>
+      <p style="color:#475569;line-height:1.6;">Hi ${safeName},</p>
       <p style="color:#475569;line-height:1.6;">Please verify your email address before signing in. This protects your account and keeps bookings tied to the right person.</p>
       <div style="text-align:center;margin:24px 0;">
-        <a href="${verificationUrl}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Verify Email</a>
+        <a href="${safeUrl}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Verify Email</a>
       </div>
       <p style="color:#475569;line-height:1.6;">This link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.</p>
-      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${verificationUrl}</p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${safeUrl}</p>
     `, contact),
   }
 }
 
 export function adminPasswordResetEmail(username: string, resetUrl: string, contact?: Partial<SupportContact>) {
+  const safeUsername = escapeHtml(username)
+  const safeUrl = escapeHtml(resetUrl)
   return {
     subject: `Reset your ${BRAND} Admin password`,
     html: layout('Admin Password Reset', `
-      <p style="color:#475569;line-height:1.6;">Hi ${username},</p>
+      <p style="color:#475569;line-height:1.6;">Hi ${safeUsername},</p>
       <p style="color:#475569;line-height:1.6;">We received a request to reset your admin password. Click the button below to set a new password:</p>
       <div style="text-align:center;margin:24px 0;">
-        <a href="${resetUrl}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Reset Admin Password</a>
+        <a href="${safeUrl}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Reset Admin Password</a>
       </div>
       <p style="color:#475569;line-height:1.6;">This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
-      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${resetUrl}</p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${safeUrl}</p>
     `, contact),
   }
 }
 
 export function passwordResetEmail(name: string, resetUrl: string, contact?: Partial<SupportContact>) {
+  const safeName = escapeHtml(name)
+  const safeUrl = escapeHtml(resetUrl)
   return {
     subject: `Reset your ${BRAND} password`,
     html: layout('Password Reset', `
-      <p style="color:#475569;line-height:1.6;">Hi ${name},</p>
+      <p style="color:#475569;line-height:1.6;">Hi ${safeName},</p>
       <p style="color:#475569;line-height:1.6;">We received a request to reset your password. Click the button below to set a new password:</p>
       <div style="text-align:center;margin:24px 0;">
-        <a href="${resetUrl}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
+        <a href="${safeUrl}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
       </div>
       <p style="color:#475569;line-height:1.6;">This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
-      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${resetUrl}</p>
+      <p style="color:#94a3b8;font-size:12px;margin-top:24px;">If the button doesn't work, copy and paste this URL into your browser: ${safeUrl}</p>
     `, contact),
   }
 }
@@ -104,16 +112,20 @@ export function paymentConfirmationEmail(data: {
   currency: string
   itemName: string
 }, contact?: Partial<SupportContact>) {
+  const safeName = escapeHtml(data.name)
+  const safeItemName = escapeHtml(data.itemName)
+  const safeCurrency = escapeHtml(data.currency)
+  const safeReference = escapeHtml(data.reference)
   return {
-    subject: `Payment Confirmed - ${data.reference}`,
+    subject: `Payment Confirmed - ${safeReference}`,
     html: layout('Payment Confirmed', `
-      <p style="color:#475569;line-height:1.6;">Hi ${data.name},</p>
+      <p style="color:#475569;line-height:1.6;">Hi ${safeName},</p>
       <p style="color:#475569;line-height:1.6;">Your payment has been successfully processed. Here are the details:</p>
       <div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;">
         <table style="width:100%;border-collapse:collapse;font-size:14px;">
-          <tr><td style="padding:6px 0;color:#64748b;">Booking</td><td style="padding:6px 0;color:#0f172a;font-weight:600;text-align:right;">${data.itemName}</td></tr>
-          <tr><td style="padding:6px 0;color:#64748b;">Amount</td><td style="padding:6px 0;color:#0f172a;font-weight:600;text-align:right;">${data.currency} ${data.amount.toLocaleString()}</td></tr>
-          <tr><td style="padding:6px 0;color:#64748b;">Reference</td><td style="padding:6px 0;color:#0f172a;font-family:monospace;text-align:right;">${data.reference}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b;">Booking</td><td style="padding:6px 0;color:#0f172a;font-weight:600;text-align:right;">${safeItemName}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b;">Amount</td><td style="padding:6px 0;color:#0f172a;font-weight:600;text-align:right;">${safeCurrency} ${data.amount.toLocaleString()}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b;">Reference</td><td style="padding:6px 0;color:#0f172a;font-family:monospace;text-align:right;">${safeReference}</td></tr>
         </table>
       </div>
       <div style="text-align:center;margin:24px 0;">
@@ -131,21 +143,29 @@ export function contactNotificationEmail(data: {
   subject: string
   message: string
 }, contact?: Partial<SupportContact>) {
+  const safeName = escapeHtml(data.name)
+  const safeEmail = escapeHtml(data.email)
+  const safePhone = data.phone ? escapeHtml(data.phone) : ''
+  const cleanSubject = String(data.subject || '').replace(/[\r\n]+/g, ' ').trim()
+  const safeSubject = escapeHtml(cleanSubject)
+  const safeMessage = escapeHtml(data.message)
+
   return {
-    subject: `New Contact: ${data.subject}`,
+    subject: `New Contact: ${cleanSubject}`,
     html: layout('New Contact Message', `
       <div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;">
         <table style="width:100%;border-collapse:collapse;font-size:14px;">
-          <tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Name</td><td style="padding:6px 0;color:#0f172a;">${data.name}</td></tr>
-          <tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Email</td><td style="padding:6px 0;color:#0f172a;">${data.email}</td></tr>
-          ${data.phone ? `<tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Phone</td><td style="padding:6px 0;color:#0f172a;">${data.phone}</td></tr>` : ''}
-          <tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Subject</td><td style="padding:6px 0;color:#0f172a;">${data.subject}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Name</td><td style="padding:6px 0;color:#0f172a;">${safeName}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Email</td><td style="padding:6px 0;color:#0f172a;">${safeEmail}</td></tr>
+          ${safePhone ? `<tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Phone</td><td style="padding:6px 0;color:#0f172a;">${safePhone}</td></tr>` : ''}
+          <tr><td style="padding:6px 0;color:#64748b;vertical-align:top;">Subject</td><td style="padding:6px 0;color:#0f172a;">${safeSubject}</td></tr>
         </table>
       </div>
       <div style="background:#f0fdf4;border-radius:8px;padding:16px;margin:16px 0;border:1px solid #bbf7d0;">
-        <p style="color:#0f172a;line-height:1.6;margin:0;white-space:pre-wrap;">${data.message}</p>
+        <p style="color:#0f172a;line-height:1.6;margin:0;white-space:pre-wrap;">${safeMessage}</p>
       </div>
-      <p style="color:#475569;font-size:13px;">Reply directly to this email or contact the sender at ${data.email}</p>
+      <p style="color:#475569;font-size:13px;">Reply directly to this email or contact the sender at ${safeEmail}</p>
     `, contact),
   }
 }
+

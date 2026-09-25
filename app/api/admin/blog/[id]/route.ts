@@ -28,6 +28,10 @@ function normalizeImageUrl(value: unknown) {
 }
 
 async function enforceBlogWriteLimit(request: NextRequest, userId: string) {
+  const contentLength = Number(request.headers.get('content-length') || 0)
+  if (contentLength > 524_288) {
+    return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+  }
   const { allowed, retryAfterMs } = await checkRateLimit(
     `admin-blog-write:${userId}:${getClientIp(request)}`,
     { maxRequests: 30, windowMs: 60_000 }

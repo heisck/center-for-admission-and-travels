@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     const payments = await prisma.payment.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
+      take: 100,
       select: {
         id: true,
         reference: true,

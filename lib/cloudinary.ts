@@ -344,16 +344,41 @@ export async function deleteImages(publicIds: string[]): Promise<boolean[]> {
  * @param maxSizeMB - Maximum file size in MB
  * @returns Validation result
  */
+/**
+ * Validate image file
+ * 
+ * @param file - File object
+ * @param maxSizeMB - Maximum file size in MB
+ * @returns Validation result
+ */
 export function validateImageFile(
   file: File,
   maxSizeMB: number = 5
 ): { valid: boolean; error?: string } {
-  // Check file type
+  if (!file || typeof file !== 'object' || typeof file.size !== 'number' || typeof file.type !== 'string') {
+    return {
+      valid: false,
+      error: 'Invalid file object provided.',
+    }
+  }
+
+  // Check file type MIME
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
   if (!validTypes.includes(file.type)) {
     return {
       valid: false,
       error: 'Invalid file type. Please upload JPG, PNG, WebP, or GIF.',
+    }
+  }
+
+  // Check file extension
+  const fileName = typeof file.name === 'string' ? file.name : ''
+  const ext = fileName.split('.').pop()?.toLowerCase() || ''
+  const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+  if (!ext || !validExtensions.includes(ext)) {
+    return {
+      valid: false,
+      error: 'Invalid file extension. Allowed extensions: .jpg, .jpeg, .png, .webp, .gif',
     }
   }
 
@@ -367,6 +392,57 @@ export function validateImageFile(
   }
 
   return { valid: true }
+}
+
+/**
+ * Inspect magic bytes of uploaded file to prevent MIME spoofing / polyglot attacks.
+ */
+export async function validateImageFileBytes(
+  file: File,
+  maxSizeMB: number = 5
+): Promise<{ valid: boolean; error?: string }> {
+  const basic = validateImageFile(file, maxSizeMB)
+  if (!basic.valid) return basic
+
+  try {
+    const slice = file.slice(0, 16)
+    const arrayBuffer = await slice.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+
+    if (bytes.length < 4) {
+      return { valid: false, error: 'File is too small to be a valid image.' }
+    }
+
+    // JPEG: FF D8 FF
+    const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+    // PNG: 89 50 4E 47
+    const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47
+    // GIF: 47 49 46 38 ("GIF8")
+    const isGif = bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38
+    // WebP: 52 49 46 46 ("RIFF" at 0) and 57 45 42 50 ("WEBP" at 8)
+    const isWebP =
+      bytes.length >= 12 &&
+      bytes[0] === 0x52 &&
+      bytes[1] === 0x49 &&
+      bytes[2] === 0x46 &&
+      bytes[3] === 0x46 &&
+      bytes[8] === 0x57 &&
+      bytes[9] === 0x45 &&
+      bytes[10] === 0x42 &&
+      bytes[11] === 0x50
+
+    if (!isJpeg && !isPng && !isGif && !isWebP) {
+      return {
+        valid: false,
+        error: 'File content does not match an allowed image format (JPEG, PNG, WebP, GIF).',
+      }
+    }
+
+    return { valid: true }
+  } catch (error) {
+    console.error('Error verifying image bytes:', error)
+    return { valid: false, error: 'Failed to inspect image header.' }
+  }
 }
 
 /**

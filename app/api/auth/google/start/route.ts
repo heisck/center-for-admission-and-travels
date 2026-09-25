@@ -56,6 +56,9 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error: any) {
     console.error('Google OAuth start error:', error)
-    return buildOAuthErrorRedirect(request, error?.message || 'Google sign-in is unavailable right now.', errorPath)
+    const safeError = process.env.NODE_ENV === 'production'
+      ? 'Google sign-in is unavailable right now.'
+      : (error?.message || 'Google sign-in is unavailable right now.')
+    return buildOAuthErrorRedirect(request, safeError, errorPath)
   }
 }

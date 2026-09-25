@@ -80,16 +80,15 @@ export async function POST(
     }
 
     const paymentData = verifyResponse.data
-    let nextStatus = mapPaystackStatus(paymentData.status)
-
     const paidAmountMinor = Number(paymentData.amount || 0)
     const expectedAmountMinor = payment.amountMinor || Math.round(Number(payment.amount) * 100)
     const paidCurrency = String(paymentData.currency || '').toUpperCase()
     const expectedCurrency = payment.currency.toUpperCase()
     const amountAndCurrencyMatch = paidAmountMinor === expectedAmountMinor && paidCurrency === expectedCurrency
 
-    if (!amountAndCurrencyMatch) {
-      nextStatus = 'failed'
+    let nextStatus = mapPaystackStatus(paymentData.status)
+    if (paymentData.status === 'success') {
+      nextStatus = amountAndCurrencyMatch ? 'success' : 'failed'
     }
 
     if (payment.status === 'success' && nextStatus !== 'success') {

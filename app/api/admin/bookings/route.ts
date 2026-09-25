@@ -100,6 +100,11 @@ export async function PATCH(request: NextRequest) {
     )
     if (!allowed) return rateLimitResponse(retryAfterMs)
 
+    const contentLength = Number(request.headers.get('content-length') || 0)
+    if (contentLength > 16384) {
+      return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+    }
+
     const body = await request.json().catch(() => null)
     const id = String(body?.id || '').trim()
     const status = String(body?.status || '').trim()

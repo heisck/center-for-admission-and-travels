@@ -17,6 +17,10 @@ function isValidImageUrl(value: string) {
 }
 
 async function enforceServiceWriteLimit(request: NextRequest, userId: string) {
+  const contentLength = Number(request.headers.get('content-length') || 0)
+  if (contentLength > 131072) {
+    return NextResponse.json({ success: false, error: 'Payload too large' }, { status: 413 })
+  }
   const { allowed, retryAfterMs } = await checkRateLimit(
     `admin-services-write:${userId}:${getClientIp(request)}`,
     { maxRequests: 30, windowMs: 60_000 }

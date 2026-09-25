@@ -13,6 +13,7 @@ import { sendEmail } from '@/lib/email'
 import { paymentConfirmationEmail } from '@/lib/email-templates'
 import { getSupportContact } from '@/lib/support-contact'
 import { getClientIp } from '@/lib/security'
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit'
 import crypto from 'crypto'
 
 function isValidSignature(rawBody: string, signature: string, secret: string) {
@@ -43,13 +44,7 @@ function isWebhookIpAllowed(request: NextRequest) {
   const allowlist = getWebhookIpAllowlist()
   if (allowlist.length === 0) return true
 
-  const forwardedFor = request.headers.get('x-forwarded-for') || ''
-  const forwardedIps = forwardedFor
-    .split(',')
-    .map((ip) => ip.trim())
-    .filter(Boolean)
-  const clientIp = forwardedIps[0] || getClientIp(request)
-
+  const clientIp = getClientIp(request)
   return allowlist.includes(clientIp)
 }
 
@@ -67,6 +62,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Webhook IP is not allowed' },
         { status: 403 }
+      )
+    }
+
+    const ip = getClientIp(request)
+    const { allowed, retryAfterMs } = await checkRateLimit(`payment-webhook:${ip}`, {
+      maxRequests: 120,
+      windowMs: 60_000,
+    })
+    if (!allowed) return rateLimitResponse(retryAfterMs)
+
+    const contentLength = Number(request.headers.get('content-length') || 0)
+    if (contentLength > 1_000_000) {
+      return NextResponse.json(
+        { success: false, error: 'Webhook payload is too large' },
+        { status: 413 }
       )
     }
 
@@ -145,6 +155,9 @@ export async function POST(request: NextRequest) {
       case 'charge.abandoned':
         nextStatus = 'cancelled'
         break
+      case 'refund.processed':
+        nextStatus = 'cancelled'
+        break
       case 'transfer.success':
       case 'transfer.failed':
       case 'transfer.reversed':
@@ -159,16 +172,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: `Unhandled event: ${event}` })
     }
 
-    // Never downgrade a successful payment due to later noisy events.
-    if (payment.status === 'success' && nextStatus !== 'success') {
+    // Never downgrade a successful payment due to later noisy events (except legitimate refunds)
+    if (payment.status === 'success' && nextStatus !== 'success' && event !== 'refund.processed') {
       return NextResponse.json({ success: true, message: 'Payment already marked successful' })
     }
 
+    const whereClause: any = {
+      id: payment.id,
+    }
+    if (event !== 'refund.processed') {
+      whereClause.status = { not: 'success' }
+    }
+
     const updateResult = await prisma.payment.updateMany({
-      where: {
-        id: payment.id,
-        status: { not: 'success' },
-      },
+      where: whereClause,
       data: {
         status: nextStatus,
         paystackData: data as any,
